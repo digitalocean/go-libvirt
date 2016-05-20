@@ -1,0 +1,13 @@
+language: go
+go:
+  - 1.6.2
+before_install:
+  - go get github.com/golang/lint/golint
+before_script:
+  - go get -d ./...
+script:
+  - ./scripts/licensecheck.sh
+  - go build ./...
+  - ./scripts/golint.sh
+  - go vet ./...
+  - go test -v ./...
