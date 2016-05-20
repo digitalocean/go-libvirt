@@ -12,12 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package libvirt
+// Package libvirttest provides a mock libvirt server for RPC testing.
+package libvirttest
 
 import (
 	"encoding/binary"
 	"net"
 	"sync/atomic"
+
+	"github.com/digitalocean/go-libvirt/internal/constants"
 )
 
 var testDomainResponse = []byte{
@@ -164,18 +167,20 @@ var testVersionReply = []byte{
 	0x00, 0x00, 0x00, 0x00, 0x00, 0x0f, 0x4d, 0xfc, // version (1003004)
 }
 
-type mockLibvirt struct {
+// MockLibvirt provides a mock libvirt server for testing.
+type MockLibvirt struct {
 	net.Conn
-	test   net.Conn
+	Test   net.Conn
 	serial uint32
 }
 
-func setupTest() *mockLibvirt {
+// New creates a new mock Libvirt server.
+func New() *MockLibvirt {
 	serv, conn := net.Pipe()
 
-	m := &mockLibvirt{
+	m := &MockLibvirt{
 		Conn: conn,
-		test: serv,
+		Test: serv,
 	}
 
 	go m.handle(serv)
@@ -183,9 +188,10 @@ func setupTest() *mockLibvirt {
 	return m
 }
 
-func (m *mockLibvirt) handle(conn net.Conn) {
+func (m *MockLibvirt) handle(conn net.Conn) {
 	for {
-		buf := make([]byte, packetLengthSize+headerSize)
+		// packetLengthSize + headerSize
+		buf := make([]byte, 28)
 		conn.Read(buf)
 
 		// extract program
@@ -195,45 +201,45 @@ func (m *mockLibvirt) handle(conn net.Conn) {
 		proc := binary.BigEndian.Uint32(buf[12:16])
 
 		switch prog {
-		case programRemote:
+		case constants.ProgramRemote:
 			m.handleRemote(proc, conn)
-		case programQEMU:
+		case constants.ProgramQEMU:
 			m.handleQEMU(proc, conn)
 		}
 	}
 }
 
-func (m *mockLibvirt) handleRemote(procedure uint32, conn net.Conn) {
+func (m *MockLibvirt) handleRemote(procedure uint32, conn net.Conn) {
 	switch procedure {
-	case procAuthList:
+	case constants.ProcAuthList:
 		conn.Write(m.reply(testAuthReply))
-	case procConnectOpen:
+	case constants.ProcConnectOpen:
 		conn.Write(m.reply(testConnectReply))
-	case procConnectClose:
+	case constants.ProcConnectClose:
 		conn.Write(m.reply(testDisconnectReply))
-	case procConnectGetLibVersion:
+	case constants.ProcConnectGetLibVersion:
 		conn.Write(m.reply(testVersionReply))
-	case procDomainLookupByName:
+	case constants.ProcDomainLookupByName:
 		conn.Write(m.reply(testDomainResponse))
-	case procConnectListAllDomains:
+	case constants.ProcConnectListAllDomains:
 		conn.Write(m.reply(testDomainsReply))
 	}
 }
 
-func (m *mockLibvirt) handleQEMU(procedure uint32, conn net.Conn) {
+func (m *MockLibvirt) handleQEMU(procedure uint32, conn net.Conn) {
 	switch procedure {
-	case qemuConnectDomainMonitorEventRegister:
+	case constants.QEMUConnectDomainMonitorEventRegister:
 		conn.Write(m.reply(testRegisterEvent))
-	case qemuConnectDomainMonitorEventDeregister:
+	case constants.QEMUConnectDomainMonitorEventDeregister:
 		conn.Write(m.reply(testDeregisterEvent))
-	case qemuDomainMonitor:
+	case constants.QEMUDomainMonitor:
 		conn.Write(m.reply(testRunReply))
 	}
 }
 
 // reply automatically injects the correct serial
 // number into the provided response buffer.
-func (m *mockLibvirt) reply(buf []byte) []byte {
+func (m *MockLibvirt) reply(buf []byte) []byte {
 	atomic.AddUint32(&m.serial, 1)
 	binary.BigEndian.PutUint32(buf[20:24], m.serial)
 

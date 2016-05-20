@@ -25,6 +25,7 @@ import (
 	"sync"
 
 	"github.com/davecgh/go-xdr/xdr2"
+	"github.com/digitalocean/go-libvirt/internal/constants"
 )
 
 // ErrEventsNotSupported is returned by Events() if event streams
@@ -52,7 +53,7 @@ type Libvirt struct {
 // Domain represents a domain as seen by libvirt.
 type Domain struct {
 	Name string
-	UUID [uuidSize]byte
+	UUID [constants.UUIDSize]byte
 	ID   int
 }
 
@@ -108,7 +109,7 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(procConnectListAllDomains, programRemote, &buf)
+	resp, err := l.request(constants.ProcConnectListAllDomains, constants.ProgramRemote, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +160,7 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(qemuConnectDomainMonitorEventRegister, programQEMU, &buf)
+	resp, err := l.request(constants.QEMUConnectDomainMonitorEventRegister, constants.ProgramQEMU, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +219,7 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(qemuDomainMonitor, programQEMU, &buf)
+	resp, err := l.request(constants.QEMUDomainMonitor, constants.ProgramQEMU, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +243,7 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 
 // Version returns the version of the libvirt daemon.
 func (l *Libvirt) Version() (string, error) {
-	resp, err := l.request(procConnectGetLibVersion, programRemote, nil)
+	resp, err := l.request(constants.ProcConnectGetLibVersion, constants.ProgramRemote, nil)
 	if err != nil {
 		return "", err
 	}
@@ -286,7 +287,7 @@ func (l *Libvirt) lookup(name string) (*Domain, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(procDomainLookupByName, programRemote, &buf)
+	resp, err := l.request(constants.ProcDomainLookupByName, constants.ProgramRemote, &buf)
 	if err != nil {
 		return nil, err
 	}
