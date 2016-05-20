@@ -20,11 +20,13 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-xdr/xdr2"
+	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/digitalocean/go-libvirt/libvirttest"
 )
 
 var (
 	// dc229f87d4de47198cfd2e21c6105b01
-	testUUID = [uuidSize]byte{
+	testUUID = [constants.UUIDSize]byte{
 		0xdc, 0x22, 0x9f, 0x87, 0xd4, 0xde, 0x47, 0x19,
 		0x8c, 0xfd, 0x2e, 0x21, 0xc6, 0x10, 0x5b, 0x01,
 	}
@@ -118,16 +120,16 @@ func TestExtractHeader(t *testing.T) {
 		t.Error(err)
 	}
 
-	if h.Program != programRemote {
-		t.Errorf("expected Program %q, got %q", programRemote, h.Program)
+	if h.Program != constants.ProgramRemote {
+		t.Errorf("expected Program %q, got %q", constants.ProgramRemote, h.Program)
 	}
 
-	if h.Version != programVersion {
-		t.Errorf("expected version %q, got %q", programVersion, h.Version)
+	if h.Version != constants.ProgramVersion {
+		t.Errorf("expected version %q, got %q", constants.ProgramVersion, h.Version)
 	}
 
-	if h.Procedure != procConnectOpen {
-		t.Errorf("expected procedure %q, got %q", procConnectOpen, h.Procedure)
+	if h.Procedure != constants.ProcConnectOpen {
+		t.Errorf("expected procedure %q, got %q", constants.ProcConnectOpen, h.Procedure)
 	}
 
 	if h.Type != Call {
@@ -270,7 +272,7 @@ func TestAddStream(t *testing.T) {
 func TestRemoveStream(t *testing.T) {
 	id := uint32(1)
 
-	conn := setupTest()
+	conn := libvirttest.New()
 	l := New(conn)
 	l.events[id] = make(chan *DomainEvent)
 
@@ -328,7 +330,7 @@ func TestLookup(t *testing.T) {
 	c := make(chan response)
 	name := "test"
 
-	conn := setupTest()
+	conn := libvirttest.New()
 	l := New(conn)
 
 	l.register(id, c)

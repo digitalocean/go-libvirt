@@ -23,6 +23,7 @@ import (
 	"sync/atomic"
 
 	"github.com/davecgh/go-xdr/xdr2"
+	"github.com/digitalocean/go-libvirt/internal/constants"
 )
 
 // ErrUnsupported is returned if a procedure is not supported by libvirt
@@ -66,44 +67,6 @@ const (
 	// StatusContinue is only used for streams.
 	// This indicates that further data packets will be following.
 	StatusContinue
-)
-
-// magic program numbers
-// see: https://libvirt.org/git/?p=libvirt.git;a=blob_plain;f=src/remote/remote_protocol.x;hb=HEAD
-const (
-	programVersion   = 1
-	programRemote    = 0x20008086
-	programQEMU      = 0x20008087
-	programKeepAlive = 0x6b656570
-)
-
-// libvirt procedure identifiers
-const (
-	procConnectOpen           = 1
-	procConnectClose          = 2
-	procDomainLookupByName    = 23
-	procAuthList              = 66
-	procConnectGetLibVersion  = 157
-	procConnectListAllDomains = 273
-)
-
-// qemu procedure identifiers
-const (
-	qemuDomainMonitor                       = 1
-	qemuConnectDomainMonitorEventRegister   = 4
-	qemuConnectDomainMonitorEventDeregister = 5
-	qemuDomainMonitorEvent                  = 6
-)
-
-const (
-	// packet length, in bytes.
-	packetLengthSize = 4
-
-	// packet header, in bytes.
-	headerSize = 24
-
-	// UUID size, in bytes.
-	uuidSize = 16
 )
 
 // header is a libvirt rpc packet header
@@ -168,7 +131,7 @@ func (l *Libvirt) connect() error {
 
 	// libvirt requires that we call auth-list prior to connecting,
 	// event when no authentication is used.
-	resp, err := l.request(procAuthList, programRemote, &buf)
+	resp, err := l.request(constants.ProcAuthList, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -178,7 +141,7 @@ func (l *Libvirt) connect() error {
 		return decodeError(r.Payload)
 	}
 
-	resp, err = l.request(procConnectOpen, programRemote, &buf)
+	resp, err = l.request(constants.ProcConnectOpen, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -192,7 +155,7 @@ func (l *Libvirt) connect() error {
 }
 
 func (l *Libvirt) disconnect() error {
-	resp, err := l.request(procConnectClose, programRemote, nil)
+	resp, err := l.request(constants.ProcConnectClose, constants.ProgramRemote, nil)
 	if err != nil {
 		return err
 	}
@@ -230,7 +193,7 @@ func (l *Libvirt) listen() {
 		}
 
 		// payload: packet length minus what was previously read
-		size := int(length) - (packetLengthSize + headerSize)
+		size := int(length) - (constants.PacketLengthSize + constants.HeaderSize)
 		buf := make([]byte, size)
 		for n := 0; n < size; {
 			nn, err := l.r.Read(buf)
@@ -260,7 +223,7 @@ func (l *Libvirt) callback(id uint32, res response) {
 // route sends incoming packets to their listeners.
 func (l *Libvirt) route(h *header, buf []byte) {
 	// route events to their respective listener
-	if h.Program == programQEMU && h.Procedure == qemuDomainMonitorEvent {
+	if h.Program == constants.ProgramQEMU && h.Procedure == constants.QEMUDomainMonitorEvent {
 		l.stream(buf)
 		return
 	}
@@ -320,7 +283,7 @@ func (l *Libvirt) removeStream(id uint32) error {
 		return err
 	}
 
-	resp, err := l.request(qemuConnectDomainMonitorEventDeregister, programQEMU, &buf)
+	resp, err := l.request(constants.QEMUConnectDomainMonitorEventDeregister, constants.ProgramQEMU, &buf)
 	if err != nil {
 		return err
 	}
@@ -361,7 +324,7 @@ func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (<
 
 	l.register(serial, c)
 
-	size := packetLengthSize + headerSize
+	size := constants.PacketLengthSize + constants.HeaderSize
 	if payload != nil {
 		size += payload.Len()
 	}
@@ -370,7 +333,7 @@ func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (<
 		Len: uint32(size),
 		Header: header{
 			Program:   program,
-			Version:   programVersion,
+			Version:   constants.ProgramVersion,
 			Procedure: proc,
 			Type:      Call,
 			Serial:    serial,
@@ -442,7 +405,7 @@ func decodeEvent(buf []byte) (*DomainEvent, error) {
 // If an error is encountered reading the provided Reader, the
 // error is returned and response length will be 0.
 func pktlen(r io.Reader) (uint32, error) {
-	buf := make([]byte, packetLengthSize)
+	buf := make([]byte, constants.PacketLengthSize)
 
 	for n := 0; n < cap(buf); {
 		nn, err := r.Read(buf)
@@ -458,7 +421,7 @@ func pktlen(r io.Reader) (uint32, error) {
 
 // extractHeader returns the decoded header from an incoming response.
 func extractHeader(r io.Reader) (*header, error) {
-	buf := make([]byte, headerSize)
+	buf := make([]byte, constants.HeaderSize)
 
 	for n := 0; n < cap(buf); {
 		nn, err := r.Read(buf)

@@ -19,10 +19,12 @@ import (
 	"fmt"
 	"testing"
 	"time"
+
+	"github.com/digitalocean/go-libvirt/libvirttest"
 )
 
 func TestConnect(t *testing.T) {
-	conn := setupTest()
+	conn := libvirttest.New()
 	l := New(conn)
 
 	err := l.Connect()
@@ -32,7 +34,7 @@ func TestConnect(t *testing.T) {
 }
 
 func TestDisconnect(t *testing.T) {
-	conn := setupTest()
+	conn := libvirttest.New()
 	l := New(conn)
 
 	err := l.Disconnect()
@@ -42,7 +44,7 @@ func TestDisconnect(t *testing.T) {
 }
 
 func TestDomains(t *testing.T) {
-	conn := setupTest()
+	conn := libvirttest.New()
 	l := New(conn)
 
 	domains, err := l.Domains()
@@ -70,7 +72,7 @@ func TestDomains(t *testing.T) {
 }
 
 func TestEvents(t *testing.T) {
-	conn := setupTest()
+	conn := libvirttest.New()
 	l := New(conn)
 	done := make(chan struct{})
 
@@ -108,14 +110,14 @@ func TestEvents(t *testing.T) {
 	}()
 
 	// send an event to the listener goroutine
-	conn.test.Write(append(testEventHeader, testEvent...))
+	conn.Test.Write(append(testEventHeader, testEvent...))
 
 	// wait for completion
 	<-done
 }
 
 func TestRun(t *testing.T) {
-	conn := setupTest()
+	conn := libvirttest.New()
 	l := New(conn)
 
 	res, err := l.Run("test", []byte(`{"query-version"}`))
@@ -147,7 +149,7 @@ func TestRun(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
-	conn := setupTest()
+	conn := libvirttest.New()
 	l := New(conn)
 
 	version, err := l.Version()
