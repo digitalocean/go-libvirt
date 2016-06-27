@@ -195,14 +195,10 @@ func (l *Libvirt) listen() {
 		// payload: packet length minus what was previously read
 		size := int(length) - (constants.PacketLengthSize + constants.HeaderSize)
 		buf := make([]byte, size)
-		for n := 0; n < size; {
-			nn, err := l.r.Read(buf)
-			if err != nil {
-				// invalid packet
-				continue
-			}
-
-			n += nn
+		_, err = io.ReadFull(l.r, buf)
+		if err != nil {
+			// invalid packet
+			continue
 		}
 
 		// route response to caller
