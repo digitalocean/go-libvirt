@@ -148,6 +148,17 @@ func TestRun(t *testing.T) {
 	}
 }
 
+func TestRunFail(t *testing.T) {
+	conn := libvirttest.New()
+	conn.Fail = true
+	l := New(conn)
+
+	_, err := l.Run("test", []byte(`{"drive-foo"}`))
+	if err == nil {
+		t.Error("expected qemu error")
+	}
+}
+
 func TestVersion(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
