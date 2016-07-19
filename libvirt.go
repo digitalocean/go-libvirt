@@ -19,6 +19,7 @@ package libvirt
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -66,6 +67,14 @@ type DomainEvent struct {
 	Microseconds uint32
 	Padding      uint8
 	Details      []byte
+}
+
+// qemuError represents a QEMU process error.
+type qemuError struct {
+	Error struct {
+		Class       string `json:"class"`
+		Description string `json:"desc"`
+	} `json:"error"`
 }
 
 // Connect establishes communication with the libvirt server.
@@ -225,8 +234,14 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 	}
 
 	res := <-resp
+	// check for libvirt errors
 	if res.Status != StatusOK {
 		return nil, decodeError(res.Payload)
+	}
+
+	// check for QEMU process errors
+	if err = getQEMUError(res); err != nil {
+		return nil, err
 	}
 
 	r := bytes.NewReader(res.Payload)
@@ -238,7 +253,7 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 
 	// drop QMP control characters from start of line, and drop
 	// any trailing NULL characters from the end
-	return bytes.TrimRight(data[4:], "\x00"), err
+	return bytes.TrimRight(data[4:], "\x00"), nil
 }
 
 // Version returns the version of the libvirt daemon.
@@ -306,6 +321,29 @@ func (l *Libvirt) lookup(name string) (*Domain, error) {
 	}
 
 	return &d, nil
+}
+
+// getQEMUError checks the provided response for QEMU process errors.
+// If an error is found, it is extracted an returned, otherwise nil.
+func getQEMUError(r response) error {
+	pl := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(pl)
+
+	s, _, err := dec.DecodeString()
+	if err != nil {
+		return err
+	}
+
+	var e qemuError
+	if err = json.Unmarshal([]byte(s), &e); err != nil {
+		return err
+	}
+
+	if e.Error.Description != "" {
+		return errors.New(e.Error.Description)
+	}
+
+	return nil
 }
 
 // New configures a new Libvirt RPC connection.
