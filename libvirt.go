@@ -204,6 +204,44 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 	return c, nil
 }
 
+// MigrateSetMaxSpeed set the maximum migration bandwidth (in MiB/s) for a
+// domain which is being migrated to another host. Specifying a negative value
+// results in an essentially unlimited value being provided to the hypervisor.
+func (l *Libvirt) MigrateSetMaxSpeed(dom string, speed int64) error {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return err
+	}
+
+	payload := struct {
+		Padding   [4]byte
+		Domain    Domain
+		Bandwidth int64
+		Flags     uint32
+	}{
+		Padding:   [4]byte{0x0, 0x0, 0x1, 0x0},
+		Domain:    *d,
+		Bandwidth: speed,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainMigrateSetMaxSpeed, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
 // Run executes the given QAPI command against a domain's QEMU instance.
 // For a list of available QAPI commands, see:
 //	http://git.qemu.org/?p=qemu.git;a=blob;f=qapi-schema.json;hb=HEAD

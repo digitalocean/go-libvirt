@@ -43,6 +43,15 @@ func TestDisconnect(t *testing.T) {
 	}
 }
 
+func TestMigrateSetMaxSpeed(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	if err := l.MigrateSetMaxSpeed("test", 100); err != nil {
+		t.Fatalf("unexpected error setting max speed for migrate: %v", err)
+	}
+}
+
 func TestDomains(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
