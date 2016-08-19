@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"sync"
 
 	"github.com/davecgh/go-xdr/xdr2"
@@ -76,6 +77,56 @@ type qemuError struct {
 		Description string `json:"desc"`
 	} `json:"error"`
 }
+
+// MigrateFlags specifies options when performing a migration.
+type MigrateFlags uint32
+
+const (
+	// MigrateFlagLive performs a zero-downtime live migration.
+	MigrateFlagLive MigrateFlags = 1 << iota
+
+	// MigrateFlagPeerToPeer creates a direct source to destination control channel.
+	MigrateFlagPeerToPeer
+
+	// MigrateFlagTunneled tunnels migration data over the libvirtd connection.
+	MigrateFlagTunneled
+
+	// MigrateFlagPersistDestination will persist the VM on the destination host.
+	MigrateFlagPersistDestination
+
+	// MigrateFlagUndefineSource undefines the VM on the source host.
+	MigrateFlagUndefineSource
+
+	// MigrateFlagPaused will pause the remote side VM.
+	MigrateFlagPaused
+
+	// MigrateFlagNonSharedDisk migrate non-shared storage with full disk copy.
+	MigrateFlagNonSharedDisk
+
+	// MigrateFlagNonSharedIncremental migrate non-shared storage with incremental copy.
+	MigrateFlagNonSharedIncremental
+
+	// MigrateFlagChangeProtection prevents any changes to the domain configuration through the whole migration process.
+	MigrateFlagChangeProtection
+
+	// MigrateFlagUnsafe will force a migration even when it is considered unsafe.
+	MigrateFlagUnsafe
+
+	// MigrateFlagOffline is used to perform an offline migration.
+	MigrateFlagOffline
+
+	// MigrateFlagCompressed compresses data during migration.
+	MigrateFlagCompressed
+
+	// MigrateFlagAbortOnError will abort a migration on I/O errors encountered during migration.
+	MigrateFlagAbortOnError
+
+	// MigrateFlagAutoConverge forces convergence.
+	MigrateFlagAutoConverge
+
+	// MigrateFlagRDMAPinAll enables RDMA memory pinning.
+	MigrateFlagRDMAPinAll
+)
 
 // Connect establishes communication with the libvirt server.
 // The underlying libvirt socket connection must be previously established.
@@ -202,6 +253,58 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 	}()
 
 	return c, nil
+}
+
+// Migrate synchronously migrates the domain specified by dom, e.g.,
+// 'prod-lb-01', to the destination hypervisor specified by dest, e.g.,
+// 'qemu+tcp://example.com/system'. The flags argument determines the
+// type of migration and how it will be performed. For more information
+// on available migration flags and their meaning, see MigrateFlag*.
+func (l *Libvirt) Migrate(dom string, dest string, flags MigrateFlags) error {
+	_, err := url.Parse(dest)
+	if err != nil {
+		return err
+	}
+
+	d, err := l.lookup(dom)
+	if err != nil {
+		return err
+	}
+
+	// Two unknowns remain here , Libvirt specifies RemoteParameters
+	// and CookieIn. In testing both values are always set to 0 by virsh
+	// and the source does not provide clear definitions of their purpose.
+	// For now, using the same zero'd values as done by virsh will be Good Enough.
+	payload := struct {
+		Domain           Domain
+		DestinationURI   string
+		RemoteParameters uint32
+		CookieIn         uint32
+		Flags            MigrateFlags
+	}{
+		Domain:           *d,
+		DestinationURI:   dest,
+		RemoteParameters: 0,
+		CookieIn:         0,
+		Flags:            flags,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcMigratePerformParams, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
 }
 
 // MigrateSetMaxSpeed set the maximum migration bandwidth (in MiB/s) for a

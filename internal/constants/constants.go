@@ -29,10 +29,11 @@ const (
 	ProcConnectOpen              = 1
 	ProcConnectClose             = 2
 	ProcDomainLookupByName       = 23
-	ProcDomainMigrateSetMaxSpeed = 207
 	ProcAuthList                 = 66
 	ProcConnectGetLibVersion     = 157
+	ProcDomainMigrateSetMaxSpeed = 207
 	ProcConnectListAllDomains    = 273
+	ProcMigratePerformParams     = 305
 )
 
 // qemu procedure identifiers
