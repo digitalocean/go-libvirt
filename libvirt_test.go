@@ -43,6 +43,43 @@ func TestDisconnect(t *testing.T) {
 	}
 }
 
+func TestMigrate(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	var flags MigrateFlags
+	flags = MigrateFlagLive |
+		MigrateFlagPeerToPeer |
+		MigrateFlagPersistDestination |
+		MigrateFlagChangeProtection |
+		MigrateFlagAbortOnError |
+		MigrateFlagAutoConverge |
+		MigrateFlagNonSharedDisk
+
+	if err := l.Migrate("test", "qemu+tcp://foo/system", flags); err != nil {
+		t.Fatalf("unexpected live migration error: %v", err)
+	}
+}
+
+func TestMigrateInvalidDest(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	var flags MigrateFlags
+	flags = MigrateFlagLive |
+		MigrateFlagPeerToPeer |
+		MigrateFlagPersistDestination |
+		MigrateFlagChangeProtection |
+		MigrateFlagAbortOnError |
+		MigrateFlagAutoConverge |
+		MigrateFlagNonSharedDisk
+
+	dest := ":$'"
+	if err := l.Migrate("test", dest, flags); err == nil {
+		t.Fatalf("expected invalid dest uri %q to fail", dest)
+	}
+}
+
 func TestMigrateSetMaxSpeed(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
