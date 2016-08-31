@@ -1,6 +1,6 @@
 language: go
 go:
-  - 1.6.2
+  - 1.7
 before_install:
   - go get github.com/golang/lint/golint
 before_script:
