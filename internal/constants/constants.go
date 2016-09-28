@@ -42,6 +42,7 @@ const (
 	ProcAuthList                 = 66
 	ProcConnectGetLibVersion     = 157
 	ProcDomainMigrateSetMaxSpeed = 207
+	ProcDomainUndefineFlags      = 231
 	ProcConnectListAllDomains    = 273
 	ProcMigratePerformParams     = 305
 )

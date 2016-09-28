@@ -205,6 +205,16 @@ func TestRunFail(t *testing.T) {
 	}
 }
 
+func TestUndefine(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	var flags UndefineFlags
+	if err := l.Undefine("test", flags); err != nil {
+		t.Fatalf("unexpected undefine error: %v", err)
+	}
+}
+
 func TestVersion(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)

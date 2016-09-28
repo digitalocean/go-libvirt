@@ -128,6 +128,20 @@ const (
 	MigrateFlagRDMAPinAll
 )
 
+// UndefineFlags specifies options available when undefining a domain.
+type UndefineFlags uint32
+
+const (
+	// UndefineFlagManagedSave removes all domain managed save data.
+	UndefineFlagManagedSave UndefineFlags = 1 << iota
+
+	// UndefineFlagSnapshotsMetadata removes all domain snapshot metadata.
+	UndefineFlagSnapshotsMetadata
+
+	// UndefineFlagNVRAM removes all domain NVRAM files.
+	UndefineFlagNVRAM
+)
+
 // Connect establishes communication with the libvirt server.
 // The underlying libvirt socket connection must be previously established.
 func (l *Libvirt) Connect() error {
@@ -397,6 +411,42 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 	// drop QMP control characters from start of line, and drop
 	// any trailing NULL characters from the end
 	return bytes.TrimRight(data[4:], "\x00"), nil
+}
+
+// Undefine undefines the domain specified by dom, e.g., 'prod-lb-01'.
+// The flags argument allows additional options to be specified such as
+// cleaning up snapshot metadata. For more information on available
+// flags, see UndefineFlag*.
+func (l *Libvirt) Undefine(dom string, flags UndefineFlags) error {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return err
+	}
+
+	payload := struct {
+		Domain Domain
+		Flags  UndefineFlags
+	}{
+		Domain: *d,
+		Flags:  flags,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainUndefineFlags, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
 }
 
 // Version returns the version of the libvirt daemon.
