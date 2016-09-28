@@ -277,12 +277,14 @@ func (l *Libvirt) Migrate(dom string, dest string, flags MigrateFlags) error {
 	// For now, using the same zero'd values as done by virsh will be Good Enough.
 	payload := struct {
 		Domain           Domain
+		Padding          [4]byte
 		DestinationURI   string
 		RemoteParameters uint32
 		CookieIn         uint32
 		Flags            MigrateFlags
 	}{
 		Domain:           *d,
+		Padding:          [4]byte{0x0, 0x0, 0x0, 0x1},
 		DestinationURI:   dest,
 		RemoteParameters: 0,
 		CookieIn:         0,
