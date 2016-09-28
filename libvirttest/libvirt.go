@@ -205,6 +205,16 @@ var testDomainsReply = []byte{
 	0x00, 0x00, 0x02,
 }
 
+var testUndefineReply = []byte{
+	0x00, 0x00, 0x00, 0x1c, // length
+	0x20, 0x00, 0x80, 0x86, // program
+	0x00, 0x00, 0x00, 0x01, // version
+	0x00, 0x00, 0x00, 0xe7, // procedure
+	0x00, 0x00, 0x00, 0x01, // type
+	0x00, 0x00, 0x00, 0x00, // serial
+	0x00, 0x00, 0x00, 0x00, // status
+}
+
 var testVersionReply = []byte{
 	0x00, 0x00, 0x00, 0x24, // length
 	0x20, 0x00, 0x80, 0x86, // program
@@ -277,6 +287,8 @@ func (m *MockLibvirt) handleRemote(procedure uint32, conn net.Conn) {
 		conn.Write(m.reply(testSetSpeedReply))
 	case constants.ProcMigratePerformParams:
 		conn.Write(m.reply(testMigrateReply))
+	case constants.ProcDomainUndefineFlags:
+		conn.Write(m.reply(testUndefineReply))
 	}
 }
 
