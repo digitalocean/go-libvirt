@@ -41,6 +41,35 @@ func TestDisconnectIntegration(t *testing.T) {
 	}
 }
 
+func TestCapabilities(t *testing.T) {
+	l := New(testConn(t))
+	defer l.Disconnect()
+
+	if err := l.Connect(); err != nil {
+		t.Fatal(err)
+	}
+
+	resp, err := l.Capabilities()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// verify UUID exists within returned XML
+	var caps struct {
+		Host struct {
+			UUID string `xml:"uuid"`
+		} `xml:"host"`
+	}
+
+	if err := xml.Unmarshal(resp, &caps); err != nil {
+		t.Fatal(err)
+	}
+
+	if caps.Host.UUID == "" {
+		t.Error("expected capabilities to contain a UUID")
+	}
+}
+
 func TestXMLIntegration(t *testing.T) {
 	l := New(testConn(t))
 
