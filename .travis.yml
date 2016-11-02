@@ -1,13 +1,45 @@
 language: go
+os: linux
+dist: trusty
+sudo: require
+
 go:
   - 1.7
+
+env:
+  - LIBVIRT=1.2.2  EXT=gz
+  - LIBVIRT=2.3.0  EXT=xz
+
 before_install:
   - go get github.com/golang/lint/golint
+
+install:
+  # credit here goes to the go-libvirt authors,
+  # see: https://github.com/rgbkrk/libvirt-go/blob/master/.travis.yml
+  - sudo apt-get -qqy build-dep libvirt
+  - sudo apt-get -qqy install curl qemu-system-x86
+  - sudo mkdir -p /usr/src && sudo chown $(id -u) /usr/src
+  - curl -O -s https://libvirt.org/sources/libvirt-${LIBVIRT}.tar.${EXT}
+  - tar -C /usr/src -xf libvirt-${LIBVIRT}.tar.${EXT}
+  - pushd /usr/src/libvirt-${LIBVIRT}
+  - |
+        ./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc \
+                    --without-polkit \
+                    --without-esx --without-vbox --without-xen --without-libxl --without-lxc \
+                    --with-qemu
+  - make
+  - sudo make install
+  - popd
+  - sudo libvirtd -d -l -f libvirtd.conf
+  - sudo virtlogd -d || true
+
 before_script:
   - go get -d ./...
+
 script:
+  - virsh list
   - ./scripts/licensecheck.sh
   - go build ./...
   - golint -set_exit_status ./...
   - go vet ./...
-  - go test -v ./...
+  - go test -v -tags=integration ./...
