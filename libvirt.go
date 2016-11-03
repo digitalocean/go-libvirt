@@ -142,6 +142,17 @@ const (
 	UndefineFlagNVRAM
 )
 
+// DestroyFlags specifies options available when destroying a domain.
+type DestroyFlags uint32
+
+const (
+	// DestroyFlagDefault default behavior, forcefully terminate the domain.
+	DestroyFlagDefault DestroyFlags = 1 << iota
+
+	// DestroyFlagGraceful only sends a SIGTERM no SIGKILL.
+	DestroyFlagGraceful
+)
+
 // Connect establishes communication with the libvirt server.
 // The underlying libvirt socket connection must be previously established.
 func (l *Libvirt) Connect() error {
@@ -437,6 +448,42 @@ func (l *Libvirt) Undefine(dom string, flags UndefineFlags) error {
 	}
 
 	resp, err := l.request(constants.ProcDomainUndefineFlags, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
+// Destroy destroys the domain specified by dom, e.g., 'prod-lb-01'.
+// The flags argument allows additional options to be specified such as
+// allowing a graceful shutdown with SIGTERM than SIGKILL.
+// For more information on available flags, see DestroyFlag*.
+func (l *Libvirt) Destroy(dom string, flags DestroyFlags) error {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return err
+	}
+
+	payload := struct {
+		Domain Domain
+		Flags  DestroyFlags
+	}{
+		Domain: *d,
+		Flags:  flags,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainDestroyFlags, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
