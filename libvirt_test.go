@@ -215,6 +215,16 @@ func TestUndefine(t *testing.T) {
 	}
 }
 
+func TestDestroy(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	var flags DestroyFlags
+	if err := l.Destroy("test", flags); err != nil {
+		t.Fatalf("unexpected destroy error: %v", err)
+	}
+}
+
 func TestVersion(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)

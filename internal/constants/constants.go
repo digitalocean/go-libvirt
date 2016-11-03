@@ -43,6 +43,7 @@ const (
 	ProcConnectGetLibVersion     = 157
 	ProcDomainMigrateSetMaxSpeed = 207
 	ProcDomainUndefineFlags      = 231
+	ProcDomainDestroyFlags       = 234
 	ProcConnectListAllDomains    = 273
 	ProcMigratePerformParams     = 305
 )
