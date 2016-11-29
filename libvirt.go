@@ -218,6 +218,70 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 	return result.Domains, nil
 }
 
+// DomainState returns state of the domain managed by libvirt.
+func (l *Libvirt) DomainState(dom string) (string, error) {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return "", err
+	}
+
+	req := struct {
+		Domain Domain
+		Flags  uint32
+	}{
+		Domain: *d,
+		Flags:  0,
+	}
+
+	buf, err := encode(&req)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := l.request(constants.ProcDomainGetState, constants.ProgramRemote, &buf)
+	if err != nil {
+		return "", err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return "", decodeError(r.Payload)
+	}
+
+	result := struct {
+		State uint32
+	}{}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return "", err
+	}
+
+	switch result.State {
+	case constants.DomainNoState:
+		return "No state", nil
+	case constants.DomainRunning:
+		return "Running", nil
+	case constants.DomainBlocked:
+		return "Blocked", nil
+	case constants.DomainPaused:
+		return "Paused", nil
+	case constants.DomainShutdown:
+		return "Shutdown", nil
+	case constants.DomainShutoff:
+		return "Shut off", nil
+	case constants.DomainCrashed:
+		return "Crashed", nil
+	case constants.DomainPMSuspended:
+		return "PM suspended", nil
+	case constants.DomainLast:
+		return "Last", nil
+	default:
+		return "", nil
+	}
+}
+
 // Events streams domain events.
 // If a problem is encountered setting up the event monitor connection
 // an error will be returned. Errors encountered during streaming will
