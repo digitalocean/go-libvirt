@@ -246,7 +246,7 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 	d, err := l.lookup(dom)
 	if err != nil {
-		return 0, err
+		return DomainStateNoState, err
 	}
 
 	req := struct {
@@ -259,17 +259,17 @@ func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 
 	buf, err := encode(&req)
 	if err != nil {
-		return 0, err
+		return DomainStateNoState, err
 	}
 
 	resp, err := l.request(constants.ProcDomainGetState, constants.ProgramRemote, &buf)
 	if err != nil {
-		return 0, err
+		return DomainStateNoState, err
 	}
 
 	r := <-resp
 	if r.Status != StatusOK {
-		return 0, decodeError(r.Payload)
+		return DomainStateNoState, decodeError(r.Payload)
 	}
 
 	result := struct {
@@ -279,7 +279,7 @@ func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
 	_, err = dec.Decode(&result)
 	if err != nil {
-		return 0, err
+		return DomainStateNoState, err
 	}
 
 	return DomainState(result.State), nil
