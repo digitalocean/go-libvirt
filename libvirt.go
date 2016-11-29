@@ -153,26 +153,27 @@ const (
 	DestroyFlagGraceful
 )
 
+// DomainState specifies state of the domain
 type DomainState uint32
 
 const (
-	// No state
+	// DomainStateNoState No state
 	DomainStateNoState = 0 << iota
-	// The domain is running
+	// DomainStateRunning The domain is running
 	DomainStateRunning
-	// The domain is blocked on resource
+	// DomainStateBlocked The domain is blocked on resource
 	DomainStateBlocked
-	// The domain is paused by user
+	// DomainStatePaused The domain is paused by user
 	DomainStatePaused
-	// The domain is being shut down
+	// DomainStateShutdown The domain is being shut down
 	DomainStateShutdown
-	// The domain is shut off
+	// DomainStateShutoff The domain is shut off
 	DomainStateShutoff
-	// The domain is crashed
+	// DomainStateCrashed The domain is crashed
 	DomainStateCrashed
-	// The domain is suspended by guest power management
+	// DomainStatePMSuspended The domain is suspended by guest power management
 	DomainStatePMSuspended
-	// This value will increase over time as new events are added to the libvirt
+	// DomainStateLast This value will increase over time as new events are added to the libvirt
 	// API. It reflects the last state supported by this version of the libvirt API.
 	DomainStateLast
 )

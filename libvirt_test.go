@@ -117,6 +117,21 @@ func TestDomains(t *testing.T) {
 	}
 }
 
+func TestDomainState(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	wantState := DomainState(1)
+	gotState, err := l.DomainState("test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	if gotState != wantState {
+		t.Errorf("expected domain state %d, got %d", wantState, gotState)
+	}
+}
+
 func TestEvents(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
