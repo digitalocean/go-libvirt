@@ -153,6 +153,30 @@ const (
 	DestroyFlagGraceful
 )
 
+type DomainState uint32
+
+const (
+	// No state
+	DomainStateNoState = 0 << iota
+	// The domain is running
+	DomainStateRunning
+	// The domain is blocked on resource
+	DomainStateBlocked
+	// The domain is paused by user
+	DomainStatePaused
+	// The domain is being shut down
+	DomainStateShutdown
+	// The domain is shut off
+	DomainStateShutoff
+	// The domain is crashed
+	DomainStateCrashed
+	// The domain is suspended by guest power management
+	DomainStatePMSuspended
+	// This value will increase over time as new events are added to the libvirt
+	// API. It reflects the last state supported by this version of the libvirt API.
+	DomainStateLast
+)
+
 // Connect establishes communication with the libvirt server.
 // The underlying libvirt socket connection must be previously established.
 func (l *Libvirt) Connect() error {
@@ -219,10 +243,10 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 }
 
 // DomainState returns state of the domain managed by libvirt.
-func (l *Libvirt) DomainState(dom string) (string, error) {
+func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 	d, err := l.lookup(dom)
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
 	req := struct {
@@ -235,17 +259,17 @@ func (l *Libvirt) DomainState(dom string) (string, error) {
 
 	buf, err := encode(&req)
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
 	resp, err := l.request(constants.ProcDomainGetState, constants.ProgramRemote, &buf)
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
 	r := <-resp
 	if r.Status != StatusOK {
-		return "", decodeError(r.Payload)
+		return 0, decodeError(r.Payload)
 	}
 
 	result := struct {
@@ -255,31 +279,10 @@ func (l *Libvirt) DomainState(dom string) (string, error) {
 	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
 	_, err = dec.Decode(&result)
 	if err != nil {
-		return "", err
+		return 0, err
 	}
 
-	switch result.State {
-	case constants.DomainNoState:
-		return "No state", nil
-	case constants.DomainRunning:
-		return "Running", nil
-	case constants.DomainBlocked:
-		return "Blocked", nil
-	case constants.DomainPaused:
-		return "Paused", nil
-	case constants.DomainShutdown:
-		return "Shutdown", nil
-	case constants.DomainShutoff:
-		return "Shut off", nil
-	case constants.DomainCrashed:
-		return "Crashed", nil
-	case constants.DomainPMSuspended:
-		return "PM suspended", nil
-	case constants.DomainLast:
-		return "Last", nil
-	default:
-		return "", nil
-	}
+	return DomainState(result.State), nil
 }
 
 // Events streams domain events.

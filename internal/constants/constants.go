@@ -67,26 +67,3 @@ const (
 	// UUIDSize is the length of a UUID, in bytes.
 	UUIDSize = 16
 )
-
-// Domain state
-const (
-	// No state
-	DomainNoState = 0
-	// The domain is running
-	DomainRunning = 1
-	// The domain is blocked on resource
-	DomainBlocked = 2
-	// The domain is paused by user
-	DomainPaused = 3
-	// The domain is being shut down
-	DomainShutdown = 4
-	// The domain is shut off
-	DomainShutoff = 5
-	// The domain is crashed
-	DomainCrashed = 6
-	// The domain is suspended by guest power management
-	DomainPMSuspended = 7
-	// This value will increase over time as new events are added to the libvirt
-	// API. It reflects the last state supported by this version of the libvirt API.
-	DomainLast = 8
-)
