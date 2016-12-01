@@ -170,6 +170,24 @@ const (
 	DestroyFlagGraceful
 )
 
+// Capabilities returns an XML document describing the host's capabilties.
+func (l *Libvirt) Capabilities() ([]byte, error) {
+	resp, err := l.request(constants.ProcConnectGetCapabilties, constants.ProgramRemote, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	caps, _, err := dec.DecodeString()
+
+	return []byte(caps), err
+}
+
 // Connect establishes communication with the libvirt server.
 // The underlying libvirt socket connection must be previously established.
 func (l *Libvirt) Connect() error {
