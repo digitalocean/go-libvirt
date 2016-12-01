@@ -17,6 +17,7 @@
 package libvirt
 
 import (
+	"encoding/xml"
 	"net"
 	"testing"
 	"time"
@@ -36,6 +37,26 @@ func TestConnectIntegration(t *testing.T) {
 func TestDisconnectIntegration(t *testing.T) {
 	l := New(testConn(t))
 	if err := l.Disconnect(); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestXMLIntegration(t *testing.T) {
+	l := New(testConn(t))
+
+	if err := l.Connect(); err != nil {
+		t.Error(err)
+	}
+	defer l.Disconnect()
+
+	var flags DomainXMLFlags
+	data, err := l.XML("test", flags)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var v interface{}
+	if err := xml.Unmarshal(data, &v); err != nil {
 		t.Error(err)
 	}
 }

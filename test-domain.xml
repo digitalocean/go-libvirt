@@ -1,0 +1,38 @@
+<!-- simple integration test domain for go-libvirt -->
+<domain type="qemu">
+  <name>test</name>
+  <currentMemory>1024</currentMemory>
+  <memory>1024</memory>
+  <uuid>afc2ef71-66e0-45a7-a5ec-d8ba1ea8177d</uuid>
+  <os>
+    <type arch='x86_64'>hvm</type>
+    <boot dev='hd'/>
+  </os>
+  <features>
+    <acpi/><apic/><pae/>
+  </features>
+  <clock offset="utc"/>
+  <on_poweroff>destroy</on_poweroff>
+  <on_reboot>restart</on_reboot>
+  <on_crash>restart</on_crash>
+  <vcpu>1</vcpu>
+  <devices>
+    <emulator>/usr/bin/qemu-system-x86_64</emulator>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='raw'/>
+      <source file='/var/lib/libvirt/images/test.raw'/>
+      <target dev='vda' bus='virtio'/>
+    </disk>
+    <disk type='block' device='cdrom'>
+      <target dev='hdc' bus='ide'/>
+      <readonly/>
+    </disk>
+    <input type='tablet' bus='usb'/>
+    <graphics type='vnc' port='-1'/>
+    <console type='pty'/>
+    <sound model='ac97'/>
+    <video>
+      <model type='cirrus'/>
+    </video>
+  </devices>
+</domain>

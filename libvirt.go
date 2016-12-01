@@ -78,6 +78,23 @@ type qemuError struct {
 	} `json:"error"`
 }
 
+// DomainXMLFlags specifies options for dumping a domain's XML.
+type DomainXMLFlags uint32
+
+const (
+	// DomainXMLFlagSecure dumps XML with sensitive information included.
+	DomainXMLFlagSecure DomainXMLFlags = 1 << iota
+
+	// DomainXMLFlagInactive dumps XML with inactive domain information.
+	DomainXMLFlagInactive
+
+	// DomainXMLFlagUpdateCPU dumps XML with guest CPU requirements according to the host CPU.
+	DomainXMLFlagUpdateCPU
+
+	// DomainXMLFlagMigratable dumps XML suitable for migration.
+	DomainXMLFlagMigratable
+)
+
 // MigrateFlags specifies options when performing a migration.
 type MigrateFlags uint32
 
@@ -494,6 +511,47 @@ func (l *Libvirt) Destroy(dom string, flags DestroyFlags) error {
 	}
 
 	return nil
+}
+
+// XML returns a domain's raw XML definition, akin to `virsh dumpxml <domain>`.
+// See DomainXMLFlag* for optional flags.
+func (l *Libvirt) XML(dom string, flags DomainXMLFlags) ([]byte, error) {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return nil, err
+	}
+
+	payload := struct {
+		Domain Domain
+		Flags  DomainXMLFlags
+	}{
+		Domain: *d,
+		Flags:  flags,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := l.request(constants.ProcDomainGetXMLDesc, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	pl := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(pl)
+	s, _, err := dec.DecodeString()
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(s), nil
 }
 
 // Version returns the version of the libvirt daemon.
