@@ -170,6 +170,31 @@ const (
 	DestroyFlagGraceful
 )
 
+// DomainState specifies state of the domain
+type DomainState uint32
+
+const (
+	// DomainStateNoState No state
+	DomainStateNoState = iota
+	// DomainStateRunning The domain is running
+	DomainStateRunning
+	// DomainStateBlocked The domain is blocked on resource
+	DomainStateBlocked
+	// DomainStatePaused The domain is paused by user
+	DomainStatePaused
+	// DomainStateShutdown The domain is being shut down
+	DomainStateShutdown
+	// DomainStateShutoff The domain is shut off
+	DomainStateShutoff
+	// DomainStateCrashed The domain is crashed
+	DomainStateCrashed
+	// DomainStatePMSuspended The domain is suspended by guest power management
+	DomainStatePMSuspended
+	// DomainStateLast This value will increase over time as new events are added to the libvirt
+	// API. It reflects the last state supported by this version of the libvirt API.
+	DomainStateLast
+)
+
 // Capabilities returns an XML document describing the host's capabilties.
 func (l *Libvirt) Capabilities() ([]byte, error) {
 	resp, err := l.request(constants.ProcConnectGetCapabilties, constants.ProgramRemote, nil)
@@ -251,6 +276,50 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 	}
 
 	return result.Domains, nil
+}
+
+// DomainState returns state of the domain managed by libvirt.
+func (l *Libvirt) DomainState(dom string) (DomainState, error) {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return DomainStateNoState, err
+	}
+
+	req := struct {
+		Domain Domain
+		Flags  uint32
+	}{
+		Domain: *d,
+		Flags:  0,
+	}
+
+	buf, err := encode(&req)
+	if err != nil {
+		return DomainStateNoState, err
+	}
+
+	resp, err := l.request(constants.ProcDomainGetState, constants.ProgramRemote, &buf)
+	if err != nil {
+		return DomainStateNoState, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return DomainStateNoState, decodeError(r.Payload)
+	}
+
+	result := struct {
+		State  uint32
+		Reason uint32
+	}{}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return DomainStateNoState, err
+	}
+
+	return DomainState(result.State), nil
 }
 
 // Events streams domain events.
