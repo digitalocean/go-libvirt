@@ -158,7 +158,7 @@ type DomainState uint32
 
 const (
 	// DomainStateNoState No state
-	DomainStateNoState = 0 << iota
+	DomainStateNoState = iota
 	// DomainStateRunning The domain is running
 	DomainStateRunning
 	// DomainStateBlocked The domain is blocked on resource
