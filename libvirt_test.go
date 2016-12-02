@@ -121,7 +121,7 @@ func TestDomainState(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	wantState := DomainState(1)
+	wantState := DomainState(DomainStateRunning)
 	gotState, err := l.DomainState("test")
 	if err != nil {
 		t.Error(err)
