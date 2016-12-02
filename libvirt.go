@@ -274,7 +274,8 @@ func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 	}
 
 	result := struct {
-		State uint32
+		State  uint32
+		Reason uint32
 	}{}
 
 	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
