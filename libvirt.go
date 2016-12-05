@@ -159,7 +159,7 @@ const (
 	UndefineFlagNVRAM
 )
 
-// DomainXMLDefineFlags specifies options available when defining a domain.
+// DomainDefineXMLFlags specifies options available when defining a domain.
 type DomainDefineXMLFlags uint32
 
 const (
