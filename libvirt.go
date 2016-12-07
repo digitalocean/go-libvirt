@@ -163,7 +163,7 @@ const (
 type DomainDefineXMLFlags uint32
 
 const (
-	// DefineValidate validate the XML document against schema
+	// DefineValidate validates the XML document against schema
 	DefineValidate DomainDefineXMLFlags = 1
 )
 
@@ -649,7 +649,7 @@ func (l *Libvirt) XML(dom string, flags DomainXMLFlags) ([]byte, error) {
 	return []byte(s), nil
 }
 
-// DefineXML a domain, but does not start it.
+// DefineXML defines a domain, but does not start it.
 func (l *Libvirt) DefineXML(x []byte, flags DomainDefineXMLFlags) error {
 	payload := struct {
 		Domain []byte
