@@ -254,3 +254,14 @@ func TestVersion(t *testing.T) {
 		t.Errorf("expected version %q, got %q", expected, version)
 	}
 }
+
+func TestDefineXML(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	var flags DomainDefineXMLFlags
+	buf := make([]byte, 0)
+	if err := l.DefineXML(buf, flags); err != nil {
+		t.Fatalf("unexpected define error: %v", err)
+	}
+}
