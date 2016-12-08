@@ -260,7 +260,7 @@ func TestDefineXML(t *testing.T) {
 	l := New(conn)
 
 	var flags DomainDefineXMLFlags
-	buf := make([]byte, 0)
+	var buf []byte
 	if err := l.DefineXML(buf, flags); err != nil {
 		t.Fatalf("unexpected define error: %v", err)
 	}
