@@ -159,6 +159,14 @@ const (
 	UndefineFlagNVRAM
 )
 
+// DomainDefineXMLFlags specifies options available when defining a domain.
+type DomainDefineXMLFlags uint32
+
+const (
+	// DefineValidate validates the XML document against schema
+	DefineValidate DomainDefineXMLFlags = 1
+)
+
 // DestroyFlags specifies options available when destroying a domain.
 type DestroyFlags uint32
 
@@ -639,6 +647,34 @@ func (l *Libvirt) XML(dom string, flags DomainXMLFlags) ([]byte, error) {
 	}
 
 	return []byte(s), nil
+}
+
+// DefineXML defines a domain, but does not start it.
+func (l *Libvirt) DefineXML(x []byte, flags DomainDefineXMLFlags) error {
+	payload := struct {
+		Domain []byte
+		Flags  DomainDefineXMLFlags
+	}{
+		Domain: x,
+		Flags:  flags,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainDefineXMLFlags, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
 }
 
 // Version returns the version of the libvirt daemon.

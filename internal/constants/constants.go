@@ -49,6 +49,7 @@ const (
 	ProcDomainDestroyFlags       = 234
 	ProcConnectListAllDomains    = 273
 	ProcMigratePerformParams     = 305
+	ProcDomainDefineXMLFlags     = 350
 )
 
 // qemu procedure identifiers
