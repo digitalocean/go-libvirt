@@ -15,15 +15,18 @@
 package libvirt
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"sync/atomic"
 
 	"github.com/davecgh/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/digitalocean/go-libvirt/sasl"
 )
 
 // ErrUnsupported is returned if a procedure is not supported by libvirt
@@ -67,6 +70,12 @@ const (
 	// StatusContinue is only used for streams.
 	// This indicates that further data packets will be following.
 	StatusContinue
+)
+
+// constants making Nil fields usage more clear
+const (
+	xdrDataNotEmpty int32 = 0
+	xdrDataEmpty          = 1
 )
 
 // header is a libvirt rpc packet header
@@ -113,7 +122,129 @@ type libvirtError struct {
 	Level    uint32
 }
 
-func (l *Libvirt) connect() error {
+type remoteAuthTypesRet struct {
+	Types []constants.RemoteAuthType
+}
+
+func (l *Libvirt) decode(payload []byte, v interface{}) error {
+	dec := xdr.NewDecoder(bytes.NewReader(payload))
+	_, err := dec.Decode(v)
+	return err
+}
+
+type remoteAuthSASLStartArgs struct {
+	Mech string
+	Nil  int32
+	Data []rune
+}
+
+type remoteAuthSASLStepArgs struct {
+	Nil  int32
+	Data []rune
+}
+
+type remoteAuthSASLStartStepRet struct {
+	Complete int32
+	Nil      int32
+	Data     []rune
+}
+
+func (l *Libvirt) authenticateSASL(auth sasl.AuthInfo) error {
+
+	resp, err := l.request(constants.ProcAuthSASLInit, constants.ProgramRemote, nil)
+	if err != nil {
+		return nil
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	mechlist := ""
+	err = l.decode(r.Payload, &mechlist)
+	if err != nil {
+		return err
+	}
+
+	saslClient := sasl.NewClient("libvirt", "localhost", auth)
+	startArgs := remoteAuthSASLStartArgs{
+		Nil: xdrDataEmpty,
+	}
+
+	startArgs.Mech, err = saslClient.FindMech(strings.Split(mechlist, ","))
+	if err != nil {
+		return err
+	}
+
+	buf, err := encode(startArgs)
+	if err != nil {
+		return err
+	}
+	resp, err = l.request(constants.ProcAuthSASLStart, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r = <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	startRet := remoteAuthSASLStartStepRet{}
+
+	err = l.decode(r.Payload, &startRet)
+	if err != nil {
+		return err
+	}
+	if startRet.Nil == 1 {
+		return fmt.Errorf("libvirt SASL auth: initial challenge not received")
+	}
+	saslClient.ApplyChallenge(string(startRet.Data))
+
+	for {
+		stepArgs := remoteAuthSASLStepArgs{
+			Nil:  xdrDataNotEmpty,
+			Data: []rune(saslClient.MakeResponse()),
+		}
+
+		buf, err = encode(stepArgs)
+		resp, err = l.request(constants.ProcAuthSASLStep, constants.ProgramRemote, &buf)
+		if err != nil {
+			return err
+		}
+
+		r = <-resp
+		if r.Status != StatusOK {
+			err := decodeError(r.Payload)
+			return err
+		}
+
+		stepRet := remoteAuthSASLStartStepRet{}
+		err = l.decode(r.Payload, &stepRet)
+		if err != nil {
+			return err
+		}
+
+		if stepRet.Nil == xdrDataNotEmpty {
+			saslClient.ApplyChallenge(string(stepRet.Data))
+		}
+
+		// if auth procedure has been completed Complete = 1
+		if stepRet.Complete == 1 {
+			if saslClient.GetContext() != nil {
+				r, w := sasl.WrapReadWriteSecurityContext(l.r, l.w, saslClient.GetContext())
+				l.r, l.w = bufio.NewReader(r), bufio.NewWriter(w)
+				continue
+			}
+			break
+		}
+	}
+
+	return nil
+}
+
+func (l *Libvirt) connect(auth AuthInfo) error {
 	payload := struct {
 		Padding [3]byte
 		Name    string
@@ -123,7 +254,6 @@ func (l *Libvirt) connect() error {
 		Name:    "qemu:///system",
 		Flags:   0,
 	}
-
 	buf, err := encode(&payload)
 	if err != nil {
 		return err
@@ -139,6 +269,30 @@ func (l *Libvirt) connect() error {
 	r := <-resp
 	if r.Status != StatusOK {
 		return decodeError(r.Payload)
+	}
+
+	var remoteAuthList remoteAuthTypesRet
+	err = l.decode(r.Payload, &remoteAuthList)
+	if err != nil {
+		return err
+	}
+
+	if len(remoteAuthList.Types) > 0 {
+	loop:
+		for _, expected := range remoteAuthList.Types {
+			switch expected {
+			case constants.RemoteAuthTypeSASL:
+				if auth != nil && auth.WantedAuthType() == expected {
+					err = l.authenticateSASL(auth.(sasl.AuthInfo))
+					if err != nil {
+						return err
+					}
+					break loop
+				}
+			case constants.RemoteAuthTypePolKit:
+				// TODO: Implement PolKit support
+			}
+		}
 	}
 
 	resp, err = l.request(constants.ProcConnectOpen, constants.ProgramRemote, &buf)
@@ -321,6 +475,7 @@ func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (<
 	l.register(serial, c)
 
 	size := constants.PacketLengthSize + constants.HeaderSize
+
 	if payload != nil {
 		size += payload.Len()
 	}

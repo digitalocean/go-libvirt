@@ -42,6 +42,10 @@ const (
 	ProcDomainGetXMLDesc         = 14
 	ProcDomainLookupByName       = 23
 	ProcAuthList                 = 66
+	ProcAuthSASLInit             = 67
+	ProcAuthSASLStart            = 68
+	ProcAuthSASLStep             = 69
+	ProcAuthPolKit               = 70
 	ProcConnectGetLibVersion     = 157
 	ProcDomainMigrateSetMaxSpeed = 207
 	ProcDomainGetState           = 212
@@ -50,6 +54,21 @@ const (
 	ProcConnectListAllDomains    = 273
 	ProcMigratePerformParams     = 305
 	ProcDomainDefineXMLFlags     = 350
+)
+
+// RemoteAuthType specifies the type of authentication used by libvirt.
+type RemoteAuthType uint32
+
+// Currently supported remote authentication types as defined by libvirt.
+// See:
+// https://libvirt.org/git/?p=libvirt.git;a=blob_plain;f=src/remote/remote_protocol.x;hb=HEAD
+const (
+	// RemoteAuthTypeNone means that no authentication is required.
+	RemoteAuthTypeNone RemoteAuthType = 0
+	// RemoteAuthTypeSASL means that the SASL authentication mechanism is used.
+	RemoteAuthTypeSASL RemoteAuthType = 1
+	// RemoteAuthTypePolKit means that PolKit is used for authentication.
+	RemoteAuthTypePolKit RemoteAuthType = 2
 )
 
 // qemu procedure identifiers
@@ -69,4 +88,10 @@ const (
 
 	// UUIDSize is the length of a UUID, in bytes.
 	UUIDSize = 16
+
+	// AuthSASLDataMax is the upper limit on SASL auth negotiation packet.
+	AuthSASLDataMax = 65536
+
+	// AuthTypeListMax is the maximum number of auth types.
+	AuthTypeListMax = 20
 )
