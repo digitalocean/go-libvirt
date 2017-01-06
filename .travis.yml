@@ -38,6 +38,7 @@ before_script:
   - sudo qemu-img create -f raw -o size=10M /var/lib/libvirt/images/test.raw
   - sudo virsh define ./test-domain.xml
   - sudo virsh start test
+  - sudo virsh pool-create ./test-pool.xml
 
 script:
   - ./scripts/licensecheck.sh

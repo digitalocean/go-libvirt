@@ -70,6 +70,52 @@ func TestCapabilities(t *testing.T) {
 	}
 }
 
+func TestStoragePoolsIntegration(t *testing.T) {
+	l := New(testConn(t))
+	defer l.Disconnect()
+
+	if err := l.Connect(); err != nil {
+		t.Fatal(err)
+	}
+
+	pools, err := l.StoragePools(StoragePoolsFlagActive)
+	if err != nil {
+		t.Error(err)
+	}
+
+	wantLen := 1
+	gotLen := len(pools)
+	if gotLen != wantLen {
+		t.Fatalf("expected %d storage pool, got %d", wantLen, gotLen)
+	}
+
+	wantName := "test"
+	gotName := pools[0].Name
+	if gotName != wantName {
+		t.Errorf("expected name %q, got %q", wantName, gotName)
+	}
+}
+
+func TestStoragePoolsAutostartIntegration(t *testing.T) {
+	l := New(testConn(t))
+	defer l.Disconnect()
+
+	if err := l.Connect(); err != nil {
+		t.Fatal(err)
+	}
+
+	pools, err := l.StoragePools(StoragePoolsFlagAutostart)
+	if err != nil {
+		t.Error(err)
+	}
+
+	wantLen := 0
+	gotLen := len(pools)
+	if gotLen != wantLen {
+		t.Errorf("expected %d storage pool, got %d", wantLen, gotLen)
+	}
+}
+
 func TestXMLIntegration(t *testing.T) {
 	l := New(testConn(t))
 

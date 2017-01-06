@@ -20,6 +20,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/digitalocean/go-libvirt/internal/constants"
 	"github.com/digitalocean/go-libvirt/libvirttest"
 )
 
@@ -217,6 +218,38 @@ func TestRunFail(t *testing.T) {
 	_, err := l.Run("test", []byte(`{"drive-foo"}`))
 	if err == nil {
 		t.Error("expected qemu error")
+	}
+}
+
+func TestStoragePools(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	pools, err := l.StoragePools(StoragePoolsFlagActive)
+	if err != nil {
+		t.Error(err)
+	}
+
+	wantLen := 1
+	gotLen := len(pools)
+	if gotLen != wantLen {
+		t.Errorf("expected %d storage pool, got %d", wantLen, gotLen)
+	}
+
+	wantName := "default"
+	gotName := pools[0].Name
+	if gotName != wantName {
+		t.Errorf("expected name %q, got %q", wantName, gotName)
+	}
+
+	// bb30a11c-0846-4827-8bba-3e6b5cf1b65f
+	wantUUID := [constants.UUIDSize]byte{
+		0xbb, 0x30, 0xa1, 0x1c, 0x08, 0x46, 0x48, 0x27,
+		0x8b, 0xba, 0x3e, 0x6b, 0x5c, 0xf1, 0xb6, 0x5f,
+	}
+	gotUUID := pools[0].UUID
+	if gotUUID != wantUUID {
+		t.Errorf("expected UUID %q, got %q", wantUUID, gotUUID)
 	}
 }
 

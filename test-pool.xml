@@ -1,0 +1,7 @@
+<!-- storage pool used for CI testing -->
+<pool type="dir">
+  <name>test</name>
+  <target>
+    <path>/tmp</path>
+  </target>
+</pool>
