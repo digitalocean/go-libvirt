@@ -70,6 +70,12 @@ type DomainEvent struct {
 	Details      []byte
 }
 
+// StoragePool represents a storage pool as seen by libvirt.
+type StoragePool struct {
+	Name string
+	UUID [constants.UUIDSize]byte
+}
+
 // qemuError represents a QEMU process error.
 type qemuError struct {
 	Error struct {
@@ -201,6 +207,36 @@ const (
 	// DomainStateLast This value will increase over time as new events are added to the libvirt
 	// API. It reflects the last state supported by this version of the libvirt API.
 	DomainStateLast
+)
+
+// StoragePoolsFlags specifies storage pools to list.
+type StoragePoolsFlags uint32
+
+// These flags come in groups; if all bits from a group are 0,
+// then that group is not used to filter results.
+const (
+	StoragePoolsFlagInactive = 1 << iota
+	StoragePoolsFlagActive
+
+	StoragePoolsFlagPersistent
+	StoragePoolsFlagTransient
+
+	StoragePoolsFlagAutostart
+	StoragePoolsFlagNoAutostart
+
+	// pools by type
+	StoragePoolsFlagDir
+	StoragePoolsFlagFS
+	StoragePoolsFlagNETFS
+	StoragePoolsFlagLogical
+	StoragePoolsFlagDisk
+	StoragePoolsFlagISCSI
+	StoragePoolsFlagSCSI
+	StoragePoolsFlagMPATH
+	StoragePoolsFlagRBD
+	StoragePoolsFlagSheepdog
+	StoragePoolsFlagGluster
+	StoragePoolsFlagZFS
 )
 
 // Capabilities returns an XML document describing the host's capabilties.
@@ -534,6 +570,46 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 	// drop QMP control characters from start of line, and drop
 	// any trailing NULL characters from the end
 	return bytes.TrimRight(data[4:], "\x00"), nil
+}
+
+// StoragePools returns a list of defined storage pools. Pools are filtered by
+// the provided flags. See StoragePools*.
+func (l *Libvirt) StoragePools(flags StoragePoolsFlags) ([]StoragePool, error) {
+	req := struct {
+		NeedResults uint32
+		Flags       StoragePoolsFlags
+	}{
+		NeedResults: 1,
+		Flags:       flags,
+	}
+
+	buf, err := encode(&req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := l.request(constants.ProcConnectListAllStoragePools, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	result := struct {
+		Pools []StoragePool
+		Count uint32
+	}{}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Pools, nil
 }
 
 // Undefine undefines the domain specified by dom, e.g., 'prod-lb-01'.
