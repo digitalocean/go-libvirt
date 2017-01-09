@@ -221,6 +221,32 @@ func TestRunFail(t *testing.T) {
 	}
 }
 
+func TestStoragePool(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	wantName := "default"
+	pool, err := l.StoragePool(wantName)
+	if err != nil {
+		t.Error(err)
+	}
+
+	gotName := pool.Name
+	if gotName != wantName {
+		t.Errorf("expected name %q, got %q", wantName, gotName)
+	}
+
+	// bb30a11c-0846-4827-8bba-3e6b5cf1b65f
+	wantUUID := [constants.UUIDSize]byte{
+		0xbb, 0x30, 0xa1, 0x1c, 0x08, 0x46, 0x48, 0x27,
+		0x8b, 0xba, 0x3e, 0x6b, 0x5c, 0xf1, 0xb6, 0x5f,
+	}
+	gotUUID := pool.UUID
+	if gotUUID != wantUUID {
+		t.Errorf("expected UUID %q, got %q", wantUUID, gotUUID)
+	}
+}
+
 func TestStoragePools(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
@@ -250,6 +276,16 @@ func TestStoragePools(t *testing.T) {
 	gotUUID := pools[0].UUID
 	if gotUUID != wantUUID {
 		t.Errorf("expected UUID %q, got %q", wantUUID, gotUUID)
+	}
+}
+
+func TestStoragePoolRefresh(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	err := l.StoragePoolRefresh("default")
+	if err != nil {
+		t.Error(err)
 	}
 }
 
