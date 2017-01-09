@@ -572,6 +572,43 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 	return bytes.TrimRight(data[4:], "\x00"), nil
 }
 
+// StoragePool returns the storage pool associated with the provided name.
+// An error is returned if the requested storage pool is not found.
+func (l *Libvirt) StoragePool(name string) (*StoragePool, error) {
+	req := struct {
+		Name string
+	}{
+		Name: name,
+	}
+
+	buf, err := encode(&req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := l.request(constants.ProcStoragePoolLookupByName, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	result := struct {
+		Pool StoragePool
+	}{}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result.Pool, nil
+}
+
 // StoragePools returns a list of defined storage pools. Pools are filtered by
 // the provided flags. See StoragePools*.
 func (l *Libvirt) StoragePools(flags StoragePoolsFlags) ([]StoragePool, error) {

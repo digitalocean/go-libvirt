@@ -42,6 +42,7 @@ const (
 	ProcDomainGetXMLDesc           = 14
 	ProcDomainLookupByName         = 23
 	ProcAuthList                   = 66
+	ProcStoragePoolLookupByName    = 84
 	ProcConnectGetLibVersion       = 157
 	ProcDomainMigrateSetMaxSpeed   = 207
 	ProcDomainGetState             = 212
