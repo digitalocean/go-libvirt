@@ -235,6 +235,16 @@ var testStoragePoolLookup = []byte{
 	0x8b, 0xba, 0x3e, 0x6b, 0x5c, 0xf1, 0xb6, 0x5f,
 }
 
+var testStoragePoolRefresh = []byte{
+	0x00, 0x00, 0x00, 0x1c, // length
+	0x20, 0x00, 0x80, 0x86, // program
+	0x00, 0x00, 0x00, 0x01, // version
+	0x00, 0x00, 0x00, 0x53, // procedure
+	0x00, 0x00, 0x00, 0x01, // type
+	0x00, 0x00, 0x00, 0x00, // serial
+	0x00, 0x00, 0x00, 0x00, // status
+}
+
 var testListPoolsReply = []byte{
 	0x00, 0x00, 0x00, 0x40, // length
 	0x20, 0x00, 0x80, 0x86, // program
@@ -351,6 +361,8 @@ func (m *MockLibvirt) handleRemote(procedure uint32, conn net.Conn) {
 	switch procedure {
 	case constants.ProcAuthList:
 		conn.Write(m.reply(testAuthReply))
+	case constants.ProcStoragePoolRefresh:
+		conn.Write(m.reply(testStoragePoolRefresh))
 	case constants.ProcStoragePoolLookupByName:
 		conn.Write(m.reply(testStoragePoolLookup))
 	case constants.ProcConnectOpen:

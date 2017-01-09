@@ -81,7 +81,7 @@ func TestStoragePoolIntegration(t *testing.T) {
 	wantName := "test"
 	pool, err := l.StoragePool(wantName)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	gotName := pool.Name
@@ -147,6 +147,34 @@ func TestStoragePoolsAutostartIntegration(t *testing.T) {
 	gotLen := len(pools)
 	if gotLen != wantLen {
 		t.Errorf("expected %d storage pool, got %d", wantLen, gotLen)
+	}
+}
+
+func TestStoragePoolRefreshIntegration(t *testing.T) {
+	l := New(testConn(t))
+	defer l.Disconnect()
+
+	if err := l.Connect(); err != nil {
+		t.Fatal(err)
+	}
+
+	err := l.StoragePoolRefresh("test")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestStoragePoolRefreshInvalidIntegration(t *testing.T) {
+	l := New(testConn(t))
+	defer l.Disconnect()
+
+	if err := l.Connect(); err != nil {
+		t.Fatal(err)
+	}
+
+	err := l.StoragePoolRefresh("test-does-not-exist")
+	if err == nil {
+		t.Error("expected non-existent storage pool to fail refresh")
 	}
 }
 

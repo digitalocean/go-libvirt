@@ -279,6 +279,16 @@ func TestStoragePools(t *testing.T) {
 	}
 }
 
+func TestStoragePoolRefresh(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	err := l.StoragePoolRefresh("default")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestUndefine(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)

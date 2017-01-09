@@ -609,6 +609,39 @@ func (l *Libvirt) StoragePool(name string) (*StoragePool, error) {
 	return &result.Pool, nil
 }
 
+// StoragePoolRefresh refreshes the storage pool specified by name.
+func (l *Libvirt) StoragePoolRefresh(name string) error {
+	pool, err := l.StoragePool(name)
+	if err != nil {
+		return err
+	}
+
+	req := struct {
+		Pool  StoragePool
+		Flags uint32
+	}{
+		Pool:  *pool,
+		Flags: 0, // unused per libvirt source, callers should pass 0
+	}
+
+	buf, err := encode(&req)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcStoragePoolRefresh, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
 // StoragePools returns a list of defined storage pools. Pools are filtered by
 // the provided flags. See StoragePools*.
 func (l *Libvirt) StoragePools(flags StoragePoolsFlags) ([]StoragePool, error) {
