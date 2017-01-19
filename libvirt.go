@@ -70,6 +70,13 @@ type DomainEvent struct {
 	Details      []byte
 }
 
+// Secret represents a secret managed by the libvirt daemon.
+type Secret struct {
+	UUID      [constants.UUIDSize]byte
+	UsageType SecretUsageType
+	UsageID   string
+}
+
 // StoragePool represents a storage pool as seen by libvirt.
 type StoragePool struct {
 	Name string
@@ -207,6 +214,20 @@ const (
 	// DomainStateLast This value will increase over time as new events are added to the libvirt
 	// API. It reflects the last state supported by this version of the libvirt API.
 	DomainStateLast
+)
+
+// SecretUsageType specifies the usage for a libvirt secret.
+type SecretUsageType uint32
+
+const (
+	// SecretUsageTypeNone specifies no usage.
+	SecretUsageTypeNone SecretUsageType = iota
+	// SecretUsageTypeVolume specifies a volume secret.
+	SecretUsageTypeVolume
+	// SecretUsageTypeCeph specifies secrets for ceph devices.
+	SecretUsageTypeCeph
+	// SecretUsageTypeISCSI specifies secrets for ISCSI devices.
+	SecretUsageTypeISCSI
 )
 
 // StoragePoolsFlags specifies storage pools to list.
@@ -570,6 +591,45 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 	// drop QMP control characters from start of line, and drop
 	// any trailing NULL characters from the end
 	return bytes.TrimRight(data[4:], "\x00"), nil
+}
+
+// Secrets returns all secrets managed by the libvirt daemon.
+func (l *Libvirt) Secrets() ([]Secret, error) {
+	req := struct {
+		NeedResults uint32
+		Flags       uint32
+	}{
+		NeedResults: 1,
+		Flags:       0, // unused per libvirt source, callers should pass 0
+	}
+
+	buf, err := encode(&req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := l.request(constants.ProcConnectListAllSecrets, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	result := struct {
+		Secrets []Secret
+		Count   uint32
+	}{}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.Secrets, nil
 }
 
 // StoragePool returns the storage pool associated with the provided name.

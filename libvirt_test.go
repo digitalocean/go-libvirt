@@ -221,6 +221,42 @@ func TestRunFail(t *testing.T) {
 	}
 }
 
+func TestSecrets(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	secrets, err := l.Secrets()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantLen := 1
+	gotLen := len(secrets)
+	if gotLen != wantLen {
+		t.Fatalf("expected %d secrets, got %d", wantLen, gotLen)
+	}
+
+	s := secrets[0]
+	wantType := SecretUsageTypeVolume
+	if s.UsageType != wantType {
+		t.Errorf("expected usage type %d, got %d", wantType, s.UsageType)
+	}
+
+	wantID := "/tmp"
+	if s.UsageID != wantID {
+		t.Errorf("expected usage id %q, got %q", wantID, s.UsageID)
+	}
+
+	// 19fdc2f2-fa64-46f3-bacf-42a8aafca6dd
+	wantUUID := [constants.UUIDSize]byte{
+		0x19, 0xfd, 0xc2, 0xf2, 0xfa, 0x64, 0x46, 0xf3,
+		0xba, 0xcf, 0x42, 0xa8, 0xaa, 0xfc, 0xa6, 0xdd,
+	}
+	if s.UUID != wantUUID {
+		t.Errorf("expected UUID %q, got %q", wantUUID, s.UUID)
+	}
+}
+
 func TestStoragePool(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)

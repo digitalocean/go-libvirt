@@ -51,6 +51,7 @@ const (
 	ProcDomainDestroyFlags         = 234
 	ProcConnectListAllDomains      = 273
 	ProcConnectListAllStoragePools = 281
+	ProcConnectListAllSecrets      = 287
 	ProcMigratePerformParams       = 305
 	ProcDomainDefineXMLFlags       = 350
 )
