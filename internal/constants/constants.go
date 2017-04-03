@@ -48,6 +48,7 @@ const (
 	ProcAuthList                   = 66
 	ProcStoragePoolRefresh         = 83
 	ProcStoragePoolLookupByName    = 84
+	ProcStoragePoolLookupByUUID    = 85
 	ProcConnectGetLibVersion       = 157
 	ProcDomainMigrateSetMaxSpeed   = 207
 	ProcDomainGetState             = 212

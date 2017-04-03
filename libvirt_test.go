@@ -48,14 +48,14 @@ func TestMigrate(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	var flags MigrateFlags
-	flags = MigrateFlagLive |
-		MigrateFlagPeerToPeer |
-		MigrateFlagPersistDestination |
-		MigrateFlagChangeProtection |
-		MigrateFlagAbortOnError |
-		MigrateFlagAutoConverge |
-		MigrateFlagNonSharedDisk
+	var flags DomainMigrateFlags
+	flags = DomainMigrateFlagLive |
+		DomainMigrateFlagPeerToPeer |
+		DomainMigrateFlagPersistDestination |
+		DomainMigrateFlagChangeProtection |
+		DomainMigrateFlagAbortOnError |
+		DomainMigrateFlagAutoConverge |
+		DomainMigrateFlagNonSharedDisk
 
 	d, err := l.LookupDomainByName("test")
 	if err != nil {
@@ -71,14 +71,14 @@ func TestMigrateInvalidDest(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	var flags MigrateFlags
-	flags = MigrateFlagLive |
-		MigrateFlagPeerToPeer |
-		MigrateFlagPersistDestination |
-		MigrateFlagChangeProtection |
-		MigrateFlagAbortOnError |
-		MigrateFlagAutoConverge |
-		MigrateFlagNonSharedDisk
+	var flags DomainMigrateFlags
+	flags = DomainMigrateFlagLive |
+		DomainMigrateFlagPeerToPeer |
+		DomainMigrateFlagPersistDestination |
+		DomainMigrateFlagChangeProtection |
+		DomainMigrateFlagAbortOnError |
+		DomainMigrateFlagAutoConverge |
+		DomainMigrateFlagNonSharedDisk
 
 	d, err := l.LookupDomainByName("test")
 	if err != nil {
@@ -287,7 +287,7 @@ func TestStoragePool(t *testing.T) {
 	l := New(conn)
 
 	wantName := "default"
-	pool, err := l.StoragePool(wantName)
+	pool, err := l.StoragePoolLookupByName(wantName)
 	if err != nil {
 		t.Error(err)
 	}
@@ -344,7 +344,12 @@ func TestStoragePoolRefresh(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	err := l.StoragePoolRefresh("default")
+	pool, err := l.StoragePoolLookupByName("default")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = l.StoragePoolRefresh(pool, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -359,7 +364,7 @@ func TestUndefine(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	var flags UndefineFlags
+	var flags DomainUndefineFlags
 	if err := l.DomainUndefine(d, flags); err != nil {
 		t.Fatalf("unexpected undefine error: %v", err)
 	}
@@ -369,7 +374,7 @@ func TestDestroy(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	var flags DestroyFlags
+	var flags DomainDestroyFlags
 	d, err := l.LookupDomainByName("test")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

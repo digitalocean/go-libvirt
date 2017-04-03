@@ -693,9 +693,9 @@ func (l *Libvirt) Secrets() ([]Secret, error) {
 	return result.Secrets, nil
 }
 
-// StoragePool returns the storage pool associated with the provided name.
+// StoragePoolLookupByName returns the storage pool associated with the provided name.
 // An error is returned if the requested storage pool is not found.
-func (l *Libvirt) StoragePool(name string) (*StoragePool, error) {
+func (l *Libvirt) StoragePoolLookupByName(name string) (*StoragePool, error) {
 	req := struct {
 		Name string
 	}{
@@ -730,19 +730,53 @@ func (l *Libvirt) StoragePool(name string) (*StoragePool, error) {
 	return &result.Pool, nil
 }
 
-// StoragePoolRefresh refreshes the storage pool specified by name.
-func (l *Libvirt) StoragePoolRefresh(name string) error {
-	pool, err := l.StoragePool(name)
+// StoragePoolLookupByUUID returns the storage pool associated with the provided uuid.
+// An error is returned if the requested storage pool is not found.
+func (l *Libvirt) StoragePoolLookupByUUID(uuid string) (*StoragePool, error) {
+	req := struct {
+		UUID [constants.UUIDSize]byte
+	}{}
+
+	_, err := hex.Decode(req.UUID[:], []byte(strings.Replace(uuid, "-", "", -1)))
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	buf, err := encode(&req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := l.request(constants.ProcStoragePoolLookupByUUID, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	result := struct {
+		Pool StoragePool
+	}{}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+	return &result.Pool, nil
+}
+
+// StoragePoolRefresh refreshes the storage pool specified by name.
+func (l *Libvirt) StoragePoolRefresh(pool *StoragePool, flags uint32) error {
 	req := struct {
 		Pool  StoragePool
 		Flags uint32
 	}{
 		Pool:  *pool,
-		Flags: 0, // unused per libvirt source, callers should pass 0
+		Flags: flags, // unused per libvirt source, callers should pass 0
 	}
 
 	buf, err := encode(&req)
