@@ -52,6 +52,15 @@ const (
 	ProcNetworkSetAutostart     = 48
 	ProcStoragePoolSetAutostart = 90
 
+	ProcNetworkLookupByName = 46
+
+	ProcVolumeCreateXML    = 93
+	ProcVolumeDelete       = 94
+	ProcVolumeLookupByName = 95
+	ProcVolumeLookupByKey  = 96
+	ProcVolumeInfo         = 98
+	ProcVolumeXML          = 99
+
 	ProcAuthList                   = 66
 	ProcStoragePoolRefresh         = 83
 	ProcStoragePoolLookupByName    = 84

@@ -736,6 +736,43 @@ func (l *Libvirt) StoragePoolLookupByName(name string) (*StoragePool, error) {
 	return &result.Pool, nil
 }
 
+// NetworkLookupByName returns the network associated with the provided name.
+// An error is returned if the requested network is not found.
+func (l *Libvirt) NetworkLookupByName(name string) (*Network, error) {
+	req := struct {
+		Name string
+	}{
+		Name: name,
+	}
+
+	buf, err := encode(&req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := l.request(constants.ProcNetworkLookupByName, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	result := struct {
+		Net Network
+	}{}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result.Net, nil
+}
+
 // StoragePoolLookupByUUID returns the storage pool associated with the provided uuid.
 // An error is returned if the requested storage pool is not found.
 func (l *Libvirt) StoragePoolLookupByUUID(uuid string) (*StoragePool, error) {
