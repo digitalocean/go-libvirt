@@ -156,6 +156,29 @@ const (
 	DomainRebootFlagParavirt = 16
 )
 
+// DomainShutdownFlagValues specifies options when performing a shutdown.
+type DomainShutdownFlagValues uint32
+
+const (
+	// DomainShutdownFlagDefault use hypervisor choice.
+	DomainShutdownFlagDefault = 0
+
+	// DomainShutdownFlagACPI send ACPI event.
+	DomainShutdownFlagACPI = 1
+
+	// DomainShutdownFlagGuestAgent use guest agent.
+	DomainShutdownFlagGuestAgent = 2
+
+	// DomainShutdownFlagInitctl use initctl.
+	DomainShutdownFlagInitctl = 4
+
+	// DomainShutdownFlagSignal send a signal.
+	DomainShutdownFlagSignal = 8
+
+	// DomainShutdownFlagParavirt use paravirt guest control.
+	DomainShutdownFlagParavirt = 16
+)
+
 // MigrateFlags specifies options when performing a migration.
 type MigrateFlags uint32
 
@@ -842,7 +865,7 @@ func (l *Libvirt) DomainDestroy(d *Domain, flags DestroyFlags) error {
 	return nil
 }
 
-// DomainRebootFlags reboot the domain.
+// DomainReboot reboot the domain.
 // The flags argument allows additional options to be specified.
 // For more information on available flags, see DomainRebootFlagValues*.
 func (l *Libvirt) DomainReboot(d *Domain, flags DomainRebootFlagValues) error {
@@ -860,6 +883,36 @@ func (l *Libvirt) DomainReboot(d *Domain, flags DomainRebootFlagValues) error {
 	}
 
 	resp, err := l.request(constants.ProcDomainReboot, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
+// DomainShutdown reboot the domain.
+// The flags argument allows additional options to be specified.
+// For more information on available flags, see DomainShutdownFlagValues*.
+func (l *Libvirt) DomainShutdown(d *Domain, flags DomainShutdownFlagValues) error {
+	payload := struct {
+		Domain Domain
+		Flags  DomainShutdownFlagValues
+	}{
+		Domain: *d,
+		Flags:  flags,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainShutdownFlags, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
