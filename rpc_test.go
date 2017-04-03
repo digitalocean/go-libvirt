@@ -335,7 +335,7 @@ func TestLookup(t *testing.T) {
 
 	l.register(id, c)
 
-	d, err := l.lookup(name)
+	d, err := l.lookupByName(name)
 	if err != nil {
 		t.Error(err)
 	}

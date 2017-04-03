@@ -57,7 +57,12 @@ func TestMigrate(t *testing.T) {
 		MigrateFlagAutoConverge |
 		MigrateFlagNonSharedDisk
 
-	if err := l.Migrate("test", "qemu+tcp://foo/system", flags); err != nil {
+	d, err := l.LookupDomainByName("test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := l.DomainMigrate(d, "qemu+tcp://foo/system", flags); err != nil {
 		t.Fatalf("unexpected live migration error: %v", err)
 	}
 }
@@ -75,8 +80,13 @@ func TestMigrateInvalidDest(t *testing.T) {
 		MigrateFlagAutoConverge |
 		MigrateFlagNonSharedDisk
 
+	d, err := l.LookupDomainByName("test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
 	dest := ":$'"
-	if err := l.Migrate("test", dest, flags); err == nil {
+	if err := l.DomainMigrate(d, dest, flags); err == nil {
 		t.Fatalf("expected invalid dest uri %q to fail", dest)
 	}
 }
@@ -85,7 +95,12 @@ func TestMigrateSetMaxSpeed(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	if err := l.MigrateSetMaxSpeed("test", 100); err != nil {
+	d, err := l.LookupDomainByName("test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := l.DomainMigrateSetMaxSpeed(d, 100); err != nil {
 		t.Fatalf("unexpected error setting max speed for migrate: %v", err)
 	}
 }
@@ -122,8 +137,13 @@ func TestDomainState(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	d, err := l.LookupDomainByName("test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
 	wantState := DomainState(DomainStateRunning)
-	gotState, err := l.DomainState("test")
+	gotState, err := l.DomainState(d)
 	if err != nil {
 		t.Error(err)
 	}
@@ -138,7 +158,12 @@ func TestEvents(t *testing.T) {
 	l := New(conn)
 	done := make(chan struct{})
 
-	stream, err := l.Events("test")
+	d, err := l.LookupDomainByName("test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	stream, err := l.DomainEvents(d)
 	if err != nil {
 		t.Error(err)
 	}
@@ -329,8 +354,13 @@ func TestUndefine(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	d, err := l.LookupDomainByName("test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
 	var flags UndefineFlags
-	if err := l.Undefine("test", flags); err != nil {
+	if err := l.DomainUndefine(d, flags); err != nil {
 		t.Fatalf("unexpected undefine error: %v", err)
 	}
 }
@@ -340,7 +370,12 @@ func TestDestroy(t *testing.T) {
 	l := New(conn)
 
 	var flags DestroyFlags
-	if err := l.Destroy("test", flags); err != nil {
+	d, err := l.LookupDomainByName("test")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if err := l.DomainDestroy(d, flags); err != nil {
 		t.Fatalf("unexpected destroy error: %v", err)
 	}
 }

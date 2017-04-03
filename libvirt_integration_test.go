@@ -230,7 +230,7 @@ func TestXMLIntegration(t *testing.T) {
 	defer l.Disconnect()
 
 	var flags DomainXMLFlags
-	data, err := l.XML("test", flags)
+	data, err := l.DomainXML("test", flags)
 	if err != nil {
 		t.Fatal(err)
 	}

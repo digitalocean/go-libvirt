@@ -811,11 +811,11 @@ func (l *Libvirt) DomainUndefine(d *Domain, flags UndefineFlags) error {
 	return nil
 }
 
-// DomainDestroyFlags destroys the domain.
+// DomainDestroy destroys the domain.
 // The flags argument allows additional options to be specified such as
 // allowing a graceful shutdown with SIGTERM than SIGKILL.
 // For more information on available flags, see DestroyFlag*.
-func (l *Libvirt) DomainDestroyFlags(d *Domain, flags DestroyFlags) error {
+func (l *Libvirt) DomainDestroy(d *Domain, flags DestroyFlags) error {
 	payload := struct {
 		Domain Domain
 		Flags  DestroyFlags
