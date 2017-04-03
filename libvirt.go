@@ -93,8 +93,9 @@ type Network struct {
 
 // StorageVolume represents a volume as seen by libvirt.
 type StorageVolume struct {
+	Pool string
 	Name string
-	UUID [constants.UUIDSize]byte
+	Key  string
 }
 
 // qemuError represents a QEMU process error.
@@ -127,8 +128,10 @@ type StorageVolumeCreateFlags uint32
 
 const (
 	_ StorageVolumeCreateFlags = iota
-	// StorageVolumeCreateFlagPreallocMetadata
+	// StorageVolumeCreateFlagPreallocMetadata preallocates metadata
 	StorageVolumeCreateFlagPreallocMetadata
+
+	// StorageVolumeCreateFlagReflink use btrfs light copy
 	StorageVolumeCreateFlagReflink
 )
 
@@ -1390,6 +1393,44 @@ func (l *Libvirt) lookupByName(name string) (*Domain, error) {
 	}
 
 	return &d, nil
+}
+
+// StorageVolumeLookupByName returns a volume as seen by libvirt.
+func (l *Libvirt) StorageVolumeLookupByName(p *StoragePool, name string) (*StorageVolume, error) {
+	payload := struct {
+		Pool StoragePool
+		Name string
+	}{
+		Pool: *p,
+		Name: name,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := l.request(constants.ProcStorageVolumeLookupByName, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	result := struct {
+		Volume StorageVolume
+	}{}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result.Volume, nil
 }
 
 // lookupByUUID returns a domain as seen by libvirt.
