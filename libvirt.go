@@ -91,6 +91,12 @@ type Network struct {
 	UUID [constants.UUIDSize]byte
 }
 
+// StorageVolume represents a volume as seen by libvirt.
+type StorageVolume struct {
+	Name string
+	UUID [constants.UUIDSize]byte
+}
+
 // qemuError represents a QEMU process error.
 type qemuError struct {
 	Error struct {
@@ -114,6 +120,16 @@ const (
 
 	// DomainXMLFlagMigratable dumps XML suitable for migration.
 	DomainXMLFlagMigratable
+)
+
+// StorageVolumeCreateFlags specifies options when performing a volume creation.
+type StorageVolumeCreateFlags uint32
+
+const (
+	_ StorageVolumeCreateFlags = iota
+	// StorageVolumeCreateFlagPreallocMetadata
+	StorageVolumeCreateFlagPreallocMetadata
+	StorageVolumeCreateFlagReflink
 )
 
 // DomainCreateFlags specifies options when performing a domain creation.
@@ -1189,11 +1205,11 @@ func (l *Libvirt) DomainXML(d *Domain, flags DomainXMLFlags) ([]byte, error) {
 // DefineXML defines a domain, but does not start it.
 func (l *Libvirt) DefineXML(x []byte, flags DomainDefineXMLFlags) error {
 	payload := struct {
-		Domain []byte
-		Flags  DomainDefineXMLFlags
+		XML   []byte
+		Flags DomainDefineXMLFlags
 	}{
-		Domain: x,
-		Flags:  flags,
+		XML:   x,
+		Flags: flags,
 	}
 
 	buf, err := encode(&payload)
@@ -1212,6 +1228,47 @@ func (l *Libvirt) DefineXML(x []byte, flags DomainDefineXMLFlags) error {
 	}
 
 	return nil
+}
+
+// StorageVolumeCreateXML defines a volume, but does not start it.
+func (l *Libvirt) StorageVolumeCreateXML(p *StoragePool, x []byte, flags StorageVolumeCreateFlags) (*StorageVolume, error) {
+	payload := struct {
+		Pool  StoragePool
+		XML   []byte
+		Flags StorageVolumeCreateFlags
+	}{
+		Pool:  *p,
+		XML:   x,
+		Flags: flags,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := l.request(constants.ProcStorageVolumeCreateXML, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	result := struct {
+		Volume StorageVolume
+	}{}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return &result.Volume, nil
+
 }
 
 // DomainCreate start defined domain.

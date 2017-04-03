@@ -54,12 +54,12 @@ const (
 
 	ProcNetworkLookupByName = 46
 
-	ProcVolumeCreateXML    = 93
-	ProcVolumeDelete       = 94
-	ProcVolumeLookupByName = 95
-	ProcVolumeLookupByKey  = 96
-	ProcVolumeInfo         = 98
-	ProcVolumeXML          = 99
+	ProcStorageVolumeCreateXML    = 93
+	ProcStorageVolumeDelete       = 94
+	ProcStorageVolumeLookupByName = 95
+	ProcStorageVolumeLookupByKey  = 96
+	ProcStorageVolumeInfo         = 98
+	ProcStorageVolumeXML          = 99
 
 	ProcAuthList                   = 66
 	ProcStoragePoolRefresh         = 83
