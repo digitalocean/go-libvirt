@@ -36,17 +36,22 @@ const (
 // See:
 // https://libvirt.org/git/?p=libvirt.git;a=blob_plain;f=src/remote/remote_protocol.x;hb=HEAD
 const (
-	ProcConnectOpen                = 1
-	ProcConnectClose               = 2
-	ProcConnectGetCapabilties      = 7
-	ProcDomainCreate               = 9
-	ProcDomainCreateXML            = 10
-	ProcDomainGetXMLDesc           = 14
-	ProcDomainLookupByName         = 23
-	ProcDomainLookupByUUID         = 24
-	ProcDomainReboot               = 27
-	ProcDomainResume               = 28
-	ProcDomainSuspend              = 34
+	ProcConnectOpen           = 1
+	ProcConnectClose          = 2
+	ProcConnectGetCapabilties = 7
+	ProcDomainCreate          = 9
+	ProcDomainCreateXML       = 10
+	ProcDomainGetXMLDesc      = 14
+	ProcDomainLookupByName    = 23
+	ProcDomainLookupByUUID    = 24
+	ProcDomainReboot          = 27
+	ProcDomainResume          = 28
+	ProcDomainSuspend         = 34
+
+	ProcDomainSetAutostart      = 29
+	ProcNetworkSetAutostart     = 48
+	ProcStoragePoolSetAutostart = 90
+
 	ProcAuthList                   = 66
 	ProcStoragePoolRefresh         = 83
 	ProcStoragePoolLookupByName    = 84

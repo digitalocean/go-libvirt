@@ -85,6 +85,12 @@ type StoragePool struct {
 	UUID [constants.UUIDSize]byte
 }
 
+// Network represents a network as seen by libvirt.
+type Network struct {
+	Name string
+	UUID [constants.UUIDSize]byte
+}
+
 // qemuError represents a QEMU process error.
 type qemuError struct {
 	Error struct {
@@ -908,6 +914,102 @@ func (l *Libvirt) DomainResume(d *Domain) error {
 	}
 
 	resp, err := l.request(constants.ProcDomainResume, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
+// DomainSetAutostart set autostart for domain.
+func (l *Libvirt) DomainSetAutostart(d *Domain, autostart bool) error {
+	payload := struct {
+		Domain    Domain
+		Autostart int32
+	}{}
+
+	payload.Domain = *d
+	if autostart {
+		payload.Autostart = 1
+	} else {
+		payload.Autostart = 0
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainSetAutostart, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
+// StoragePoolSetAutostart set autostart for domain.
+func (l *Libvirt) StoragePoolSetAutostart(p *StoragePool, autostart bool) error {
+	payload := struct {
+		Pool      StoragePool
+		Autostart int32
+	}{}
+
+	payload.Pool = *p
+	if autostart {
+		payload.Autostart = 1
+	} else {
+		payload.Autostart = 0
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcStoragePoolSetAutostart, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
+// NetworkSetAutostart set autostart for domain.
+func (l *Libvirt) NetworkSetAutostart(n *Network, autostart bool) error {
+	payload := struct {
+		Network   Network
+		Autostart int32
+	}{}
+
+	payload.Network = *n
+	if autostart {
+		payload.Autostart = 1
+	} else {
+		payload.Autostart = 0
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcNetworkSetAutostart, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
