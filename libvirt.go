@@ -115,132 +115,132 @@ type DomainCreateFlags uint32
 
 const (
 	// DomainCreateFlagNone is the default behavior.
-	DomainCreateFlagNone = 0
+	DomainCreateFlagNone DomainCreateFlags = 0
 
 	// DomainCreateFlagPaused creates paused domain.
-	DomainCreateFlagPaused = 1
+	DomainCreateFlagPaused DomainCreateFlags = 1 << (iota - 1)
 
 	// DomainCreateFlagAutoDestroy destoy domain after libvirt connection closed.
-	DomainCreateFlagAutoDestroy = 2
+	DomainCreateFlagAutoDestroy
 
 	// DomainCreateFlagBypassCache avoid file system cache pollution.
-	DomainCreateFlagBypassCache = 4
+	DomainCreateFlagBypassCache
 
 	// DomainCreateFlagStartForceBoot boot, discarding any managed save
-	DomainCreateFlagStartForceBoot = 8
+	DomainCreateFlagStartForceBoot
 
 	// DomainCreateFlagStartValidate validate the XML document against schema
-	DomainCreateFlagStartValidate = 16
+	DomainCreateFlagStartValidate
 )
 
 // DomainRebootFlagValues specifies options when performing a reboot.
-type DomainRebootFlagValues uint32
+type DomainRebootFlags uint32
 
 const (
 	// DomainRebootFlagDefault use hypervisor choice.
-	DomainRebootFlagDefault = 0
+	DomainRebootFlagDefault DomainRebootFlags = 0
 
 	// DomainRebootFlagACPI send ACPI event.
-	DomainRebootFlagACPI = 1
+	DomainRebootFlagACPI DomainRebootFlags = 1 << (iota - 1)
 
 	// DomainRebootFlagGuestAgent use guest agent.
-	DomainRebootFlagGuestAgent = 2
+	DomainRebootFlagGuestAgent
 
 	// DomainRebootFlagInitctl use initctl.
-	DomainRebootFlagInitctl = 4
+	DomainRebootFlagInitctl
 
 	// DomainRebootFlagSignal send a signal.
-	DomainRebootFlagSignal = 8
+	DomainRebootFlagSignal
 
 	// DomainRebootFlagParavirt use paravirt guest control.
-	DomainRebootFlagParavirt = 16
+	DomainRebootFlagParavirt
 )
 
 // DomainShutdownFlagValues specifies options when performing a shutdown.
-type DomainShutdownFlagValues uint32
+type DomainShutdownFlags uint32
 
 const (
 	// DomainShutdownFlagDefault use hypervisor choice.
-	DomainShutdownFlagDefault = 0
+	DomainShutdownFlagDefault DomainShutdownFlags = 0
 
 	// DomainShutdownFlagACPI send ACPI event.
-	DomainShutdownFlagACPI = 1
+	DomainShutdownFlagACPI DomainShutdownFlags = 1 << (iota - 1)
 
 	// DomainShutdownFlagGuestAgent use guest agent.
-	DomainShutdownFlagGuestAgent = 2
+	DomainShutdownFlagGuestAgent
 
 	// DomainShutdownFlagInitctl use initctl.
-	DomainShutdownFlagInitctl = 4
+	DomainShutdownFlagInitctl
 
 	// DomainShutdownFlagSignal send a signal.
-	DomainShutdownFlagSignal = 8
+	DomainShutdownFlagSignal
 
 	// DomainShutdownFlagParavirt use paravirt guest control.
-	DomainShutdownFlagParavirt = 16
+	DomainShutdownFlagParavirt
 )
 
 // MigrateFlags specifies options when performing a migration.
-type MigrateFlags uint32
+type DomainMigrateFlags uint32
 
 const (
-	// MigrateFlagLive performs a zero-downtime live migration.
-	MigrateFlagLive MigrateFlags = 1 << iota
+	// DomainMigrateFlagLive performs a zero-downtime live migration.
+	DomainMigrateFlagLive DomainMigrateFlags = 1 << iota
 
-	// MigrateFlagPeerToPeer creates a direct source to destination control channel.
-	MigrateFlagPeerToPeer
+	// DomainMigrateFlagPeerToPeer creates a direct source to destination control channel.
+	DomainMigrateFlagPeerToPeer
 
-	// MigrateFlagTunneled tunnels migration data over the libvirtd connection.
-	MigrateFlagTunneled
+	// DomainMigrateFlagTunneled tunnels migration data over the libvirtd connection.
+	DomainMigrateFlagTunneled
 
-	// MigrateFlagPersistDestination will persist the VM on the destination host.
-	MigrateFlagPersistDestination
+	// DomainMigrateFlagPersistDestination will persist the VM on the destination host.
+	DomainMigrateFlagPersistDestination
 
-	// MigrateFlagUndefineSource undefines the VM on the source host.
-	MigrateFlagUndefineSource
+	// DomainMigrateFlagUndefineSource undefines the VM on the source host.
+	DomainMigrateFlagUndefineSource
 
-	// MigrateFlagPaused will pause the remote side VM.
-	MigrateFlagPaused
+	// DomainMigrateFlagPaused will pause the remote side VM.
+	DomainMigrateFlagPaused
 
-	// MigrateFlagNonSharedDisk migrate non-shared storage with full disk copy.
-	MigrateFlagNonSharedDisk
+	// DomainMigrateFlagNonSharedDisk migrate non-shared storage with full disk copy.
+	DomainMigrateFlagNonSharedDisk
 
-	// MigrateFlagNonSharedIncremental migrate non-shared storage with incremental copy.
-	MigrateFlagNonSharedIncremental
+	// DomainMigrateFlagNonSharedIncremental migrate non-shared storage with incremental copy.
+	DomainMigrateFlagNonSharedIncremental
 
-	// MigrateFlagChangeProtection prevents any changes to the domain configuration through the whole migration process.
-	MigrateFlagChangeProtection
+	// DomainMigrateFlagChangeProtection prevents any changes to the domain configuration through the whole migration process.
+	DomainMigrateFlagChangeProtection
 
-	// MigrateFlagUnsafe will force a migration even when it is considered unsafe.
-	MigrateFlagUnsafe
+	// DomainMigrateFlagUnsafe will force a migration even when it is considered unsafe.
+	DomainMigrateFlagUnsafe
 
-	// MigrateFlagOffline is used to perform an offline migration.
-	MigrateFlagOffline
+	// DomainMigrateFlagOffline is used to perform an offline migration.
+	DomainMigrateFlagOffline
 
-	// MigrateFlagCompressed compresses data during migration.
-	MigrateFlagCompressed
+	// DomainMigrateFlagCompressed compresses data during migration.
+	DomainMigrateFlagCompressed
 
-	// MigrateFlagAbortOnError will abort a migration on I/O errors encountered during migration.
-	MigrateFlagAbortOnError
+	// DomainMigrateFlagAbortOnError will abort a migration on I/O errors encountered during migration.
+	DomainMigrateFlagAbortOnError
 
-	// MigrateFlagAutoConverge forces convergence.
-	MigrateFlagAutoConverge
+	// DomainMigrateFlagAutoConverge forces convergence.
+	DomainMigrateFlagAutoConverge
 
-	// MigrateFlagRDMAPinAll enables RDMA memory pinning.
-	MigrateFlagRDMAPinAll
+	// DomainMigrateFlagRDMAPinAll enables RDMA memory pinning.
+	DomainMigrateFlagRDMAPinAll
 )
 
 // UndefineFlags specifies options available when undefining a domain.
-type UndefineFlags uint32
+type DomainUndefineFlags uint32
 
 const (
-	// UndefineFlagManagedSave removes all domain managed save data.
-	UndefineFlagManagedSave UndefineFlags = 1 << iota
+	// DomainUndefineFlagManagedSave removes all domain managed save data.
+	DomainUndefineFlagManagedSave DomainUndefineFlags = 1 << iota
 
-	// UndefineFlagSnapshotsMetadata removes all domain snapshot metadata.
-	UndefineFlagSnapshotsMetadata
+	// DomainUndefineFlagSnapshotsMetadata removes all domain snapshot metadata.
+	DomainUndefineFlagSnapshotsMetadata
 
-	// UndefineFlagNVRAM removes all domain NVRAM files.
-	UndefineFlagNVRAM
+	// DomainUndefineFlagNVRAM removes all domain NVRAM files.
+	DomainUndefineFlagNVRAM
 )
 
 // DomainDefineXMLFlags specifies options available when defining a domain.
@@ -251,12 +251,12 @@ const (
 	DefineValidate DomainDefineXMLFlags = 1
 )
 
-// DestroyFlags specifies options available when destroying a domain.
-type DestroyFlags uint32
+// DomainDestroyFlags specifies options available when destroying a domain.
+type DomainDestroyFlags uint32
 
 const (
 	// DestroyFlagDefault default behavior, forcefully terminate the domain.
-	DestroyFlagDefault DestroyFlags = 1 << iota
+	DestroyFlagDefault DomainDestroyFlags = 1 << iota
 
 	// DestroyFlagGraceful only sends a SIGTERM no SIGKILL.
 	DestroyFlagGraceful
@@ -525,7 +525,7 @@ func (l *Libvirt) DomainEvents(d *Domain) (<-chan DomainEvent, error) {
 // 'qemu+tcp://example.com/system'. The flags argument determines the
 // type of migration and how it will be performed. For more information
 // on available migration flags and their meaning, see MigrateFlag*.
-func (l *Libvirt) DomainMigrate(d *Domain, dest string, flags MigrateFlags) error {
+func (l *Libvirt) DomainMigrate(d *Domain, dest string, flags DomainMigrateFlags) error {
 	_, err := url.Parse(dest)
 	if err != nil {
 		return err
@@ -541,7 +541,7 @@ func (l *Libvirt) DomainMigrate(d *Domain, dest string, flags MigrateFlags) erro
 		DestinationURI   string
 		RemoteParameters uint32
 		CookieIn         uint32
-		Flags            MigrateFlags
+		Flags            DomainMigrateFlags
 	}{
 		Domain:           *d,
 		Padding:          [4]byte{0x0, 0x0, 0x0, 0x1},
@@ -806,11 +806,11 @@ func (l *Libvirt) StoragePools(flags StoragePoolsFlags) ([]StoragePool, error) {
 // DomainUndefine undefines the domain specified by dom, e.g., 'prod-lb-01'.
 // The flags argument allows additional options to be specified such as
 // cleaning up snapshot metadata. For more information on available
-// flags, see UndefineFlag*.
-func (l *Libvirt) DomainUndefine(d *Domain, flags UndefineFlags) error {
+// flags, see DomainUndefineFlag*.
+func (l *Libvirt) DomainUndefine(d *Domain, flags DomainUndefineFlags) error {
 	payload := struct {
 		Domain Domain
-		Flags  UndefineFlags
+		Flags  DomainUndefineFlags
 	}{
 		Domain: *d,
 		Flags:  flags,
@@ -837,11 +837,11 @@ func (l *Libvirt) DomainUndefine(d *Domain, flags UndefineFlags) error {
 // DomainDestroy destroys the domain.
 // The flags argument allows additional options to be specified such as
 // allowing a graceful shutdown with SIGTERM than SIGKILL.
-// For more information on available flags, see DestroyFlag*.
-func (l *Libvirt) DomainDestroy(d *Domain, flags DestroyFlags) error {
+// For more information on available flags, see DomainDestroyFlag*.
+func (l *Libvirt) DomainDestroy(d *Domain, flags DomainDestroyFlags) error {
 	payload := struct {
 		Domain Domain
-		Flags  DestroyFlags
+		Flags  DomainDestroyFlags
 	}{
 		Domain: *d,
 		Flags:  flags,
@@ -867,11 +867,11 @@ func (l *Libvirt) DomainDestroy(d *Domain, flags DestroyFlags) error {
 
 // DomainReboot reboot the domain.
 // The flags argument allows additional options to be specified.
-// For more information on available flags, see DomainRebootFlagValues*.
-func (l *Libvirt) DomainReboot(d *Domain, flags DomainRebootFlagValues) error {
+// For more information on available flags, see DomainRebootFlags*.
+func (l *Libvirt) DomainReboot(d *Domain, flags DomainRebootFlags) error {
 	payload := struct {
 		Domain Domain
-		Flags  DomainRebootFlagValues
+		Flags  DomainRebootFlags
 	}{
 		Domain: *d,
 		Flags:  flags,
@@ -897,11 +897,11 @@ func (l *Libvirt) DomainReboot(d *Domain, flags DomainRebootFlagValues) error {
 
 // DomainShutdown reboot the domain.
 // The flags argument allows additional options to be specified.
-// For more information on available flags, see DomainShutdownFlagValues*.
-func (l *Libvirt) DomainShutdown(d *Domain, flags DomainShutdownFlagValues) error {
+// For more information on available flags, see DomainShutdownFlags*.
+func (l *Libvirt) DomainShutdown(d *Domain, flags DomainShutdownFlags) error {
 	payload := struct {
 		Domain Domain
-		Flags  DomainShutdownFlagValues
+		Flags  DomainShutdownFlags
 	}{
 		Domain: *d,
 		Flags:  flags,
