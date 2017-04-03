@@ -356,12 +356,7 @@ func (l *Libvirt) LookupDomainByUUID(uuid string) (*Domain, error) {
 }
 
 // DomainState returns state of the domain managed by libvirt.
-func (l *Libvirt) DomainState(dom string) (DomainState, error) {
-	d, err := l.lookupByName(dom)
-	if err != nil {
-		return DomainStateNoState, err
-	}
-
+func (l *Libvirt) DomainState(d *Domain) (DomainState, error) {
 	req := struct {
 		Domain Domain
 		Flags  uint32
@@ -399,16 +394,11 @@ func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 	return DomainState(result.State), nil
 }
 
-// Events streams domain events.
+// DomainEvents streams domain events.
 // If a problem is encountered setting up the event monitor connection
 // an error will be returned. Errors encountered during streaming will
 // cause the returned event channel to be closed.
-func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
-	d, err := l.lookupByName(dom)
-	if err != nil {
-		return nil, err
-	}
-
+func (l *Libvirt) DomainEvents(d *Domain) (<-chan DomainEvent, error) {
 	payload := struct {
 		Padding [4]byte
 		Domain  Domain
@@ -790,16 +780,11 @@ func (l *Libvirt) Undefine(dom string, flags UndefineFlags) error {
 	return nil
 }
 
-// Destroy destroys the domain specified by dom, e.g., 'prod-lb-01'.
+// Destroy destroys the domain.
 // The flags argument allows additional options to be specified such as
 // allowing a graceful shutdown with SIGTERM than SIGKILL.
 // For more information on available flags, see DestroyFlag*.
-func (l *Libvirt) Destroy(dom string, flags DestroyFlags) error {
-	d, err := l.lookupByName(dom)
-	if err != nil {
-		return err
-	}
-
+func (l *Libvirt) Destroy(d *Domain, flags DestroyFlags) error {
 	payload := struct {
 		Domain Domain
 		Flags  DestroyFlags
@@ -826,14 +811,9 @@ func (l *Libvirt) Destroy(dom string, flags DestroyFlags) error {
 	return nil
 }
 
-// XML returns a domain's raw XML definition, akin to `virsh dumpxml <domain>`.
+// DomainXML returns a domain's raw XML definition, akin to `virsh dumpxml <domain>`.
 // See DomainXMLFlag* for optional flags.
-func (l *Libvirt) XML(dom string, flags DomainXMLFlags) ([]byte, error) {
-	d, err := l.lookupByName(dom)
-	if err != nil {
-		return nil, err
-	}
-
+func (l *Libvirt) DomainXML(d *Domain, flags DomainXMLFlags) ([]byte, error) {
 	payload := struct {
 		Domain Domain
 		Flags  DomainXMLFlags
