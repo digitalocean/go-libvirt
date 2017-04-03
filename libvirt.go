@@ -19,11 +19,13 @@ package libvirt
 import (
 	"bufio"
 	"bytes"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
 	"net/url"
+	"strings"
 	"sync"
 
 	"github.com/davecgh/go-xdr/xdr2"
@@ -345,12 +347,17 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 
 // LookupDomainByName return Domain by its name.
 func (l *Libvirt) LookupDomainByName(name string) (*Domain, error) {
-	return l.lookup(name)
+	return l.lookupByName(name)
+}
+
+// LookupDomainByUUID return Domain by its uuid.
+func (l *Libvirt) LookupDomainByUUID(uuid string) (*Domain, error) {
+	return l.lookupByUUID(uuid)
 }
 
 // DomainState returns state of the domain managed by libvirt.
 func (l *Libvirt) DomainState(dom string) (DomainState, error) {
-	d, err := l.lookup(dom)
+	d, err := l.lookupByName(dom)
 	if err != nil {
 		return DomainStateNoState, err
 	}
@@ -397,7 +404,7 @@ func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 // an error will be returned. Errors encountered during streaming will
 // cause the returned event channel to be closed.
 func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
-	d, err := l.lookup(dom)
+	d, err := l.lookupByName(dom)
 	if err != nil {
 		return nil, err
 	}
@@ -465,7 +472,7 @@ func (l *Libvirt) Migrate(dom string, dest string, flags MigrateFlags) error {
 		return err
 	}
 
-	d, err := l.lookup(dom)
+	d, err := l.lookupByName(dom)
 	if err != nil {
 		return err
 	}
@@ -512,7 +519,7 @@ func (l *Libvirt) Migrate(dom string, dest string, flags MigrateFlags) error {
 // domain which is being migrated to another host. Specifying a negative value
 // results in an essentially unlimited value being provided to the hypervisor.
 func (l *Libvirt) MigrateSetMaxSpeed(dom string, speed int64) error {
-	d, err := l.lookup(dom)
+	d, err := l.lookupByName(dom)
 	if err != nil {
 		return err
 	}
@@ -550,7 +557,7 @@ func (l *Libvirt) MigrateSetMaxSpeed(dom string, speed int64) error {
 // For a list of available QAPI commands, see:
 //	http://git.qemu.org/?p=qemu.git;a=blob;f=qapi-schema.json;hb=HEAD
 func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
-	d, err := l.lookup(dom)
+	d, err := l.lookupByName(dom)
 	if err != nil {
 		return nil, err
 	}
@@ -752,7 +759,7 @@ func (l *Libvirt) StoragePools(flags StoragePoolsFlags) ([]StoragePool, error) {
 // cleaning up snapshot metadata. For more information on available
 // flags, see UndefineFlag*.
 func (l *Libvirt) Undefine(dom string, flags UndefineFlags) error {
-	d, err := l.lookup(dom)
+	d, err := l.lookupByName(dom)
 	if err != nil {
 		return err
 	}
@@ -788,7 +795,7 @@ func (l *Libvirt) Undefine(dom string, flags UndefineFlags) error {
 // allowing a graceful shutdown with SIGTERM than SIGKILL.
 // For more information on available flags, see DestroyFlag*.
 func (l *Libvirt) Destroy(dom string, flags DestroyFlags) error {
-	d, err := l.lookup(dom)
+	d, err := l.lookupByName(dom)
 	if err != nil {
 		return err
 	}
@@ -822,7 +829,7 @@ func (l *Libvirt) Destroy(dom string, flags DestroyFlags) error {
 // XML returns a domain's raw XML definition, akin to `virsh dumpxml <domain>`.
 // See DomainXMLFlag* for optional flags.
 func (l *Libvirt) XML(dom string, flags DomainXMLFlags) ([]byte, error) {
-	d, err := l.lookup(dom)
+	d, err := l.lookupByName(dom)
 	if err != nil {
 		return nil, err
 	}
@@ -923,8 +930,8 @@ func (l *Libvirt) Version() (string, error) {
 	return versionString, nil
 }
 
-// lookup returns a domain as seen by libvirt.
-func (l *Libvirt) lookup(name string) (*Domain, error) {
+// lookupByName returns a domain as seen by libvirt.
+func (l *Libvirt) lookupByName(name string) (*Domain, error) {
 	payload := struct {
 		Name string
 	}{name}
@@ -935,6 +942,42 @@ func (l *Libvirt) lookup(name string) (*Domain, error) {
 	}
 
 	resp, err := l.request(constants.ProcDomainLookupByName, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+
+	var d Domain
+	_, err = dec.Decode(&d)
+	if err != nil {
+		return nil, err
+	}
+
+	return &d, nil
+}
+
+// lookupByUUID returns a domain as seen by libvirt.
+func (l *Libvirt) lookupByUUID(uuid string) (*Domain, error) {
+	payload := struct {
+		UUID [16]uint8
+	}{}
+	_, err := hex.Decode(payload.UUID[:], []byte(strings.Replace(uuid, "-", "", -1)))
+	if err != nil {
+		return nil, err
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := l.request(constants.ProcDomainLookupByUUID, constants.ProgramRemote, &buf)
 	if err != nil {
 		return nil, err
 	}
