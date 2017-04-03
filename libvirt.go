@@ -520,7 +520,7 @@ func (l *Libvirt) DomainEvents(d *Domain) (<-chan DomainEvent, error) {
 	return c, nil
 }
 
-// Migrate synchronously migrates the domain specified by dom, e.g.,
+// DomainMigrate synchronously migrates the domain specified by dom, e.g.,
 // 'prod-lb-01', to the destination hypervisor specified by dest, e.g.,
 // 'qemu+tcp://example.com/system'. The flags argument determines the
 // type of migration and how it will be performed. For more information
@@ -803,7 +803,7 @@ func (l *Libvirt) StoragePools(flags StoragePoolsFlags) ([]StoragePool, error) {
 	return result.Pools, nil
 }
 
-// Undefine undefines the domain specified by dom, e.g., 'prod-lb-01'.
+// DomainUndefine undefines the domain specified by dom, e.g., 'prod-lb-01'.
 // The flags argument allows additional options to be specified such as
 // cleaning up snapshot metadata. For more information on available
 // flags, see UndefineFlag*.
