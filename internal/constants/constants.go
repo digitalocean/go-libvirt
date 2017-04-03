@@ -45,6 +45,8 @@ const (
 	ProcDomainLookupByName         = 23
 	ProcDomainLookupByUUID         = 24
 	ProcDomainReboot               = 27
+	ProcDomainResume               = 28
+	ProcDomainSuspend              = 34
 	ProcAuthList                   = 66
 	ProcStoragePoolRefresh         = 83
 	ProcStoragePoolLookupByName    = 84

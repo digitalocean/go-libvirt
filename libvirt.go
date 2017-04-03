@@ -868,6 +868,58 @@ func (l *Libvirt) DomainUndefine(d *Domain, flags DomainUndefineFlags) error {
 	return nil
 }
 
+// DomainSuspend suspends the domain.
+func (l *Libvirt) DomainSuspend(d *Domain) error {
+	payload := struct {
+		Domain Domain
+	}{
+		Domain: *d,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainSuspend, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
+// DomainResume resume domain.
+func (l *Libvirt) DomainResume(d *Domain) error {
+	payload := struct {
+		Domain Domain
+	}{
+		Domain: *d,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainResume, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
 // DomainDestroy destroys the domain.
 // The flags argument allows additional options to be specified such as
 // allowing a graceful shutdown with SIGTERM than SIGKILL.
