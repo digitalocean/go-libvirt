@@ -133,6 +133,29 @@ const (
 	DomainCreateFlagStartValidate = 16
 )
 
+// DomainRebootFlagValues specifies options when performing a reboot.
+type DomainRebootFlagValues uint32
+
+const (
+	// DomainRebootFlagDefault use hypervisor choice.
+	DomainRebootFlagDefault = 0
+
+	// DomainRebootFlagACPI send ACPI event.
+	DomainRebootFlagACPI = 1
+
+	// DomainRebootFlagGuestAgent use guest agent.
+	DomainRebootFlagGuestAgent = 2
+
+	// DomainRebootFlagInitctl use initctl.
+	DomainRebootFlagInitctl = 4
+
+	// DomainRebootFlagSignal send a signal.
+	DomainRebootFlagSignal = 8
+
+	// DomainRebootFlagParavirt use paravirt guest control.
+	DomainRebootFlagParavirt = 16
+)
+
 // MigrateFlags specifies options when performing a migration.
 type MigrateFlags uint32
 
@@ -788,11 +811,11 @@ func (l *Libvirt) DomainUndefine(d *Domain, flags UndefineFlags) error {
 	return nil
 }
 
-// Destroy destroys the domain.
+// DomainDestroyFlags destroys the domain.
 // The flags argument allows additional options to be specified such as
 // allowing a graceful shutdown with SIGTERM than SIGKILL.
 // For more information on available flags, see DestroyFlag*.
-func (l *Libvirt) Destroy(d *Domain, flags DestroyFlags) error {
+func (l *Libvirt) DomainDestroyFlags(d *Domain, flags DestroyFlags) error {
 	payload := struct {
 		Domain Domain
 		Flags  DestroyFlags
@@ -807,6 +830,36 @@ func (l *Libvirt) Destroy(d *Domain, flags DestroyFlags) error {
 	}
 
 	resp, err := l.request(constants.ProcDomainDestroyFlags, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
+// DomainRebootFlags reboot the domain.
+// The flags argument allows additional options to be specified.
+// For more information on available flags, see DomainRebootFlagValues*.
+func (l *Libvirt) DomainReboot(d *Domain, flags DomainRebootFlagValues) error {
+	payload := struct {
+		Domain Domain
+		Flags  DomainRebootFlagValues
+	}{
+		Domain: *d,
+		Flags:  flags,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainReboot, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
