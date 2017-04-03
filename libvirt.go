@@ -343,6 +343,11 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 	return result.Domains, nil
 }
 
+// LookupDomainByName return Domain by its name.
+func (l *Libvirt) LookupDomainByName(name string) (*Domain, error) {
+	return l.lookup(name)
+}
+
 // DomainState returns state of the domain managed by libvirt.
 func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 	d, err := l.lookup(dom)
