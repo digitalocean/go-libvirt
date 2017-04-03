@@ -118,19 +118,19 @@ const (
 	DomainCreateFlagNone = 0
 
 	// DomainCreateFlagPaused creates paused domain.
-	DomainCreateFlagPaused = 1
+	DomainCreateFlagPaused = 1 << iota
 
 	// DomainCreateFlagAutoDestroy destoy domain after libvirt connection closed.
-	DomainCreateFlagAutoDestroy = 2
+	DomainCreateFlagAutoDestroy
 
 	// DomainCreateFlagBypassCache avoid file system cache pollution.
-	DomainCreateFlagBypassCache = 4
+	DomainCreateFlagBypassCache
 
 	// DomainCreateFlagStartForceBoot boot, discarding any managed save
-	DomainCreateFlagStartForceBoot = 8
+	DomainCreateFlagStartForceBoot
 
 	// DomainCreateFlagStartValidate validate the XML document against schema
-	DomainCreateFlagStartValidate = 16
+	DomainCreateFlagStartValidate
 )
 
 // DomainRebootFlagValues specifies options when performing a reboot.
@@ -141,19 +141,19 @@ const (
 	DomainRebootFlagDefault = 0
 
 	// DomainRebootFlagACPI send ACPI event.
-	DomainRebootFlagACPI = 1
+	DomainRebootFlagACPI = 1 << iota
 
 	// DomainRebootFlagGuestAgent use guest agent.
-	DomainRebootFlagGuestAgent = 2
+	DomainRebootFlagGuestAgent
 
 	// DomainRebootFlagInitctl use initctl.
-	DomainRebootFlagInitctl = 4
+	DomainRebootFlagInitctl
 
 	// DomainRebootFlagSignal send a signal.
-	DomainRebootFlagSignal = 8
+	DomainRebootFlagSignal
 
 	// DomainRebootFlagParavirt use paravirt guest control.
-	DomainRebootFlagParavirt = 16
+	DomainRebootFlagParavirt
 )
 
 // DomainShutdownFlagValues specifies options when performing a shutdown.
@@ -164,19 +164,19 @@ const (
 	DomainShutdownFlagDefault = 0
 
 	// DomainShutdownFlagACPI send ACPI event.
-	DomainShutdownFlagACPI = 1
+	DomainShutdownFlagACPI = 1 << iota
 
 	// DomainShutdownFlagGuestAgent use guest agent.
-	DomainShutdownFlagGuestAgent = 2
+	DomainShutdownFlagGuestAgent
 
 	// DomainShutdownFlagInitctl use initctl.
-	DomainShutdownFlagInitctl = 4
+	DomainShutdownFlagInitctl
 
 	// DomainShutdownFlagSignal send a signal.
-	DomainShutdownFlagSignal = 8
+	DomainShutdownFlagSignal
 
 	// DomainShutdownFlagParavirt use paravirt guest control.
-	DomainShutdownFlagParavirt = 16
+	DomainShutdownFlagParavirt
 )
 
 // MigrateFlags specifies options when performing a migration.
