@@ -110,6 +110,29 @@ const (
 	DomainXMLFlagMigratable
 )
 
+// DomainCreateFlags specifies options when performing a domain creation.
+type DomainCreateFlags uint32
+
+const (
+	// DomainCreateFlagNone is the default behavior.
+	DomainCreateFlagNone = 0
+
+	// DomainCreateFlagPaused creates paused domain.
+	DomainCreateFlagPaused = 1
+
+	// DomainCreateFlagAutoDestroy destoy domain after libvirt connection closed.
+	DomainCreateFlagAutoDestroy = 2
+
+	// DomainCreateFlagBypassCache avoid file system cache pollution.
+	DomainCreateFlagBypassCache = 4
+
+	// DomainCreateFlagStartForceBoot boot, discarding any managed save
+	DomainCreateFlagStartForceBoot = 8
+
+	// DomainCreateFlagStartValidate validate the XML document against schema
+	DomainCreateFlagStartValidate = 16
+)
+
 // MigrateFlags specifies options when performing a migration.
 type MigrateFlags uint32
 
@@ -456,13 +479,8 @@ func (l *Libvirt) DomainEvents(d *Domain) (<-chan DomainEvent, error) {
 // 'qemu+tcp://example.com/system'. The flags argument determines the
 // type of migration and how it will be performed. For more information
 // on available migration flags and their meaning, see MigrateFlag*.
-func (l *Libvirt) Migrate(dom string, dest string, flags MigrateFlags) error {
+func (l *Libvirt) DomainMigrate(d *Domain, dest string, flags MigrateFlags) error {
 	_, err := url.Parse(dest)
-	if err != nil {
-		return err
-	}
-
-	d, err := l.lookupByName(dom)
 	if err != nil {
 		return err
 	}
@@ -505,15 +523,10 @@ func (l *Libvirt) Migrate(dom string, dest string, flags MigrateFlags) error {
 	return nil
 }
 
-// MigrateSetMaxSpeed set the maximum migration bandwidth (in MiB/s) for a
+// DomainMigrateSetMaxSpeed set the maximum migration bandwidth (in MiB/s) for a
 // domain which is being migrated to another host. Specifying a negative value
 // results in an essentially unlimited value being provided to the hypervisor.
-func (l *Libvirt) MigrateSetMaxSpeed(dom string, speed int64) error {
-	d, err := l.lookupByName(dom)
-	if err != nil {
-		return err
-	}
-
+func (l *Libvirt) DomainMigrateSetMaxSpeed(d *Domain, speed int64) error {
 	payload := struct {
 		Padding   [4]byte
 		Domain    Domain
@@ -748,12 +761,7 @@ func (l *Libvirt) StoragePools(flags StoragePoolsFlags) ([]StoragePool, error) {
 // The flags argument allows additional options to be specified such as
 // cleaning up snapshot metadata. For more information on available
 // flags, see UndefineFlag*.
-func (l *Libvirt) Undefine(dom string, flags UndefineFlags) error {
-	d, err := l.lookupByName(dom)
-	if err != nil {
-		return err
-	}
-
+func (l *Libvirt) DomainUndefine(d *Domain, flags UndefineFlags) error {
 	payload := struct {
 		Domain Domain
 		Flags  UndefineFlags
@@ -875,6 +883,60 @@ func (l *Libvirt) DefineXML(x []byte, flags DomainDefineXMLFlags) error {
 	return nil
 }
 
+// DomainCreate start defined domain.
+func (l *Libvirt) DomainCreate(d *Domain) error {
+	payload := struct {
+		Domain Domain
+	}{
+		Domain: *d,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainCreate, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
+// DomainCreateXML start domain based on xml.
+func (l *Libvirt) DomainCreateXML(x []byte, flags DomainCreateFlags) error {
+	payload := struct {
+		XML   []byte
+		Flags DomainCreateFlags
+	}{
+		XML:   x,
+		Flags: flags,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainCreateXML, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
 // Version returns the version of the libvirt daemon.
 func (l *Libvirt) Version() (string, error) {
 	resp, err := l.request(constants.ProcConnectGetLibVersion, constants.ProgramRemote, nil)
@@ -945,7 +1007,7 @@ func (l *Libvirt) lookupByName(name string) (*Domain, error) {
 // lookupByUUID returns a domain as seen by libvirt.
 func (l *Libvirt) lookupByUUID(uuid string) (*Domain, error) {
 	payload := struct {
-		UUID [16]uint8
+		UUID [constants.UUIDSize]byte
 	}{}
 	_, err := hex.Decode(payload.UUID[:], []byte(strings.Replace(uuid, "-", "", -1)))
 	if err != nil {

@@ -39,6 +39,8 @@ const (
 	ProcConnectOpen                = 1
 	ProcConnectClose               = 2
 	ProcConnectGetCapabilties      = 7
+	ProcDomainCreate               = 9
+	ProcDomainCreateXML            = 10
 	ProcDomainGetXMLDesc           = 14
 	ProcDomainLookupByName         = 23
 	ProcDomainLookupByUUID         = 24
