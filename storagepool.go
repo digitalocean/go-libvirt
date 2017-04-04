@@ -278,7 +278,7 @@ func (p *StoragePool) StorageVolumeCreateXML(x []byte, flags StorageVolumeCreate
 	if err != nil {
 		return nil, err
 	}
-	result.Volume.l = l
+	result.Volume.l = p.l
 
 	return &result.Volume, nil
 }
@@ -318,6 +318,6 @@ func (p *StoragePool) StorageVolumeLookupByName(name string) (*StorageVolume, er
 		return nil, err
 	}
 
-	result.Volume.l = l
+	result.Volume.l = p.l
 	return &result.Volume, nil
 }

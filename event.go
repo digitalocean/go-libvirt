@@ -82,7 +82,7 @@ func (d *Domain) Events() (<-chan DomainEvent, error) {
 	}
 
 	stream := make(chan *DomainEvent)
-	l.addStream(cbID, stream)
+	d.l.addStream(cbID, stream)
 	c := make(chan DomainEvent)
 	go func() {
 		// process events
