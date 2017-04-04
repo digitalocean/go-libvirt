@@ -62,7 +62,7 @@ func TestMigrate(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := l.DomainMigrate(d, "qemu+tcp://foo/system", flags); err != nil {
+	if err := d.Migrate("qemu+tcp://foo/system", flags); err != nil {
 		t.Fatalf("unexpected live migration error: %v", err)
 	}
 }
@@ -86,7 +86,7 @@ func TestMigrateInvalidDest(t *testing.T) {
 	}
 
 	dest := ":$'"
-	if err := l.DomainMigrate(d, dest, flags); err == nil {
+	if err := d.Migrate(dest, flags); err == nil {
 		t.Fatalf("expected invalid dest uri %q to fail", dest)
 	}
 }
@@ -100,7 +100,7 @@ func TestMigrateSetMaxSpeed(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := l.DomainMigrateSetMaxSpeed(d, 100); err != nil {
+	if err := d.MigrateSetMaxSpeed(100); err != nil {
 		t.Fatalf("unexpected error setting max speed for migrate: %v", err)
 	}
 }
@@ -143,7 +143,7 @@ func TestDomainState(t *testing.T) {
 	}
 
 	wantState := DomainState(DomainStateRunning)
-	gotState, err := l.DomainState(d)
+	gotState, err := d.State()
 	if err != nil {
 		t.Error(err)
 	}
@@ -163,7 +163,7 @@ func TestEvents(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	stream, err := l.DomainEvents(d)
+	stream, err := d.Events()
 	if err != nil {
 		t.Error(err)
 	}
@@ -349,7 +349,7 @@ func TestStoragePoolRefresh(t *testing.T) {
 		t.Error(err)
 	}
 
-	err = l.StoragePoolRefresh(pool, 0)
+	err = pool.Refresh(0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -365,7 +365,7 @@ func TestUndefine(t *testing.T) {
 	}
 
 	var flags DomainUndefineFlags
-	if err := l.DomainUndefine(d, flags); err != nil {
+	if err := d.Undefine(flags); err != nil {
 		t.Fatalf("unexpected undefine error: %v", err)
 	}
 }
@@ -380,7 +380,7 @@ func TestDestroy(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if err := l.DomainDestroy(d, flags); err != nil {
+	if err := d.Destroy(flags); err != nil {
 		t.Fatalf("unexpected destroy error: %v", err)
 	}
 }
