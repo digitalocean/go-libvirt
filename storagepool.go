@@ -29,6 +29,7 @@ import (
 type StoragePool struct {
 	Name string
 	UUID [constants.UUIDSize]byte
+	l    *Libvirt
 }
 
 // StoragePoolsFlags specifies storage pools to list.
@@ -95,6 +96,7 @@ func (l *Libvirt) StoragePoolLookupByName(name string) (*StoragePool, error) {
 		return nil, err
 	}
 
+	result.Pool.l = l
 	return &result.Pool, nil
 }
 
@@ -134,16 +136,18 @@ func (l *Libvirt) StoragePoolLookupByUUID(uuid string) (*StoragePool, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	result.Pool.l = l
 	return &result.Pool, nil
 }
 
-// StoragePoolRefresh refreshes the storage pool specified by name.
-func (l *Libvirt) StoragePoolRefresh(pool *StoragePool, flags uint32) error {
+// Refresh refreshes the storage pool.
+func (p *StoragePool) Refresh(flags uint32) error {
 	req := struct {
 		Pool  StoragePool
 		Flags uint32
 	}{
-		Pool:  *pool,
+		Pool:  *p,
 		Flags: flags, // unused per libvirt source, callers should pass 0
 	}
 
@@ -152,7 +156,7 @@ func (l *Libvirt) StoragePoolRefresh(pool *StoragePool, flags uint32) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcStoragePoolRefresh, constants.ProgramRemote, &buf)
+	resp, err := p.l.request(constants.ProcStoragePoolRefresh, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -202,11 +206,14 @@ func (l *Libvirt) StoragePools(flags StoragePoolsFlags) ([]StoragePool, error) {
 		return nil, err
 	}
 
+	for _, p := range result.Pools {
+		p.l = l
+	}
 	return result.Pools, nil
 }
 
-// StoragePoolSetAutostart set autostart for domain.
-func (l *Libvirt) StoragePoolSetAutostart(p *StoragePool, autostart bool) error {
+// SetAutostart set autostart for domain.
+func (p *StoragePool) SetAutostart(autostart bool) error {
 	payload := struct {
 		Pool      StoragePool
 		Autostart int32
@@ -224,7 +231,7 @@ func (l *Libvirt) StoragePoolSetAutostart(p *StoragePool, autostart bool) error 
 		return err
 	}
 
-	resp, err := l.request(constants.ProcStoragePoolSetAutostart, constants.ProgramRemote, &buf)
+	resp, err := p.l.request(constants.ProcStoragePoolSetAutostart, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}

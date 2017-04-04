@@ -33,6 +33,7 @@ type Domain struct {
 	Name string
 	UUID [constants.UUIDSize]byte
 	ID   int
+	l    *Libvirt
 }
 
 // qemuError represents a QEMU process error.
@@ -83,7 +84,7 @@ const (
 	DomainCreateFlagStartValidate
 )
 
-// DomainRebootFlagValues specifies options when performing a reboot.
+// DomainRebootFlags specifies options when performing a reboot.
 type DomainRebootFlags uint32
 
 const (
@@ -106,7 +107,7 @@ const (
 	DomainRebootFlagParavirt
 )
 
-// DomainShutdownFlagValues specifies options when performing a shutdown.
+// DomainShutdownFlags specifies options when performing a shutdown.
 type DomainShutdownFlags uint32
 
 const (
@@ -129,7 +130,7 @@ const (
 	DomainShutdownFlagParavirt
 )
 
-// MigrateFlags specifies options when performing a migration.
+// DomainMigrateFlags specifies options when performing a migration.
 type DomainMigrateFlags uint32
 
 const (
@@ -179,7 +180,7 @@ const (
 	DomainMigrateFlagRDMAPinAll
 )
 
-// UndefineFlags specifies options available when undefining a domain.
+// DomainUndefineFlags specifies options available when undefining a domain.
 type DomainUndefineFlags uint32
 
 const (
@@ -275,6 +276,9 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 		return nil, err
 	}
 
+	for _, d := range result.Domains {
+		d.l = l
+	}
 	return result.Domains, nil
 }
 
@@ -288,8 +292,8 @@ func (l *Libvirt) LookupDomainByUUID(uuid string) (*Domain, error) {
 	return l.lookupByUUID(uuid)
 }
 
-// DomainState returns state of the domain managed by libvirt.
-func (l *Libvirt) DomainState(d *Domain) (DomainState, error) {
+// State returns state of the domain managed by libvirt.
+func (d *Domain) State() (DomainState, error) {
 	req := struct {
 		Domain Domain
 		Flags  uint32
@@ -303,7 +307,7 @@ func (l *Libvirt) DomainState(d *Domain) (DomainState, error) {
 		return DomainStateNoState, err
 	}
 
-	resp, err := l.request(constants.ProcDomainGetState, constants.ProgramRemote, &buf)
+	resp, err := d.l.request(constants.ProcDomainGetState, constants.ProgramRemote, &buf)
 	if err != nil {
 		return DomainStateNoState, err
 	}
@@ -327,12 +331,12 @@ func (l *Libvirt) DomainState(d *Domain) (DomainState, error) {
 	return DomainState(result.State), nil
 }
 
-// DomainMigrate synchronously migrates the domain specified by dom, e.g.,
+// Migrate synchronously migrates the domain specified by dom, e.g.,
 // 'prod-lb-01', to the destination hypervisor specified by dest, e.g.,
 // 'qemu+tcp://example.com/system'. The flags argument determines the
 // type of migration and how it will be performed. For more information
 // on available migration flags and their meaning, see MigrateFlag*.
-func (l *Libvirt) DomainMigrate(d *Domain, dest string, flags DomainMigrateFlags) error {
+func (d *Domain) Migrate(dest string, flags DomainMigrateFlags) error {
 	_, err := url.Parse(dest)
 	if err != nil {
 		return err
@@ -363,7 +367,7 @@ func (l *Libvirt) DomainMigrate(d *Domain, dest string, flags DomainMigrateFlags
 		return err
 	}
 
-	resp, err := l.request(constants.ProcMigratePerformParams, constants.ProgramRemote, &buf)
+	resp, err := d.l.request(constants.ProcMigratePerformParams, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -376,10 +380,10 @@ func (l *Libvirt) DomainMigrate(d *Domain, dest string, flags DomainMigrateFlags
 	return nil
 }
 
-// DomainMigrateSetMaxSpeed set the maximum migration bandwidth (in MiB/s) for a
+// MigrateSetMaxSpeed set the maximum migration bandwidth (in MiB/s) for a
 // domain which is being migrated to another host. Specifying a negative value
 // results in an essentially unlimited value being provided to the hypervisor.
-func (l *Libvirt) DomainMigrateSetMaxSpeed(d *Domain, speed int64) error {
+func (d *Domain) MigrateSetMaxSpeed(speed int64) error {
 	payload := struct {
 		Padding   [4]byte
 		Domain    Domain
@@ -396,7 +400,7 @@ func (l *Libvirt) DomainMigrateSetMaxSpeed(d *Domain, speed int64) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainMigrateSetMaxSpeed, constants.ProgramRemote, &buf)
+	resp, err := d.l.request(constants.ProcDomainMigrateSetMaxSpeed, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -461,11 +465,11 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 	return bytes.TrimRight(data[4:], "\x00"), nil
 }
 
-// DomainUndefine undefines the domain specified by dom, e.g., 'prod-lb-01'.
+// Undefine undefines the domain.
 // The flags argument allows additional options to be specified such as
 // cleaning up snapshot metadata. For more information on available
 // flags, see DomainUndefineFlag*.
-func (l *Libvirt) DomainUndefine(d *Domain, flags DomainUndefineFlags) error {
+func (d *Domain) Undefine(flags DomainUndefineFlags) error {
 	payload := struct {
 		Domain Domain
 		Flags  DomainUndefineFlags
@@ -479,7 +483,7 @@ func (l *Libvirt) DomainUndefine(d *Domain, flags DomainUndefineFlags) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainUndefineFlags, constants.ProgramRemote, &buf)
+	resp, err := d.l.request(constants.ProcDomainUndefineFlags, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -492,8 +496,8 @@ func (l *Libvirt) DomainUndefine(d *Domain, flags DomainUndefineFlags) error {
 	return nil
 }
 
-// DomainSuspend suspends the domain.
-func (l *Libvirt) DomainSuspend(d *Domain) error {
+// Suspend suspends the domain.
+func (d *Domain) Suspend() error {
 	payload := struct {
 		Domain Domain
 	}{
@@ -505,7 +509,7 @@ func (l *Libvirt) DomainSuspend(d *Domain) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainSuspend, constants.ProgramRemote, &buf)
+	resp, err := d.l.request(constants.ProcDomainSuspend, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -518,8 +522,8 @@ func (l *Libvirt) DomainSuspend(d *Domain) error {
 	return nil
 }
 
-// DomainResume resume domain.
-func (l *Libvirt) DomainResume(d *Domain) error {
+// Resume resume domain.
+func (d *Domain) Resume() error {
 	payload := struct {
 		Domain Domain
 	}{
@@ -531,7 +535,7 @@ func (l *Libvirt) DomainResume(d *Domain) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainResume, constants.ProgramRemote, &buf)
+	resp, err := d.l.request(constants.ProcDomainResume, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -544,8 +548,8 @@ func (l *Libvirt) DomainResume(d *Domain) error {
 	return nil
 }
 
-// DomainSetAutostart set autostart for domain.
-func (l *Libvirt) DomainSetAutostart(d *Domain, autostart bool) error {
+// SetAutostart set autostart for domain.
+func (d *Domain) SetAutostart(autostart bool) error {
 	payload := struct {
 		Domain    Domain
 		Autostart int32
@@ -563,7 +567,7 @@ func (l *Libvirt) DomainSetAutostart(d *Domain, autostart bool) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainSetAutostart, constants.ProgramRemote, &buf)
+	resp, err := d.l.request(constants.ProcDomainSetAutostart, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -576,11 +580,11 @@ func (l *Libvirt) DomainSetAutostart(d *Domain, autostart bool) error {
 	return nil
 }
 
-// DomainDestroy destroys the domain.
+// Destroy destroys the domain.
 // The flags argument allows additional options to be specified such as
 // allowing a graceful shutdown with SIGTERM than SIGKILL.
 // For more information on available flags, see DomainDestroyFlag*.
-func (l *Libvirt) DomainDestroy(d *Domain, flags DomainDestroyFlags) error {
+func (d *Domain) Destroy(flags DomainDestroyFlags) error {
 	payload := struct {
 		Domain Domain
 		Flags  DomainDestroyFlags
@@ -594,7 +598,7 @@ func (l *Libvirt) DomainDestroy(d *Domain, flags DomainDestroyFlags) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainDestroyFlags, constants.ProgramRemote, &buf)
+	resp, err := d.l.request(constants.ProcDomainDestroyFlags, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -607,10 +611,10 @@ func (l *Libvirt) DomainDestroy(d *Domain, flags DomainDestroyFlags) error {
 	return nil
 }
 
-// DomainReboot reboot the domain.
+// Reboot reboot the domain.
 // The flags argument allows additional options to be specified.
 // For more information on available flags, see DomainRebootFlags*.
-func (l *Libvirt) DomainReboot(d *Domain, flags DomainRebootFlags) error {
+func (d *Domain) Reboot(flags DomainRebootFlags) error {
 	payload := struct {
 		Domain Domain
 		Flags  DomainRebootFlags
@@ -624,7 +628,7 @@ func (l *Libvirt) DomainReboot(d *Domain, flags DomainRebootFlags) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainReboot, constants.ProgramRemote, &buf)
+	resp, err := d.l.request(constants.ProcDomainReboot, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -637,10 +641,10 @@ func (l *Libvirt) DomainReboot(d *Domain, flags DomainRebootFlags) error {
 	return nil
 }
 
-// DomainShutdown reboot the domain.
+// Shutdown reboot the domain.
 // The flags argument allows additional options to be specified.
 // For more information on available flags, see DomainShutdownFlags*.
-func (l *Libvirt) DomainShutdown(d *Domain, flags DomainShutdownFlags) error {
+func (d *Domain) Shutdown(flags DomainShutdownFlags) error {
 	payload := struct {
 		Domain Domain
 		Flags  DomainShutdownFlags
@@ -654,7 +658,7 @@ func (l *Libvirt) DomainShutdown(d *Domain, flags DomainShutdownFlags) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainShutdownFlags, constants.ProgramRemote, &buf)
+	resp, err := d.l.request(constants.ProcDomainShutdownFlags, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -667,9 +671,9 @@ func (l *Libvirt) DomainShutdown(d *Domain, flags DomainShutdownFlags) error {
 	return nil
 }
 
-// DomainXML returns a domain's raw XML definition, akin to `virsh dumpxml <domain>`.
+// XML returns a domain's raw XML definition, akin to `virsh dumpxml <domain>`.
 // See DomainXMLFlag* for optional flags.
-func (l *Libvirt) DomainXML(d *Domain, flags DomainXMLFlags) ([]byte, error) {
+func (d *Domain) XML(flags DomainXMLFlags) ([]byte, error) {
 	payload := struct {
 		Domain Domain
 		Flags  DomainXMLFlags
@@ -683,7 +687,7 @@ func (l *Libvirt) DomainXML(d *Domain, flags DomainXMLFlags) ([]byte, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(constants.ProcDomainGetXMLDesc, constants.ProgramRemote, &buf)
+	resp, err := d.l.request(constants.ProcDomainGetXMLDesc, constants.ProgramRemote, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -731,8 +735,8 @@ func (l *Libvirt) DefineXML(x []byte, flags DomainDefineXMLFlags) error {
 	return nil
 }
 
-// DomainCreate start defined domain.
-func (l *Libvirt) DomainCreate(d *Domain) error {
+// Create start defined domain.
+func (d *Domain) Create() error {
 	payload := struct {
 		Domain Domain
 	}{
@@ -744,7 +748,7 @@ func (l *Libvirt) DomainCreate(d *Domain) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainCreate, constants.ProgramRemote, &buf)
+	resp, err := d.l.request(constants.ProcDomainCreate, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -814,6 +818,7 @@ func (l *Libvirt) lookupByName(name string) (*Domain, error) {
 		return nil, err
 	}
 
+	d.l = l
 	return &d, nil
 }
 
@@ -850,6 +855,7 @@ func (l *Libvirt) lookupByUUID(uuid string) (*Domain, error) {
 		return nil, err
 	}
 
+	d.l = l
 	return &d, nil
 }
 

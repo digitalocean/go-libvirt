@@ -27,6 +27,7 @@ import (
 type Network struct {
 	Name string
 	UUID [constants.UUIDSize]byte
+	l    *Libvirt
 }
 
 // NetworkLookupByName returns the network associated with the provided name.
@@ -63,11 +64,12 @@ func (l *Libvirt) NetworkLookupByName(name string) (*Network, error) {
 		return nil, err
 	}
 
+	result.Net.l = l
 	return &result.Net, nil
 }
 
-// NetworkSetAutostart set autostart for domain.
-func (l *Libvirt) NetworkSetAutostart(n *Network, autostart bool) error {
+// SetAutostart set autostart for network.
+func (n *Network) SetAutostart(autostart bool) error {
 	payload := struct {
 		Network   Network
 		Autostart int32
@@ -85,7 +87,7 @@ func (l *Libvirt) NetworkSetAutostart(n *Network, autostart bool) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcNetworkSetAutostart, constants.ProgramRemote, &buf)
+	resp, err := n.l.request(constants.ProcNetworkSetAutostart, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}

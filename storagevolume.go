@@ -28,6 +28,7 @@ type StorageVolume struct {
 	Pool string
 	Name string
 	Key  string
+	l    *Libvirt
 }
 
 // StorageVolumeCreateFlags specifies options when performing a volume creation.
@@ -92,13 +93,14 @@ func (l *Libvirt) StorageVolumeCreateXML(p *StoragePool, x []byte, flags Storage
 	if err != nil {
 		return nil, err
 	}
+	result.Volume.l = l
 
 	return &result.Volume, nil
 
 }
 
-// StorageVolumeDelete deletes a volume.
-func (l *Libvirt) StorageVolumeDelete(v *StorageVolume, flags StorageVolumeDeleteFlags) error {
+// Delete deletes a volume.
+func (v *StorageVolume) Delete(flags StorageVolumeDeleteFlags) error {
 	payload := struct {
 		Vol   StorageVolume
 		Flags StorageVolumeDeleteFlags
@@ -112,7 +114,7 @@ func (l *Libvirt) StorageVolumeDelete(v *StorageVolume, flags StorageVolumeDelet
 		return err
 	}
 
-	resp, err := l.request(constants.ProcStorageVolumeDelete, constants.ProgramRemote, &buf)
+	resp, err := v.l.request(constants.ProcStorageVolumeDelete, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -160,5 +162,6 @@ func (l *Libvirt) StorageVolumeLookupByName(p *StoragePool, name string) (*Stora
 		return nil, err
 	}
 
+	result.Volume.l = l
 	return &result.Volume, nil
 }
