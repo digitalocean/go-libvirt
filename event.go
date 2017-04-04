@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package libvirt is a pure Go implementation of the libvirt RPC protocol.
-// For more information on the protocol, see https://libvirt.org/internals/l.html
 package libvirt
 
 import (
@@ -39,11 +37,11 @@ type DomainEvent struct {
 	Details      []byte
 }
 
-// DomainEvents streams domain events.
+// Events streams domain events.
 // If a problem is encountered setting up the event monitor connection
 // an error will be returned. Errors encountered during streaming will
 // cause the returned event channel to be closed.
-func (l *Libvirt) DomainEvents(d *Domain) (<-chan DomainEvent, error) {
+func (d *Domain) Events() (<-chan DomainEvent, error) {
 	payload := struct {
 		Padding [4]byte
 		Domain  Domain
@@ -61,7 +59,7 @@ func (l *Libvirt) DomainEvents(d *Domain) (<-chan DomainEvent, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(constants.QEMUConnectDomainMonitorEventRegister, constants.ProgramQEMU, &buf)
+	resp, err := d.l.request(constants.QEMUConnectDomainMonitorEventRegister, constants.ProgramQEMU, &buf)
 	if err != nil {
 		return nil, err
 	}
