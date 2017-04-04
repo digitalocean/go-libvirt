@@ -241,3 +241,83 @@ func (p *StoragePool) SetAutostart(autostart bool) error {
 
 	return nil
 }
+
+// StorageVolumeCreateXML creates a volume.
+func (p *StoragePool) StorageVolumeCreateXML(x []byte, flags StorageVolumeCreateFlags) (*StorageVolume, error) {
+	payload := struct {
+		Pool  StoragePool
+		XML   []byte
+		Flags StorageVolumeCreateFlags
+	}{
+		Pool:  *p,
+		XML:   x,
+		Flags: flags,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := p.l.request(constants.ProcStorageVolumeCreateXML, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	result := struct {
+		Volume StorageVolume
+	}{}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+	result.Volume.l = l
+
+	return &result.Volume, nil
+}
+
+// StorageVolumeLookupByName returns a volume as seen by libvirt.
+func (p *StoragePool) StorageVolumeLookupByName(name string) (*StorageVolume, error) {
+	payload := struct {
+		Pool StoragePool
+		Name string
+	}{
+		Pool: *p,
+		Name: name,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := p.l.request(constants.ProcStorageVolumeLookupByName, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	result := struct {
+		Volume StorageVolume
+	}{}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	result.Volume.l = l
+	return &result.Volume, nil
+}
