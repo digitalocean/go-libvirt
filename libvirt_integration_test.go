@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/vtolstov/go-libvirt/internal/constants"
 )
 
 const testAddr = "127.0.0.1:16509"

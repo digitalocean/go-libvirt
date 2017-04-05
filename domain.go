@@ -23,7 +23,7 @@ import (
 	"strings"
 
 	"github.com/davecgh/go-xdr/xdr2"
-	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/vtolstov/go-libvirt/internal/constants"
 )
 
 // Domain represents a domain as seen by libvirt.

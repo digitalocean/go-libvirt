@@ -34,7 +34,7 @@
 		"net"
 		"time"
 
-		"github.com/digitalocean/go-libvirt"
+		"github.com/vtolstov/go-libvirt"
 	)
 
 	func main() {

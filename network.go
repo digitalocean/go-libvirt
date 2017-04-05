@@ -18,7 +18,7 @@ import (
 	"bytes"
 
 	"github.com/davecgh/go-xdr/xdr2"
-	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/vtolstov/go-libvirt/internal/constants"
 )
 
 // Network represents a network as seen by libvirt.

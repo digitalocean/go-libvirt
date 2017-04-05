@@ -14,7 +14,7 @@
 
 package libvirt
 
-import "github.com/digitalocean/go-libvirt/internal/constants"
+import "github.com/vtolstov/go-libvirt/internal/constants"
 
 // StorageVolume represents a volume as seen by libvirt.
 type StorageVolume struct {

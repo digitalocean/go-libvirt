@@ -19,7 +19,7 @@ import (
 	"errors"
 
 	"github.com/davecgh/go-xdr/xdr2"
-	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/vtolstov/go-libvirt/internal/constants"
 )
 
 // ErrEventsNotSupported is returned by Events() if event streams

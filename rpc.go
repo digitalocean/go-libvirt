@@ -23,7 +23,7 @@ import (
 	"sync/atomic"
 
 	"github.com/davecgh/go-xdr/xdr2"
-	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/vtolstov/go-libvirt/internal/constants"
 )
 
 // ErrUnsupported is returned if a procedure is not supported by libvirt
@@ -31,25 +31,25 @@ var ErrUnsupported = errors.New("unsupported procedure requested")
 
 // request and response types
 const (
-	// Call is used when making calls to the remote server.
-	Call = iota
+	// call is used when making calls to the remote server.
+	call = iota
 
-	// Reply indicates a server reply.
-	Reply
+	// reply indicates a server reply.
+	reply
 
-	// Message is an asynchronous notification.
-	Message
+	// message is an asynchronous notification.
+	message
 
-	// Stream represents a stream data packet.
-	Stream
+	// stream represents a stream data packet.
+	stream
 
-	// CallWithFDs is used by a client to indicate the request has
+	// callWithFDs is used by a client to indicate the request has
 	// arguments with file descriptors.
-	CallWithFDs
+	callWithFDs
 
-	// ReplyWithFDs is used by a server to indicate the request has
+	// replyWithFDs is used by a server to indicate the request has
 	// arguments with file descriptors.
-	ReplyWithFDs
+	replyWithFDs
 )
 
 // request and response statuses
@@ -331,7 +331,7 @@ func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (<
 			Program:   program,
 			Version:   constants.ProgramVersion,
 			Procedure: proc,
-			Type:      Call,
+			Type:      call,
 			Serial:    serial,
 			Status:    StatusOK,
 		},
