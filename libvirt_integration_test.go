@@ -122,7 +122,7 @@ func TestStoragePoolIntegration(t *testing.T) {
 	}
 
 	wantName := "test"
-	pool, err := l.StoragePoolLooupByName(wantName)
+	pool, err := l.StoragePoolLookupByName(wantName)
 	if err != nil {
 		t.Fatal(err)
 	}
