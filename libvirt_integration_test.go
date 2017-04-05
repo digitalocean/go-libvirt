@@ -206,7 +206,7 @@ func TestStoragePoolRefreshIntegration(t *testing.T) {
 		t.Error(err)
 	}
 
-	err := pool.Refresh()
+	err = pool.Refresh(0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -240,7 +240,7 @@ func TestXMLIntegration(t *testing.T) {
 	}
 
 	var flags DomainXMLFlags
-	data, err := l.DomainXML(d, flags)
+	data, err := d.XML(flags)
 	if err != nil {
 		t.Fatal(err)
 	}
