@@ -9,6 +9,7 @@ go:
 env:
   - LIBVIRT=1.2.2  EXT=gz
   - LIBVIRT=2.3.0  EXT=xz
+  - LIBVIRT=3.1.0  EXT=xz
 
 before_install:
   - go get github.com/golang/lint/golint
