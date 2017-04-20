@@ -22,7 +22,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/vtolstov/go-libvirt/internal/constants"
 )
 
 const testAddr = "127.0.0.1:16509"
@@ -122,7 +122,7 @@ func TestStoragePoolIntegration(t *testing.T) {
 	}
 
 	wantName := "test"
-	pool, err := l.StoragePool(wantName)
+	pool, err := l.StoragePoolLookupByName(wantName)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -141,7 +141,7 @@ func TestStoragePoolInvalidIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err := l.StoragePool("test-does-not-exist")
+	_, err := l.StoragePoolLookupByName("test-does-not-exist")
 	if err == nil {
 		t.Errorf("expected non-existent storage pool return error")
 	}
@@ -201,7 +201,12 @@ func TestStoragePoolRefreshIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := l.StoragePoolRefresh("test")
+	pool, err := l.StoragePoolLookupByName("test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = pool.Refresh(0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -215,7 +220,7 @@ func TestStoragePoolRefreshInvalidIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := l.StoragePoolRefresh("test-does-not-exist")
+	pool, err := l.StoragePoolLookupByName("test-does-not-exist")
 	if err == nil {
 		t.Error("expected non-existent storage pool to fail refresh")
 	}
@@ -229,8 +234,13 @@ func TestXMLIntegration(t *testing.T) {
 	}
 	defer l.Disconnect()
 
+	d, err := l.lookupByName("test")
+	if err != nil {
+		t.Error(err)
+	}
+
 	var flags DomainXMLFlags
-	data, err := l.XML("test", flags)
+	data, err := d.XML(flags)
 	if err != nil {
 		t.Fatal(err)
 	}

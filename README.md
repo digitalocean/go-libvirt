@@ -1,7 +1,11 @@
-libvirt [![GoDoc](http://godoc.org/github.com/digitalocean/go-libvirt?status.svg)](http://godoc.org/github.com/digitalocean/go-libvirt) [![Build Status](https://travis-ci.org/digitalocean/go-libvirt.svg?branch=master)](https://travis-ci.org/digitalocean/go-libvirt) [![Report Card](https://goreportcard.com/badge/github.com/digitalocean/go-libvirt)](https://goreportcard.com/report/github.com/digitalocean/go-libvirt)
+libvirt [![GoDoc](http://godoc.org/github.com/vtolstov/go-libvirt?status.svg)](http://godoc.org/github.com/vtolstov/go-libvirt)
 ====
 
 Package `libvirt` provides a pure Go interface for interacting with Libvirt.
+
+This is fork of https://github.com/digitalocean/go-libvirt , because we don't agree with api design.
+May be sometime in the feature we can merge two projects, but now this is not possible.
+This project pulls all changes from official digitalocean repo.
 
 Rather than using Libvirt's C bindings, this package makes use of
 Libvirt's RPC interface, as documented [here](https://libvirt.org/internals/rpc.html).
