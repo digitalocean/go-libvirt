@@ -370,3 +370,13 @@ func TestDefineXML(t *testing.T) {
 		t.Fatalf("unexpected define error: %v", err)
 	}
 }
+
+func TestDomainCreateWithFlags(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	var flags DomainCreateFlags
+	if err := l.DomainCreateWithFlags("test", flags); err != nil {
+		t.Fatalf("unexpected create error: %v", err)
+	}
+}

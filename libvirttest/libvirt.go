@@ -21,6 +21,7 @@ import (
 	"sync/atomic"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
+	"fmt"
 )
 
 var testDomainResponse = []byte{
@@ -341,6 +342,22 @@ var testDefineXML = []byte{
 	0xff, 0xff, 0xff, 0xff, // id
 }
 
+var testCreateWithFlags = []byte{
+	0x00, 0x00, 0x00, 0x38, // length
+	0x20, 0x00, 0x80, 0x86, // program
+	0x00, 0x00, 0x00, 0x01, // version
+	0x00, 0x00, 0x01, 0x5e, // procedure
+	0x00, 0x00, 0x00, 0x01, // type
+	0x00, 0x00, 0x00, 0x00, // serial
+	0x00, 0x00, 0x00, 0x00, // status
+	0x00, 0x00, 0x00, 0x04, // dom
+	0x74, 0x65, 0x73, 0x74, // name
+	// uuid
+	0xaf, 0xc2, 0xef, 0x71, 0x66, 0xe0, 0x45, 0xa7,
+	0xa5, 0xec, 0xd8, 0xba, 0x1e, 0xa8, 0x17, 0x7d,
+	0xff, 0xff, 0xff, 0xff, // id
+}
+
 // MockLibvirt provides a mock libvirt server for testing.
 type MockLibvirt struct {
 	net.Conn
@@ -418,6 +435,10 @@ func (m *MockLibvirt) handleRemote(procedure uint32, conn net.Conn) {
 		conn.Write(m.reply(testDestroyReply))
 	case constants.ProcDomainDefineXMLFlags:
 		conn.Write(m.reply(testDefineXML))
+	case constants.ProcDomainCreateWithFlags:
+		conn.Write(m.reply(testCreateWithFlags))
+	default:
+		fmt.Printf("unknown procedure %d", procedure)
 	}
 }
 
