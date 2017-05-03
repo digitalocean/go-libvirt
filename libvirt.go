@@ -260,6 +260,29 @@ const (
 	StoragePoolsFlagZFS
 )
 
+// DomainCreateFlags specify options for starting domains
+type DomainCreateFlags uint32
+
+const (
+	// DomainCreateFlagNone is the default behavior.
+	DomainCreateFlagNone = 0
+
+	// DomainCreateFlagPaused creates paused domain.
+	DomainCreateFlagPaused = 1
+
+	// DomainCreateFlagAutoDestroy destoy domain after libvirt connection closed.
+	DomainCreateFlagAutoDestroy = 2
+
+	// DomainCreateFlagBypassCache avoid file system cache pollution.
+	DomainCreateFlagBypassCache = 4
+
+	// DomainCreateFlagStartForceBoot boot, discarding any managed save
+	DomainCreateFlagStartForceBoot = 8
+
+	// DomainCreateFlagStartValidate validate the XML document against schema
+	DomainCreateFlagStartValidate = 16
+)
+
 // Capabilities returns an XML document describing the host's capabilties.
 func (l *Libvirt) Capabilities() ([]byte, error) {
 	resp, err := l.request(constants.ProcConnectGetCapabilties, constants.ProgramRemote, nil)
@@ -341,6 +364,62 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 	}
 
 	return result.Domains, nil
+}
+
+// DomainCreate starts specified domain
+func (l *Libvirt) DomainCreate(dom string) error {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return err
+	}
+	req := struct {
+		Domain Domain
+	} {
+		Domain: *d,
+	}
+
+	buf, err := encode(&req)
+	if err != nil {
+		return err
+	}
+	resp, err := l.request(constants.ProcDomainCreate, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+	return nil
+}
+
+// DomainCreateWithFlags starts specified domain with flags
+func (l *Libvirt) DomainCreateWithFlags(dom string, flags DomainCreateFlags) error {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return err
+	}
+	req := struct {
+		Domain Domain
+		Flags DomainCreateFlags
+	} {
+		Domain: *d,
+		Flags: flags,
+	}
+
+	buf, err := encode(&req)
+	if err != nil {
+		return err
+	}
+	resp, err := l.request(constants.ProcDomainCreate, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+	return nil
 }
 
 // DomainState returns state of the domain managed by libvirt.

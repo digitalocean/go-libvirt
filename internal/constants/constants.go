@@ -39,12 +39,14 @@ const (
 	ProcConnectOpen                = 1
 	ProcConnectClose               = 2
 	ProcConnectGetCapabilties      = 7
+	ProcDomainCreate               = 9
 	ProcDomainGetXMLDesc           = 14
 	ProcDomainLookupByName         = 23
 	ProcAuthList                   = 66
 	ProcStoragePoolRefresh         = 83
 	ProcStoragePoolLookupByName    = 84
 	ProcConnectGetLibVersion       = 157
+	ProcDomainCreateWithFlags      = 196
 	ProcDomainMigrateSetMaxSpeed   = 207
 	ProcDomainGetState             = 212
 	ProcDomainUndefineFlags        = 231
