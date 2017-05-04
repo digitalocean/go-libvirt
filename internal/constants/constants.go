@@ -50,6 +50,7 @@ const (
 	ProcDomainGetState             = 212
 	ProcDomainUndefineFlags        = 231
 	ProcDomainDestroyFlags         = 234
+	ProcDomainShutdownFlags        = 258
 	ProcConnectListAllDomains      = 273
 	ProcConnectListAllStoragePools = 281
 	ProcConnectListAllSecrets      = 287

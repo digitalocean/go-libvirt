@@ -380,3 +380,13 @@ func TestDomainCreateWithFlags(t *testing.T) {
 		t.Fatalf("unexpected create error: %v", err)
 	}
 }
+
+func TestShutdown(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	var flags ShutdownFlags
+	if err := l.Shutdown("test", flags); err != nil {
+		t.Fatalf("unexpected define error: %v", err)
+	}
+}
