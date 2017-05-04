@@ -45,6 +45,7 @@ const (
 	ProcStoragePoolRefresh         = 83
 	ProcStoragePoolLookupByName    = 84
 	ProcConnectGetLibVersion       = 157
+	ProcDomainCreateWithFlags      = 196
 	ProcDomainMigrateSetMaxSpeed   = 207
 	ProcDomainGetState             = 212
 	ProcDomainUndefineFlags        = 231

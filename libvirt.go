@@ -260,6 +260,26 @@ const (
 	StoragePoolsFlagZFS
 )
 
+// DomainCreateFlags specify options for starting domains
+type DomainCreateFlags uint32
+
+const (
+	// DomainCreateFlagPaused creates paused domain.
+	DomainCreateFlagPaused = 1 << iota
+
+	// DomainCreateFlagAutoDestroy destoy domain after libvirt connection closed.
+	DomainCreateFlagAutoDestroy
+
+	// DomainCreateFlagBypassCache avoid file system cache pollution.
+	DomainCreateFlagBypassCache
+
+	// DomainCreateFlagStartForceBoot boot, discarding any managed save
+	DomainCreateFlagStartForceBoot
+
+	// DomainCreateFlagStartValidate validate the XML document against schema
+	DomainCreateFlagStartValidate
+)
+
 // Capabilities returns an XML document describing the host's capabilties.
 func (l *Libvirt) Capabilities() ([]byte, error) {
 	resp, err := l.request(constants.ProcConnectGetCapabilties, constants.ProgramRemote, nil)
@@ -341,6 +361,35 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 	}
 
 	return result.Domains, nil
+}
+
+// DomainCreateWithFlags starts specified domain with flags
+func (l *Libvirt) DomainCreateWithFlags(dom string, flags DomainCreateFlags) error {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return err
+	}
+	req := struct {
+		Domain Domain
+		Flags DomainCreateFlags
+	} {
+		Domain: *d,
+		Flags: flags,
+	}
+
+	buf, err := encode(&req)
+	if err != nil {
+		return err
+	}
+	resp, err := l.request(constants.ProcDomainCreateWithFlags, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+	return nil
 }
 
 // DomainState returns state of the domain managed by libvirt.
