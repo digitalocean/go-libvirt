@@ -196,12 +196,16 @@ type ShutdownFlags uint32
 const (
 	// ShutdownAcpiPowerBtn - send ACPI event
 	ShutdownAcpiPowerBtn ShutdownFlags = 1 << iota
+
 	// ShutdownGuestAgent - use guest agent
 	ShutdownGuestAgent
+
 	// ShutdownInitctl - use initctl
 	ShutdownInitctl
+
 	// ShutdownSignal - use signal
 	ShutdownSignal
+
 	// ShutdownParavirt - use paravirt guest control
 	ShutdownParavirt
 )
@@ -982,7 +986,8 @@ func (l *Libvirt) Version() (string, error) {
 	return versionString, nil
 }
 
-// Shutdown shuts down a domain
+// Shutdown shuts down a domain. Note that the guest OS may ignore the request.
+// If flags is set to 0 then the hypervisor will choose the method of shutdown it considers best.
 func (l *Libvirt) Shutdown(dom string, flags ShutdownFlags) error {
 	d, err := l.lookup(dom)
 	if err != nil {

@@ -387,6 +387,6 @@ func TestShutdown(t *testing.T) {
 
 	var flags ShutdownFlags
 	if err := l.Shutdown("test", flags); err != nil {
-		t.Fatalf("unexpected define error: %v", err)
+		t.Fatalf("unexpected shutdown error: %v", err)
 	}
 }
