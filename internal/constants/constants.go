@@ -41,6 +41,7 @@ const (
 	ProcConnectGetCapabilties      = 7
 	ProcDomainGetXMLDesc           = 14
 	ProcDomainLookupByName         = 23
+	ProcDomainReboot 	       = 27
 	ProcAuthList                   = 66
 	ProcStoragePoolRefresh         = 83
 	ProcStoragePoolLookupByName    = 84
@@ -50,6 +51,7 @@ const (
 	ProcDomainGetState             = 212
 	ProcDomainUndefineFlags        = 231
 	ProcDomainDestroyFlags         = 234
+	ProcDomainReset 	       = 245
 	ProcDomainShutdownFlags        = 258
 	ProcConnectListAllDomains      = 273
 	ProcConnectListAllStoragePools = 281

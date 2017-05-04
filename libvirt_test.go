@@ -390,3 +390,22 @@ func TestShutdown(t *testing.T) {
 		t.Fatalf("unexpected shutdown error: %v", err)
 	}
 }
+
+func TestReboot(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	var flags RebootFlags
+	if err := l.Reboot("test", flags); err != nil {
+		t.Fatalf("unexpected reboot error: %v", err)
+	}
+}
+
+func TestReset(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	if err := l.Reset("test"); err != nil {
+		t.Fatalf("unexpected reset error: %v", err)
+	}
+}

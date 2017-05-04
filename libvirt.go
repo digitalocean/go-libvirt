@@ -299,6 +299,25 @@ const (
 	DomainCreateFlagStartValidate
 )
 
+// RebootFlags specifies domain reboot methods
+type RebootFlags uint32
+const (
+	// RebootAcpiPowerBtn - send ACPI event
+	RebootAcpiPowerBtn RebootFlags = 1 << iota
+
+	// RebootGuestAgent - use guest agent
+	RebootGuestAgent
+
+	// RebootInitctl - use initctl
+	RebootInitctl
+
+	// RebootSignal - use signal
+	RebootSignal
+
+	// RebootParavirt - use paravirt guest control
+	RebootParavirt
+)
+
 // Capabilities returns an XML document describing the host's capabilties.
 func (l *Libvirt) Capabilities() ([]byte, error) {
 	resp, err := l.request(constants.ProcConnectGetCapabilties, constants.ProgramRemote, nil)
@@ -1008,6 +1027,73 @@ func (l *Libvirt) Shutdown(dom string, flags ShutdownFlags) error {
 	}
 
 	resp, err := l.request(constants.ProcDomainShutdownFlags, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
+// Reboot reboots the domain. Note that the guest OS may ignore the request.
+// If flags is set to zero, then the hypervisor will choose the method of shutdown it considers best.
+func (l *Libvirt) Reboot(dom string, flags RebootFlags) error {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return err
+	}
+
+	payload := struct {
+		Domain Domain
+		Flags  RebootFlags
+	}{
+		Domain: *d,
+		Flags:  flags,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainReboot, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
+// Reset resets domain immediately without any guest OS shutdown
+func (l *Libvirt) Reset(dom string) error {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return err
+	}
+
+	payload := struct {
+		Domain Domain
+		Flags 	uint32
+	}{
+		Domain: *d,
+		Flags:  0,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainReset, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
