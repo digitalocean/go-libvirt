@@ -22,6 +22,7 @@ import (
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
 	"fmt"
+	"os"
 )
 
 var testDomainResponse = []byte{
@@ -438,7 +439,7 @@ func (m *MockLibvirt) handleRemote(procedure uint32, conn net.Conn) {
 	case constants.ProcDomainCreateWithFlags:
 		conn.Write(m.reply(testCreateWithFlags))
 	default:
-		fmt.Printf("unknown procedure %d", procedure)
+		fmt.Fprintln(os.Stderr, "unknown procedure", procedure)
 	}
 }
 
