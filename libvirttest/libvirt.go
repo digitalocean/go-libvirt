@@ -359,6 +359,16 @@ var testCreateWithFlags = []byte{
 	0xff, 0xff, 0xff, 0xff, // id
 }
 
+var testShutdownReply = []byte{
+	0x00, 0x00, 0x00, 0x1c, // length
+	0x20, 0x00, 0x80, 0x86, // program
+	0x00, 0x00, 0x00, 0x01, // version
+	0x00, 0x00, 0x00, 0xea, // procedure
+	0x00, 0x00, 0x00, 0x01, // type
+	0x00, 0x00, 0x00, 0x00, // serial
+	0x00, 0x00, 0x00, 0x00, // status
+}
+
 // MockLibvirt provides a mock libvirt server for testing.
 type MockLibvirt struct {
 	net.Conn
@@ -438,6 +448,8 @@ func (m *MockLibvirt) handleRemote(procedure uint32, conn net.Conn) {
 		conn.Write(m.reply(testDefineXML))
 	case constants.ProcDomainCreateWithFlags:
 		conn.Write(m.reply(testCreateWithFlags))
+	case constants.ProcDomainShutdownFlags:
+		conn.Write(m.reply(testShutdownReply))
 	default:
 		fmt.Fprintln(os.Stderr, "unknown procedure", procedure)
 	}

@@ -191,6 +191,25 @@ const (
 	DestroyFlagGraceful
 )
 
+// ShutdownFlags specifies options available when shutting down a domain.
+type ShutdownFlags uint32
+const (
+	// ShutdownAcpiPowerBtn - send ACPI event
+	ShutdownAcpiPowerBtn ShutdownFlags = 1 << iota
+
+	// ShutdownGuestAgent - use guest agent
+	ShutdownGuestAgent
+
+	// ShutdownInitctl - use initctl
+	ShutdownInitctl
+
+	// ShutdownSignal - use signal
+	ShutdownSignal
+
+	// ShutdownParavirt - use paravirt guest control
+	ShutdownParavirt
+)
+
 // DomainState specifies state of the domain
 type DomainState uint32
 
@@ -965,6 +984,40 @@ func (l *Libvirt) Version() (string, error) {
 
 	versionString := fmt.Sprintf("%d.%d.%d", major, minor, micro)
 	return versionString, nil
+}
+
+// Shutdown shuts down a domain. Note that the guest OS may ignore the request.
+// If flags is set to 0 then the hypervisor will choose the method of shutdown it considers best.
+func (l *Libvirt) Shutdown(dom string, flags ShutdownFlags) error {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return err
+	}
+
+	payload := struct {
+		Domain Domain
+		Flags  ShutdownFlags
+	}{
+		Domain: *d,
+		Flags:  flags,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainShutdownFlags, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
 }
 
 // lookup returns a domain as seen by libvirt.
