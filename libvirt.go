@@ -193,6 +193,7 @@ const (
 
 // ShutdownFlags specifies options available when shutting down a domain.
 type ShutdownFlags uint32
+
 const (
 	// ShutdownAcpiPowerBtn - send ACPI event
 	ShutdownAcpiPowerBtn ShutdownFlags = 1 << iota
@@ -301,6 +302,7 @@ const (
 
 // RebootFlags specifies domain reboot methods
 type RebootFlags uint32
+
 const (
 	// RebootAcpiPowerBtn - send ACPI event
 	RebootAcpiPowerBtn RebootFlags = 1 << iota
@@ -317,6 +319,54 @@ const (
 	// RebootParavirt - use paravirt guest control
 	RebootParavirt
 )
+
+// DomainMemoryStatTag specifies domain memory tags
+type DomainMemoryStatTag uint32
+
+const (
+	// DomainMemoryStatTagSwapIn - The total amount of data read from swap space (in kB).
+	DomainMemoryStatTagSwapIn DomainMemoryStatTag = iota
+
+	// DomainMemoryStatTagSwapOut - The total amount of memory written out to swap space (in kB).
+	DomainMemoryStatTagSwapOut
+
+	// DomainMemoryStatTagMajorFault - Page faults occur when a process makes a valid access to virtual memory
+	// that is not available.  When servicing the page fault, if disk IO is
+	// required, it is considered a major fault.
+	// These are expressed as the number of faults that have occurred.
+	DomainMemoryStatTagMajorFault
+
+	// DomainMemoryStatTagMinorFault - If the page fault not require disk IO, it is a minor fault.
+	DomainMemoryStatTagMinorFault
+
+	// DomainMemoryStatTagUnused - The amount of memory left completely unused by the system (in kB).
+	DomainMemoryStatTagUnused
+
+	// DomainMemoryStatTagAvailable - The total amount of usable memory as seen by the domain (in kB).
+	DomainMemoryStatTagAvailable
+
+	// DomainMemoryStatTagActualBalloon - Current balloon value (in KB).
+	DomainMemoryStatTagActualBalloon
+
+	// DomainMemoryStatTagRss - Resident Set Size of the process running the domain (in KB).
+	DomainMemoryStatTagRss
+
+	// DomainMemoryStatTagUsable - How much the balloon can be inflated without pushing the guest system
+	// to swap, corresponds to 'Available' in /proc/meminfo
+	DomainMemoryStatTagUsable
+
+	// DomainMemoryStatTagLastUpdate - Timestamp of the last update of statistics, in seconds.
+	DomainMemoryStatTagLastUpdate
+
+	// DomainMemoryStatTagNr - The number of statistics supported by this version of the interface.
+	DomainMemoryStatTagNr
+)
+
+// DomainMemoryStat specifies memory stats of the domain
+type DomainMemoryStat struct {
+	Tag DomainMemoryStatTag
+	Val uint64
+}
 
 // Capabilities returns an XML document describing the host's capabilties.
 func (l *Libvirt) Capabilities() ([]byte, error) {
@@ -409,10 +459,10 @@ func (l *Libvirt) DomainCreateWithFlags(dom string, flags DomainCreateFlags) err
 	}
 	req := struct {
 		Domain Domain
-		Flags DomainCreateFlags
-	} {
+		Flags  DomainCreateFlags
+	}{
 		Domain: *d,
-		Flags: flags,
+		Flags:  flags,
 	}
 
 	buf, err := encode(&req)
@@ -428,6 +478,49 @@ func (l *Libvirt) DomainCreateWithFlags(dom string, flags DomainCreateFlags) err
 		return decodeError(r.Payload)
 	}
 	return nil
+}
+
+// DomainMemoryStats returns memory stats of the domain managed by libvirt.
+func (l *Libvirt) DomainMemoryStats(dom string) ([]DomainMemoryStat, error) {
+
+	d, err := l.lookup(dom)
+	if err != nil {
+		return nil, err
+	}
+
+	req := struct {
+		Domain   Domain
+		MaxStats uint32
+		Flags    uint32
+	}{
+		Domain:   *d,
+		MaxStats: 8,
+		Flags:    0,
+	}
+
+	buf, err := encode(&req)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := l.request(constants.ProcDomainMemoryStats, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+
+	result := struct {
+		DomainMemoryStats []DomainMemoryStat
+	}{}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result.DomainMemoryStats, nil
 }
 
 // DomainState returns state of the domain managed by libvirt.
@@ -1082,7 +1175,7 @@ func (l *Libvirt) Reset(dom string) error {
 
 	payload := struct {
 		Domain Domain
-		Flags 	uint32
+		Flags  uint32
 	}{
 		Domain: *d,
 		Flags:  0,
