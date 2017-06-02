@@ -523,6 +523,49 @@ func (l *Libvirt) DomainMemoryStats(dom string) ([]DomainMemoryStat, error) {
 	return result.DomainMemoryStats, nil
 }
 
+// DomainStats returns statistics about the domain managed by libvirt.
+func (l *Libvirt) DomainStats(dom string) ([]DomainStat, error) {
+
+        d, err := l.lookup(dom)
+        if err != nil {
+                return nil, err
+        }
+
+        req := struct {
+                Domain   Domain
+                Flags    uint32
+        }{
+                Domain:   *d,
+                Flags:    0,
+        }
+
+        buf, err := encode(&req)
+        if err != nil {
+                return nil, err
+        }
+
+        resp, err := l.request(constants.ProcDomainStats, constants.ProgramRemote, &buf)
+        if err != nil {
+                return nil, err
+        }
+
+        r := <-resp
+
+        result := struct {
+		Domain	    Domain
+                DomainStats []DomainStat
+        }{}
+
+        dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+        _, err = dec.Decode(&result)
+        if err != nil {
+                return nil, err
+        }
+
+        return result.DomainStats, nil
+}
+
+
 // DomainState returns state of the domain managed by libvirt.
 func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 	d, err := l.lookup(dom)
