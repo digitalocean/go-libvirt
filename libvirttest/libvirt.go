@@ -20,8 +20,8 @@ import (
 	"net"
 	"sync/atomic"
 
-	"github.com/digitalocean/go-libvirt/internal/constants"
 	"fmt"
+	"github.com/digitalocean/go-libvirt/internal/constants"
 	"os"
 )
 
@@ -205,6 +205,26 @@ var testDomainsReply = []byte{
 
 	// count of domains returned
 	0x00, 0x00, 0x02,
+}
+
+var testDomainMemoryStatsReply = []byte{
+	0x00, 0x00, 0x00, 0x38, // length
+	0x20, 0x00, 0x80, 0x86, // program
+	0x00, 0x00, 0x00, 0x01, // version
+	0x00, 0x00, 0x00, 0x9f, // procedure
+	0x00, 0x00, 0x00, 0x01, // type
+	0x00, 0x00, 0x00, 0x00, // serial
+	0x00, 0x00, 0x00, 0x00, // status
+
+	// tag 6 val 1048576
+	// tag 7 val 91272
+	0x00, 0x00, 0x00, 0x02,
+	0x00, 0x00, 0x00, 0x06,
+	0x00, 0x00, 0x00, 0x00,
+	0x00, 0x10, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x07,
+	0x00, 0x00, 0x00, 0x00,
+	0x00, 0x01, 0x64, 0x88,
 }
 
 var testDomainStateReply = []byte{
@@ -446,6 +466,8 @@ func (m *MockLibvirt) handleRemote(procedure uint32, conn net.Conn) {
 		conn.Write(m.reply(testSecretsReply))
 	case constants.ProcDomainGetState:
 		conn.Write(m.reply(testDomainStateReply))
+	case constants.ProcDomainMemoryStats:
+		conn.Write(m.reply(testDomainMemoryStatsReply))
 	case constants.ProcDomainMigrateSetMaxSpeed:
 		conn.Write(m.reply(testSetSpeedReply))
 	case constants.ProcMigratePerformParams:

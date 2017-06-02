@@ -133,6 +133,34 @@ func TestDomainState(t *testing.T) {
 	}
 }
 
+func TestDomainMemoryStats(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	wantDomainMemoryStats := []DomainMemoryStat{
+		DomainMemoryStat{
+			Tag: 6,
+			Val: 1048576,
+		},
+		DomainMemoryStat{
+			Tag: 7,
+			Val: 91272,
+		},
+	}
+
+	gotDomainMemoryStats, err := l.DomainMemoryStats("test")
+	if err != nil {
+		t.Error(err)
+	}
+
+	for i := range wantDomainMemoryStats {
+		if wantDomainMemoryStats[i] != gotDomainMemoryStats[i] {
+			t.Errorf("expected domain memory stat %v, got %v", wantDomainMemoryStats[i], gotDomainMemoryStats[i])
+		}
+	}
+
+}
+
 func TestEvents(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
