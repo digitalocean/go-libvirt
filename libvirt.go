@@ -565,7 +565,6 @@ func (l *Libvirt) DomainStats(dom string) ([]DomainStat, error) {
         return result.DomainStats, nil
 }
 
-
 // DomainState returns state of the domain managed by libvirt.
 func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 	d, err := l.lookup(dom)
