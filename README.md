@@ -18,8 +18,9 @@ if you'd like to discuss the project.
 Warning
 -------
 
-All packages contained in this repository should be treated as **pre-production
-software with an unstable API**.
+The libvirt project strongly recommends *against* talking to the RPC interface
+directly. They consider it to be a private implementation detail with the
+possibility of being entirely rearchitected in the future.
 
 While these package are reasonably well-tested and have seen some use inside of
 DigitalOcean, there may be subtle bugs which could cause the packages to act
