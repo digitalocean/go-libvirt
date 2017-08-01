@@ -88,19 +88,19 @@ func TestSecretsIntegration(t *testing.T) {
 	wantLen := 1
 	gotLen := len(secrets)
 	if gotLen != wantLen {
-		t.Fatal("expected %d secrets, got %d", wantLen, gotLen)
+		t.Fatalf("expected %d secrets, got %d", wantLen, gotLen)
 	}
 
 	s := secrets[0]
 
 	wantType := SecretUsageTypeVolume
 	if s.UsageType != wantType {
-		t.Error("expected usage type: %d, got %d", wantType, s.UsageType)
+		t.Errorf("expected usage type: %d, got %d", wantType, s.UsageType)
 	}
 
 	wantID := "/tmp"
 	if s.UsageID != wantID {
-		t.Error("expected usage id: %q, got %q", wantID, s.UsageID)
+		t.Errorf("expected usage id: %q, got %q", wantID, s.UsageID)
 	}
 
 	// 19fdc2f2-fa64-46f3-bacf-42a8aafca6dd
