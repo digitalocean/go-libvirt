@@ -95,21 +95,32 @@ type qemuError struct {
 // DomainXMLFlags specifies options for dumping a domain's XML.
 type DomainXMLFlags uint32
 
+// DomainAffectFlags specifies options for whether an operation affects the
+// running VM, or the persistent VM configuration on disk. See FlagDomain...
+// consts for values.
+type DomainAffectFlags uint32
+
 // Consts used for flags
 
-// virDomainModificationImpact and virTypedParameterFlags
+// virDomainModificationImpact and virTypedParameterFlags values. These are
+// combined here because they are both used to set the same flags fields in the
+// libvirt API.
 const (
-	FlagDomainAffectCurrent = 0
-	FlagDomainAffectLive    = 1 << (iota - 1)
+	// FlagDomainAffectCurrent means affect the current domain state
+	FlagDomainAffectCurrent DomainAffectFlags = 0
+	// FlagDomainAffectLive means affect the running domain state
+	FlagDomainAffectLive = 1 << (iota - 1)
+	// FlagDomainAffectConfig means affect the persistent domain state.
 	FlagDomainAffectConfig
+	// FlagTypedParamStringOkay tells the server that this client understands
+	// TypedParameStrings.
 	FlagTypedParamStringOkay
 )
 
 // Consts relating to TypedParams:
 const (
-	_ = iota
 	// TypedParamInt is a C int.
-	TypedParamInt
+	TypedParamInt = iota + 1
 	// TypedParamUInt is a C unsigned int.
 	TypedParamUInt
 	// TypedParamLLong is a C long long int.
@@ -118,9 +129,9 @@ const (
 	TypedParamULLong
 	// TypedParamDouble is a C double.
 	TypedParamDouble
-	// TypedParamBoolean is a c char.
+	// TypedParamBoolean is a C char.
 	TypedParamBoolean
-	// TypedParamString is a c char*.
+	// TypedParamString is a C char*.
 	TypedParamString
 
 	// TypedParamLast is just an end-of-enum marker.
@@ -1269,7 +1280,7 @@ func (l *Libvirt) Reset(dom string) error {
 	return nil
 }
 
-// BlockLimit contains a name and value pair for a Get/SetBlockIoTune limit.
+// BlockLimit contains a name and value pair for a Get/SetBlockIOTune limit.
 // The Name field is the name of the limit (to see a list of the limits that can
 // be applied, execute the 'blkdeviotune' command on a VM in virsh). The Value
 // field is the limit to apply.
@@ -1278,7 +1289,7 @@ type BlockLimit struct {
 	Value uint64
 }
 
-// SetBlockIoTune changes the per-device block I/O tunables within a guest.
+// SetBlockIOTune changes the per-device block I/O tunables within a guest.
 // Parameters are the name of the VM, the name of the disk device to which the
 // limits should be applied, and 1 or more BlockLimit structs containing the
 // actual limits.
@@ -1295,8 +1306,8 @@ type BlockLimit struct {
 // virsh.
 //
 // Example usage:
-//  SetBlockIoTune("vm-name", "vda", BlockLimit{"write_bytes_sec", 1000000})
-func (l *Libvirt) SetBlockIoTune(dom string, disk string, limits ...BlockLimit) error {
+//  SetBlockIOTune("vm-name", "vda", BlockLimit{"write_bytes_sec", 1000000})
+func (l *Libvirt) SetBlockIOTune(dom string, disk string, limits ...BlockLimit) error {
 	d, err := l.lookup(dom)
 	if err != nil {
 		return err
@@ -1307,7 +1318,7 @@ func (l *Libvirt) SetBlockIoTune(dom string, disk string, limits ...BlockLimit) 
 		Domain Domain
 		Disk   string
 		Params []TypedParam
-		Flags  uint32
+		Flags  DomainAffectFlags
 	}{
 		Domain: *d,
 		Disk:   disk,
@@ -1337,9 +1348,9 @@ func (l *Libvirt) SetBlockIoTune(dom string, disk string, limits ...BlockLimit) 
 	return nil
 }
 
-// GetBlockIoTune returns a slice containing the current block I/O tunables for
+// GetBlockIOTune returns a slice containing the current block I/O tunables for
 // a disk.
-func (l *Libvirt) GetBlockIoTune(dom string, disk string) ([]BlockLimit, error) {
+func (l *Libvirt) GetBlockIOTune(dom string, disk string) ([]BlockLimit, error) {
 	d, err := l.lookup(dom)
 	if err != nil {
 		return nil, err
@@ -1349,7 +1360,7 @@ func (l *Libvirt) GetBlockIoTune(dom string, disk string) ([]BlockLimit, error) 
 		Domain     Domain
 		Disk       []string
 		ParamCount uint32
-		Flags      uint32
+		Flags      DomainAffectFlags
 	}{
 		Domain:     *d,
 		Disk:       []string{disk},
