@@ -1280,14 +1280,41 @@ func (l *Libvirt) Reset(dom string) error {
 	return nil
 }
 
-// BlockLimit contains a name and value pair for a Get/SetBlockIOTune limit.
-// The Name field is the name of the limit (to see a list of the limits that can
-// be applied, execute the 'blkdeviotune' command on a VM in virsh). The Value
-// field is the limit to apply.
+// BlockLimit contains a name and value pair for a Get/SetBlockIOTune limit. The
+// Name field is the name of the limit (to see a list of the limits that can be
+// applied, execute the 'blkdeviotune' command on a VM in virsh). Callers can
+// use the QEMUBlockIO... constants below for the Name value. The Value field is
+// the limit to apply.
 type BlockLimit struct {
 	Name  string
 	Value uint64
 }
+
+// BlockIOTune-able values. These tunables are different for different
+// hypervisors; currently only the tunables for QEMU are defined here. These are
+// not necessarily the only possible values; different libvirt versions may add
+// or remove parameters from this list.
+const (
+	QEMUBlockIOTotalBytesSec          = "total_bytes_sec"
+	QEMUBlockIOReadBytesSec           = "read_bytes_sec"
+	QEMUBlockIOWriteBytesSec          = "write_bytes_sec"
+	QEMUBlockIOTotalIOPSSec           = "total_iops_sec"
+	QEMUBlockIOReadIOPSSec            = "read_iops_sec"
+	QEMUBlockIOWriteIOPSSec           = "write_iops_sec"
+	QEMUBlockIOTotalBytesSecMax       = "total_bytes_sec_max"
+	QEMUBlockIOReadBytesSecMax        = "read_bytes_sec_max"
+	QEMUBlockIOWriteBytesSecMax       = "write_bytes_sec_max"
+	QEMUBlockIOTotalIOPSSecMax        = "total_iops_sec_max"
+	QEMUBlockIOReadIOPSSecMax         = "read_iops_sec_max"
+	QEMUBlockIOWriteIOPSSecMax        = "write_iops_sec_max"
+	QEMUBlockIOSizeIOPSSec            = "size_iops_sec"
+	QEMUBlockIOTotalBytesSecMaxLength = "total_bytes_sec_max_length"
+	QEMUBlockIOReadBytesSecMaxLength  = "read_bytes_sec_max_length"
+	QEMUBlockIOWriteBytesSecMaxLength = "write_bytes_sec_max_length"
+	QEMUBlockIOTotalIOPSSecMaxLength  = "total_iops_sec_max_length"
+	QEMUBlockIOReadIOPSSecMaxLength   = "read_iops_sec_max_length"
+	QEMUBlockIOWriteIOPSSecMaxLength  = "write_iops_sec_max_length"
+)
 
 // SetBlockIOTune changes the per-device block I/O tunables within a guest.
 // Parameters are the name of the VM, the name of the disk device to which the
