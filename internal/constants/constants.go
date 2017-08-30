@@ -53,6 +53,8 @@ const (
 	ProcDomainUndefineFlags        = 231
 	ProcDomainDestroyFlags         = 234
 	ProcDomainReset                = 245
+	ProcDomainSetBlockIoTune       = 252
+	ProcDomainGetBlockIoTune       = 253
 	ProcDomainShutdownFlags        = 258
 	ProcConnectListAllDomains      = 273
 	ProcConnectListAllStoragePools = 281
@@ -78,4 +80,8 @@ const (
 
 	// UUIDSize is the length of a UUID, in bytes.
 	UUIDSize = 16
+
+	// TypedParamFieldLength is VIR_TYPED_PARAM_FIELD_LENGTH, and is the maximum
+	// length of the Field string in virTypedParameter structs.
+	TypedParamFieldLength = 80
 )

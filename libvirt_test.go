@@ -437,3 +437,27 @@ func TestReset(t *testing.T) {
 		t.Fatalf("unexpected reset error: %v", err)
 	}
 }
+
+func TestSetBlockIoTune(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	if err := l.SetBlockIoTune("test", "vda", BlockLimit{"write_bytes_sec", 5000000}); err != nil {
+		t.Fatalf("unexpected SetBlockIoTune error: %v", err)
+	}
+}
+
+func TestGetBlockIoTune(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	limits, err := l.GetBlockIoTune("do-test", "vda")
+	if err != nil {
+		t.Fatalf("unexpected GetBlockIoTune error: %v", err)
+	}
+
+	lim := BlockLimit{"write_bytes_sec", 500000}
+	if limits[2] != lim {
+		t.Fatalf("unexpected result in limits list: %v", limits[2])
+	}
+}

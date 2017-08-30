@@ -19,6 +19,7 @@ package libvirt
 import (
 	"bufio"
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -93,6 +94,75 @@ type qemuError struct {
 
 // DomainXMLFlags specifies options for dumping a domain's XML.
 type DomainXMLFlags uint32
+
+// Consts used for flags
+
+// virDomainModificationImpact and virTypedParameterFlags
+const (
+	FlagDomainAffectCurrent = 0
+	FlagDomainAffectLive    = 1 << (iota - 1)
+	FlagDomainAffectConfig
+	FlagTypedParamStringOkay
+)
+
+// Consts relating to TypedParams:
+const (
+	_ = iota
+	// TypedParamInt is a C int.
+	TypedParamInt
+	// TypedParamUInt is a C unsigned int.
+	TypedParamUInt
+	// TypedParamLLong is a C long long int.
+	TypedParamLLong
+	// TypedParamULLong is a C unsigned long long int.
+	TypedParamULLong
+	// TypedParamDouble is a C double.
+	TypedParamDouble
+	// TypedParamBoolean is a c char.
+	TypedParamBoolean
+	// TypedParamString is a c char*.
+	TypedParamString
+
+	// TypedParamLast is just an end-of-enum marker.
+	TypedParamLast
+)
+
+// TypedParam represents libvirt's virTypedParameter, which is used to pass
+// typed parameters to libvirt functions. The `Value` field defined as a union
+// in libvirt, and given the current set of types inside it, is 8 bytes long.
+type TypedParam struct {
+	Field string
+	Type  int
+	Value [8]byte
+}
+
+// NewTypedParamInt returns a TypedParam encoding for an int.
+func NewTypedParamInt(name string, v int) *TypedParam {
+	// Truncate the field name if it's longer than the limit.
+	if len(name) > constants.TypedParamFieldLength {
+		name = name[:constants.TypedParamFieldLength]
+	}
+	tp := TypedParam{
+		Field: name,
+		Type:  TypedParamInt,
+	}
+	binary.BigEndian.PutUint32(tp.Value[:], uint32(v))
+	return &tp
+}
+
+// NewTypedParamULongLong returns a TypedParam encoding for an unsigned long long.
+func NewTypedParamULongLong(name string, v uint64) *TypedParam {
+	// Truncate the field name if it's longer than the limit.
+	if len(name) > constants.TypedParamFieldLength {
+		name = name[:constants.TypedParamFieldLength]
+	}
+	tp := TypedParam{
+		Field: name,
+		Type:  TypedParamULLong,
+	}
+	binary.BigEndian.PutUint64(tp.Value[:], v)
+	return &tp
+}
 
 const (
 	// DomainXMLFlagSecure dumps XML with sensitive information included.
@@ -601,7 +671,7 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 
 	res := <-resp
 	if res.Status != StatusOK {
-		err := decodeError(res.Payload)
+		err = decodeError(res.Payload)
 		if err == ErrUnsupported {
 			return nil, ErrEventsNotSupported
 		}
@@ -1197,6 +1267,128 @@ func (l *Libvirt) Reset(dom string) error {
 	}
 
 	return nil
+}
+
+// BlockLimit contains a name and value pair for a Get/SetBlockIoTune limit.
+// The Name field is the name of the limit (to see a list of the limits that can
+// be applied, execute the 'blkdeviotune' command on a VM in virsh). The Value
+// field is the limit to apply.
+type BlockLimit struct {
+	Name  string
+	Value uint64
+}
+
+// SetBlockIoTune changes the per-device block I/O tunables within a guest.
+// Parameters are the name of the VM, the name of the disk device to which the
+// limits should be applied, and 1 or more BlockLimit structs containing the
+// actual limits.
+//
+// Possible limits which can be applied here include:
+// - total_bytes_sec
+// - read_bytes_sec
+// - write_bytes_sec
+// - total_iops_sec
+// - read_iops_sec
+// - write_iops_sec
+//
+// You can see the full list by executing the 'blkdeviotune' command on a VM in
+// virsh.
+//
+// Example usage:
+//  SetBlockIoTune("vm-name", "vda", BlockLimit{"write_bytes_sec", 1000000})
+func (l *Libvirt) SetBlockIoTune(dom string, disk string, limits ...BlockLimit) error {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return err
+	}
+
+	// https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainSetBlockIoTune
+	payload := struct {
+		Domain Domain
+		Disk   string
+		Params []TypedParam
+		Flags  uint32
+	}{
+		Domain: *d,
+		Disk:   disk,
+		Flags:  FlagDomainAffectLive,
+	}
+
+	for _, limit := range limits {
+		tp := NewTypedParamULongLong(limit.Name, limit.Value)
+		payload.Params = append(payload.Params, *tp)
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	resp, err := l.request(constants.ProcDomainSetBlockIoTune, constants.ProgramRemote, &buf)
+	if err != nil {
+		return err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return decodeError(r.Payload)
+	}
+
+	return nil
+}
+
+// GetBlockIoTune returns a slice containing the current block I/O tunables for
+// a disk.
+func (l *Libvirt) GetBlockIoTune(dom string, disk string) ([]BlockLimit, error) {
+	d, err := l.lookup(dom)
+	if err != nil {
+		return nil, err
+	}
+
+	payload := struct {
+		Domain     Domain
+		Disk       []string
+		ParamCount uint32
+		Flags      uint32
+	}{
+		Domain:     *d,
+		Disk:       []string{disk},
+		ParamCount: 32,
+		Flags:      FlagTypedParamStringOkay,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := l.request(constants.ProcDomainGetBlockIoTune, constants.ProgramRemote, &buf)
+	if err != nil {
+		return nil, err
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		return nil, decodeError(r.Payload)
+	}
+
+	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+	result := struct {
+		Limits     []TypedParam
+		ParamCount uint32
+	}{}
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return nil, err
+	}
+
+	limits := make([]BlockLimit, len(result.Limits))
+	for ix := range result.Limits {
+		limits[ix].Name = result.Limits[ix].Field
+		limits[ix].Value = binary.BigEndian.Uint64(result.Limits[ix].Value[:])
+	}
+
+	return limits, nil
 }
 
 // lookup returns a domain as seen by libvirt.
