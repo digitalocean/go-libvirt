@@ -53,8 +53,8 @@ const (
 	ProcDomainUndefineFlags        = 231
 	ProcDomainDestroyFlags         = 234
 	ProcDomainReset                = 245
-	ProcDomainSetBlockIoTune       = 252
-	ProcDomainGetBlockIoTune       = 253
+	ProcDomainSetBlockIOTune       = 252
+	ProcDomainGetBlockIOTune       = 253
 	ProcDomainShutdownFlags        = 258
 	ProcConnectListAllDomains      = 273
 	ProcConnectListAllStoragePools = 281

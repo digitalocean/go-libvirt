@@ -609,9 +609,9 @@ func (m *MockLibvirt) handleRemote(procedure uint32, conn net.Conn) {
 		conn.Write(m.reply(testCreateWithFlags))
 	case constants.ProcDomainShutdownFlags:
 		conn.Write(m.reply(testShutdownReply))
-	case constants.ProcDomainSetBlockIoTune:
+	case constants.ProcDomainSetBlockIOTune:
 		conn.Write(m.reply(testSetBlockIoTuneReply))
-	case constants.ProcDomainGetBlockIoTune:
+	case constants.ProcDomainGetBlockIOTune:
 		conn.Write(m.reply(testGetBlockIoTuneReply))
 	default:
 		fmt.Fprintln(os.Stderr, "unknown procedure", procedure)

@@ -1335,7 +1335,7 @@ func (l *Libvirt) SetBlockIOTune(dom string, disk string, limits ...BlockLimit) 
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainSetBlockIoTune, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainSetBlockIOTune, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
 	}
@@ -1373,7 +1373,7 @@ func (l *Libvirt) GetBlockIOTune(dom string, disk string) ([]BlockLimit, error) 
 		return nil, err
 	}
 
-	resp, err := l.request(constants.ProcDomainGetBlockIoTune, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainGetBlockIOTune, constants.ProgramRemote, &buf)
 	if err != nil {
 		return nil, err
 	}
