@@ -1321,19 +1321,12 @@ const (
 // limits should be applied, and 1 or more BlockLimit structs containing the
 // actual limits.
 //
-// Possible limits which can be applied here include:
-// - total_bytes_sec
-// - read_bytes_sec
-// - write_bytes_sec
-// - total_iops_sec
-// - read_iops_sec
-// - write_iops_sec
-//
-// You can see the full list by executing the 'blkdeviotune' command on a VM in
-// virsh.
+// The limits which can be applied here are enumerated in the QEMUBlockIO...
+// constants above, and you can also see the full list by executing the
+// 'blkdeviotune' command on a VM in virsh.
 //
 // Example usage:
-//  SetBlockIOTune("vm-name", "vda", BlockLimit{"write_bytes_sec", 1000000})
+//  SetBlockIOTune("vm-name", "vda", BlockLimit{libvirt.QEMUBlockIOWriteBytesSec, 1000000})
 func (l *Libvirt) SetBlockIOTune(dom string, disk string, limits ...BlockLimit) error {
 	d, err := l.lookup(dom)
 	if err != nil {
