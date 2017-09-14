@@ -1414,12 +1414,10 @@ func (l *Libvirt) SetBlockIOTune(dom string, disk string, limits ...BlockLimit) 
 		payload.Params = append(payload.Params, tp)
 	}
 
-	fmt.Println(payload)
 	buf, err := encode(&payload)
 	if err != nil {
 		return err
 	}
-	fmt.Println(buf)
 	resp, err := l.request(constants.ProcDomainSetBlockIOTune, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
