@@ -1466,7 +1466,6 @@ func (l *Libvirt) GetBlockIOTune(dom string, disk string) ([]BlockLimit, error) 
 		return nil, decodeError(r.Payload)
 	}
 
-	fmt.Println(r.Payload)
 	var limits []BlockLimit
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
