@@ -19,7 +19,6 @@ package libvirt
 import (
 	"bufio"
 	"bytes"
-	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -113,65 +112,129 @@ const (
 	// FlagDomainAffectConfig means affect the persistent domain state.
 	FlagDomainAffectConfig
 	// FlagTypedParamStringOkay tells the server that this client understands
-	// TypedParameStrings.
+	// TypedParamStrings.
 	FlagTypedParamStringOkay
 )
 
 // Consts relating to TypedParams:
 const (
-	// TypedParamInt is a C int.
-	TypedParamInt = iota + 1
-	// TypedParamUInt is a C unsigned int.
-	TypedParamUInt
-	// TypedParamLLong is a C long long int.
-	TypedParamLLong
-	// TypedParamULLong is a C unsigned long long int.
-	TypedParamULLong
-	// TypedParamDouble is a C double.
-	TypedParamDouble
-	// TypedParamBoolean is a C char.
-	TypedParamBoolean
-	// TypedParamString is a C char*.
-	TypedParamString
+	// TypeParamInt is a C int.
+	TypeParamInt = iota + 1
+	// TypeParamUInt is a C unsigned int.
+	TypeParamUInt
+	// TypeParamLLong is a C long long int.
+	TypeParamLLong
+	// TypeParamULLong is a C unsigned long long int.
+	TypeParamULLong
+	// TypeParamDouble is a C double.
+	TypeParamDouble
+	// TypeParamBoolean is a C char.
+	TypeParamBoolean
+	// TypeParamString is a C char*.
+	TypeParamString
 
-	// TypedParamLast is just an end-of-enum marker.
-	TypedParamLast
+	// TypeParamLast is just an end-of-enum marker.
+	TypeParamLast
 )
 
 // TypedParam represents libvirt's virTypedParameter, which is used to pass
-// typed parameters to libvirt functions. The `Value` field defined as a union
-// in libvirt, and given the current set of types inside it, is 8 bytes long.
-type TypedParam struct {
-	Field string
-	Type  int
-	Value [8]byte
+// typed parameters to libvirt functions. This is defined as an interface, and
+// implemented by TypedParam... concrete types.
+type TypedParam interface {
+	Field() string
+	Value() interface{}
+}
+
+// TypedParamInt contains a 32-bit signed integer.
+type TypedParamInt struct {
+	Fld     string
+	PType   int32
+	Padding [4]byte
+	Val     int32
+}
+
+// Field returns the field name, a string name for the parameter.
+func (tp *TypedParamInt) Field() string {
+	return tp.Fld
+}
+
+// Value returns the value for the typed parameter, as an empty interface.
+func (tp *TypedParamInt) Value() interface{} {
+	return tp.Val
 }
 
 // NewTypedParamInt returns a TypedParam encoding for an int.
-func NewTypedParamInt(name string, v int) *TypedParam {
+func NewTypedParamInt(name string, v int32) *TypedParamInt {
 	// Truncate the field name if it's longer than the limit.
 	if len(name) > constants.TypedParamFieldLength {
 		name = name[:constants.TypedParamFieldLength]
 	}
-	tp := TypedParam{
-		Field: name,
-		Type:  TypedParamInt,
+	tp := TypedParamInt{
+		Fld:   name,
+		PType: TypeParamInt,
+		Val:   v,
 	}
-	binary.BigEndian.PutUint32(tp.Value[:], uint32(v))
 	return &tp
 }
 
+// TypedParamULongLong contains a 64-bit unsigned integer.
+type TypedParamULongLong struct {
+	Fld   string
+	PType int32
+	Val   uint64
+}
+
+// Field returns the field name, a string name for the parameter.
+func (tp *TypedParamULongLong) Field() string {
+	return tp.Fld
+}
+
+// Value returns the value for the typed parameter, as an empty interface.
+func (tp *TypedParamULongLong) Value() interface{} {
+	return tp.Val
+}
+
 // NewTypedParamULongLong returns a TypedParam encoding for an unsigned long long.
-func NewTypedParamULongLong(name string, v uint64) *TypedParam {
+func NewTypedParamULongLong(name string, v uint64) *TypedParamULongLong {
 	// Truncate the field name if it's longer than the limit.
 	if len(name) > constants.TypedParamFieldLength {
 		name = name[:constants.TypedParamFieldLength]
 	}
-	tp := TypedParam{
-		Field: name,
-		Type:  TypedParamULLong,
+	tp := TypedParamULongLong{
+		Fld:   name,
+		PType: TypeParamULLong,
+		Val:   v,
 	}
-	binary.BigEndian.PutUint64(tp.Value[:], v)
+	return &tp
+}
+
+// TypedParamString contains a string parameter.
+type TypedParamString struct {
+	Fld   string
+	PType int
+	Val   string
+}
+
+// Field returns the field name, a string name for the parameter.
+func (tp *TypedParamString) Field() string {
+	return tp.Fld
+}
+
+// Value returns the value for the typed parameter, as an empty interface.
+func (tp *TypedParamString) Value() interface{} {
+	return tp.Val
+}
+
+// NewTypedParamString returns a typed parameter containing the passed string.
+func NewTypedParamString(name string, v string) TypedParam {
+	if len(name) > constants.TypedParamFieldLength {
+		name = name[:constants.TypedParamFieldLength]
+	}
+	tp := TypedParamString{
+		Fld:   name,
+		PType: TypeParamString,
+		Val:   v,
+	}
 	return &tp
 }
 
@@ -1295,6 +1358,7 @@ type BlockLimit struct {
 // not necessarily the only possible values; different libvirt versions may add
 // or remove parameters from this list.
 const (
+	QEMUBlockIOGroupName              = "group_name"
 	QEMUBlockIOTotalBytesSec          = "total_bytes_sec"
 	QEMUBlockIOReadBytesSec           = "read_bytes_sec"
 	QEMUBlockIOWriteBytesSec          = "write_bytes_sec"
@@ -1347,14 +1411,15 @@ func (l *Libvirt) SetBlockIOTune(dom string, disk string, limits ...BlockLimit) 
 
 	for _, limit := range limits {
 		tp := NewTypedParamULongLong(limit.Name, limit.Value)
-		payload.Params = append(payload.Params, *tp)
+		payload.Params = append(payload.Params, tp)
 	}
 
+	fmt.Println(payload)
 	buf, err := encode(&payload)
 	if err != nil {
 		return err
 	}
-
+	fmt.Println(buf)
 	resp, err := l.request(constants.ProcDomainSetBlockIOTune, constants.ProgramRemote, &buf)
 	if err != nil {
 		return err
@@ -1403,20 +1468,50 @@ func (l *Libvirt) GetBlockIOTune(dom string, disk string) ([]BlockLimit, error) 
 		return nil, decodeError(r.Payload)
 	}
 
-	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
-	result := struct {
-		Limits     []TypedParam
-		ParamCount uint32
-	}{}
-	_, err = dec.Decode(&result)
+	fmt.Println(r.Payload)
+	var limits []BlockLimit
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+
+	// find out how many params were returned
+	paramCount, _, err := dec.DecodeInt()
 	if err != nil {
 		return nil, err
 	}
 
-	limits := make([]BlockLimit, len(result.Limits))
-	for ix := range result.Limits {
-		limits[ix].Name = result.Limits[ix].Field
-		limits[ix].Value = binary.BigEndian.Uint64(result.Limits[ix].Value[:])
+	// now decode each of the returned TypedParams. To do this we read the field
+	// name and type, then use the type information to decode the value.
+	for param := int32(0); param < paramCount; param++ {
+		// Get the field name
+		name, _, err := dec.DecodeString()
+		if err != nil {
+			return nil, err
+		}
+		// ...and the type
+		ptype, _, err := dec.DecodeInt()
+		if err != nil {
+			return nil, err
+		}
+
+		// Now we can read the actual value.
+		switch ptype {
+		case TypeParamULLong:
+			var val uint64
+			_, err = dec.Decode(&val)
+			if err != nil {
+				return nil, err
+			}
+			lim := BlockLimit{name, val}
+			limits = append(limits, lim)
+		case TypeParamString:
+			var val string
+			_, err = dec.Decode(&val)
+			if err != nil {
+				return nil, err
+			}
+			// This routine doesn't currently return strings. As of libvirt 3+,
+			// there's one string here, `group_name`.
+		}
 	}
 
 	return limits, nil
