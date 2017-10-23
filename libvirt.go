@@ -506,6 +506,35 @@ const (
 	DomainMemoryStatTagNr
 )
 
+func (d DomainMemoryStatTag) String() string {
+	switch d {
+	case DomainMemoryStatTagSwapIn:
+		return "swap_in"
+	case DomainMemoryStatTagSwapOut:
+		return "swap_out"
+	case DomainMemoryStatTagMajorFault:
+		return "major_fault"
+	case DomainMemoryStatTagMinorFault:
+		return "minor_fault"
+	case DomainMemoryStatTagUnused:
+		return "unused"
+	case DomainMemoryStatTagAvailable:
+		return "available"
+	case DomainMemoryStatTagActualBalloon:
+		return "actual_ballon"
+	case DomainMemoryStatTagRss:
+		return "rss"
+	case DomainMemoryStatTagUsable:
+		return "usable"
+	case DomainMemoryStatTagLastUpdate:
+		return "last_update"
+	case DomainMemoryStatTagNr:
+		return "nr"
+	}
+
+	return "unknown"
+}
+
 // DomainMemoryStat specifies memory stats of the domain
 type DomainMemoryStat struct {
 	Tag DomainMemoryStatTag
