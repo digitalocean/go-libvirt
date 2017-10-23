@@ -512,6 +512,30 @@ type DomainMemoryStat struct {
 	Val uint64
 }
 
+type typedParamsFieldInfo struct {
+	set *bool
+	i   *int
+	ui  *uint
+	l   *int64
+	ul  *uint64
+	b   *bool
+	d   *float64
+	s   *string
+	sl  *[]string
+}
+
+// DomainStatParam specifies stats of the domain
+type DomainStatParam struct {
+	Field string
+	Value typedParamsFieldInfo
+}
+
+// DomainStat specifies a array of stats of the domain
+type DomainStat struct {
+	Domain Domain
+	DomainStatParams []DomainStatParam 
+}
+
 // Capabilities returns an XML document describing the host's capabilties.
 func (l *Libvirt) Capabilities() ([]byte, error) {
 	resp, err := l.request(constants.ProcConnectGetCapabilties, constants.ProgramRemote, nil)
@@ -632,12 +656,13 @@ func (l *Libvirt) DomainMemoryStats(dom string) ([]DomainMemoryStat, error) {
 		return nil, err
 	}
 
+
 	req := struct {
-		Domain   Domain
+		Domains  Domain
 		MaxStats uint32
 		Flags    uint32
 	}{
-		Domain:   *d,
+		Domains:  *d,
 		MaxStats: 8,
 		Flags:    0,
 	}
@@ -665,6 +690,49 @@ func (l *Libvirt) DomainMemoryStats(dom string) ([]DomainMemoryStat, error) {
 	}
 
 	return result.DomainMemoryStats, nil
+}
+
+// DomainStats returns statistics about the domain managed by libvirt.
+func (l *Libvirt) DomainStats(dom string) ([]DomainStatParam, error) {
+
+        d, err := l.lookup(dom)
+        if err != nil {
+                return nil, err
+        }
+
+        req := struct {
+                Domain   []Domain
+		Stats	 uint32
+                Flags    uint32
+        }{
+                Domain:   []Domain{*d},
+		Stats:    0,
+                Flags:    0,
+        }
+
+        buf, err := encode(&req)
+        if err != nil {
+                return nil, err
+        }
+
+	resp, err := l.request(constants.ProcConnectGetAllDomainStats, constants.ProgramRemote, &buf)
+        if err != nil {
+                return nil, err
+        }
+
+        r := <-resp
+
+        result := struct {
+		DomainStats []DomainStat 
+        }{}
+
+        dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+        _, err = dec.Decode(&result)
+        if err != nil {
+                return nil, err
+        }
+
+        return result.DomainStats[0].DomainStatParams, nil
 }
 
 // DomainState returns state of the domain managed by libvirt.

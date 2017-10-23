@@ -60,6 +60,7 @@ const (
 	ProcConnectListAllStoragePools = 281
 	ProcConnectListAllSecrets      = 287
 	ProcMigratePerformParams       = 305
+	ProcConnectGetAllDomainStats   = 344
 	ProcDomainDefineXMLFlags       = 350
 )
 
