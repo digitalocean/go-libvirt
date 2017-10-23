@@ -360,7 +360,7 @@ type DomainState uint32
 
 const (
 	// DomainStateNoState No state
-	DomainStateNoState = iota
+	DomainStateNoState DomainState = iota
 	// DomainStateRunning The domain is running
 	DomainStateRunning
 	// DomainStateBlocked The domain is blocked on resource
