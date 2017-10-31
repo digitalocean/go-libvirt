@@ -12,7 +12,7 @@ This should be considered a work in progress. Most functionaly provided by the C
 bindings have not yet made their way into this library. [Pull requests are welcome](https://github.com/digitalocean/go-libvirt/blob/master/CONTRIBUTING.md)!
 The definition of the RPC protocol is in the libvirt source tree under [src/rpc/virnetprotocol.x](https://github.com/libvirt/libvirt/blob/master/src/rpc/virnetprotocol.x).
 
-Feel free to join us in [`#go-qemu` on freenode](https://webchat.freenode.net/)
+Feel free to join us in `#go-qemu` [on freenode](https://webchat.freenode.net/)
 if you'd like to discuss the project.
 
 Warning
