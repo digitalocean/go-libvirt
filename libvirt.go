@@ -514,7 +514,7 @@ type DomainMemoryStat struct {
 
 // Capabilities returns an XML document describing the host's capabilties.
 func (l *Libvirt) Capabilities() ([]byte, error) {
-	resp, err := l.request(constants.ProcConnectGetCapabilties, constants.ProgramRemote, nil)
+	resp, err := l.request(constants.ProcConnectGetCapabilities, constants.Program, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -571,7 +571,7 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(constants.ProcConnectListAllDomains, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcConnectListAllDomains, constants.Program, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -613,7 +613,7 @@ func (l *Libvirt) DomainCreateWithFlags(dom string, flags DomainCreateFlags) err
 	if err != nil {
 		return err
 	}
-	resp, err := l.request(constants.ProcDomainCreateWithFlags, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainCreateWithFlags, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -647,7 +647,7 @@ func (l *Libvirt) DomainMemoryStats(dom string) ([]DomainMemoryStat, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(constants.ProcDomainMemoryStats, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainMemoryStats, constants.Program, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -687,7 +687,7 @@ func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 		return DomainStateNoState, err
 	}
 
-	resp, err := l.request(constants.ProcDomainGetState, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainGetState, constants.Program, &buf)
 	if err != nil {
 		return DomainStateNoState, err
 	}
@@ -814,7 +814,8 @@ func (l *Libvirt) Migrate(dom string, dest string, flags MigrateFlags) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcMigratePerformParams, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainMigratePerform3Params,
+		constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -852,7 +853,7 @@ func (l *Libvirt) MigrateSetMaxSpeed(dom string, speed int64) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainMigrateSetMaxSpeed, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainMigrateSetMaxSpeed, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -932,7 +933,7 @@ func (l *Libvirt) Secrets() ([]Secret, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(constants.ProcConnectListAllSecrets, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcConnectListAllSecrets, constants.Program, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -970,7 +971,7 @@ func (l *Libvirt) StoragePool(name string) (*StoragePool, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(constants.ProcStoragePoolLookupByName, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcStoragePoolLookupByName, constants.Program, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -1013,7 +1014,7 @@ func (l *Libvirt) StoragePoolRefresh(name string) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcStoragePoolRefresh, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcStoragePoolRefresh, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -1042,7 +1043,7 @@ func (l *Libvirt) StoragePools(flags StoragePoolsFlags) ([]StoragePool, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(constants.ProcConnectListAllStoragePools, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcConnectListAllStoragePools, constants.Program, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -1089,7 +1090,7 @@ func (l *Libvirt) Undefine(dom string, flags UndefineFlags) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainUndefineFlags, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainUndefineFlags, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -1125,7 +1126,7 @@ func (l *Libvirt) Destroy(dom string, flags DestroyFlags) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainDestroyFlags, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainDestroyFlags, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -1159,7 +1160,7 @@ func (l *Libvirt) XML(dom string, flags DomainXMLFlags) ([]byte, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(constants.ProcDomainGetXMLDesc, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainGetXMLDesc, constants.Program, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -1194,7 +1195,7 @@ func (l *Libvirt) DefineXML(x []byte, flags DomainDefineXMLFlags) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainDefineXMLFlags, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainDefineXMLFlags, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -1209,7 +1210,7 @@ func (l *Libvirt) DefineXML(x []byte, flags DomainDefineXMLFlags) error {
 
 // Version returns the version of the libvirt daemon.
 func (l *Libvirt) Version() (string, error) {
-	resp, err := l.request(constants.ProcConnectGetLibVersion, constants.ProgramRemote, nil)
+	resp, err := l.request(constants.ProcConnectGetLibVersion, constants.Program, nil)
 	if err != nil {
 		return "", err
 	}
@@ -1263,7 +1264,7 @@ func (l *Libvirt) Shutdown(dom string, flags ShutdownFlags) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainShutdownFlags, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainShutdownFlags, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -1297,7 +1298,7 @@ func (l *Libvirt) Reboot(dom string, flags RebootFlags) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainReboot, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainReboot, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -1330,7 +1331,7 @@ func (l *Libvirt) Reset(dom string) error {
 		return err
 	}
 
-	resp, err := l.request(constants.ProcDomainReset, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainReset, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -1418,7 +1419,7 @@ func (l *Libvirt) SetBlockIOTune(dom string, disk string, limits ...BlockLimit) 
 	if err != nil {
 		return err
 	}
-	resp, err := l.request(constants.ProcDomainSetBlockIOTune, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainSetBlockIOTune, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -1456,7 +1457,7 @@ func (l *Libvirt) GetBlockIOTune(dom string, disk string) ([]BlockLimit, error) 
 		return nil, err
 	}
 
-	resp, err := l.request(constants.ProcDomainGetBlockIOTune, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainGetBlockIOTune, constants.Program, &buf)
 	if err != nil {
 		return nil, err
 	}
@@ -1525,7 +1526,7 @@ func (l *Libvirt) lookup(name string) (*Domain, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(constants.ProcDomainLookupByName, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcDomainLookupByName, constants.Program, &buf)
 	if err != nil {
 		return nil, err
 	}

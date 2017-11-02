@@ -1,0 +1,4 @@
+# Ignore the yacc intermediate files.
+y.go
+y.output
+

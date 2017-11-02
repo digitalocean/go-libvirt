@@ -120,12 +120,12 @@ func TestExtractHeader(t *testing.T) {
 		t.Error(err)
 	}
 
-	if h.Program != constants.ProgramRemote {
-		t.Errorf("expected Program %q, got %q", constants.ProgramRemote, h.Program)
+	if h.Program != constants.Program {
+		t.Errorf("expected Program %q, got %q", constants.Program, h.Program)
 	}
 
-	if h.Version != constants.ProgramVersion {
-		t.Errorf("expected version %q, got %q", constants.ProgramVersion, h.Version)
+	if h.Version != constants.ProtocolVersion {
+		t.Errorf("expected version %q, got %q", constants.ProtocolVersion, h.Version)
 	}
 
 	if h.Procedure != constants.ProcConnectOpen {
