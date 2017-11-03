@@ -12,7 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package constants provides shared data for the libvirt package.
+// Package constants provides shared data for the libvirt package. This file
+// includes only things not generated automatically by the parser that runs on
+// libvirt's remote_protocol.x file - see constants.gen.go for the generated
+// definitions.
 package constants
 
 const (
