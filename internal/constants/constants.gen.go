@@ -3,6 +3,7 @@
  *
  * To regenerate, run 'go generate' in internal/lvgen.
  */
+
 package constants
 
 // libvirt procedure identifiers and other enums
