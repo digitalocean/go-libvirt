@@ -412,7 +412,7 @@ const (
 	ProcDomainManagedSaveGetXMLDesc = 388
 	ProcDomainManagedSaveDefineXML = 389
 	ProcDomainSetLifecycleAction = 390
-	
+
 
 	// From consts:
 	StringMax = 4194304
@@ -471,5 +471,4 @@ const (
 	DomainEventGraphicsIdentityMax = 20
 	Program = 0x20008086
 	ProtocolVersion = 1
-	
 )

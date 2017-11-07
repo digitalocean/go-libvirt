@@ -19,10 +19,10 @@ package constants
 //	REMOTE_PROC_DOMAIN_MIGRATE_SET_MAX_SPEED = 207,
 const (
 	// From enums:
-	{{range .Enums}}{{.Name}} = {{.Val}}
-	{{end}}
+{{range .EnumVals}}	{{.Name}} = {{.Val}}
+{{end}}
 
 	// From consts:
-	{{range .Consts}}{{.Name}} = {{.Val}}
-	{{end}}
+{{range .Consts}}	{{.Name}} = {{.Val}}
+{{end -}}
 )

@@ -46,7 +46,7 @@ definition
     ;
 
 enum_definition
-    : ENUM enum_ident '{' enum_value_list '}' { StartEnum() }
+    : ENUM enum_ident '{' enum_value_list '}' { StartEnum($2.val) }
     ;
 
 enum_value_list
@@ -63,7 +63,7 @@ enum_value
         }
     }
     | enum_value_ident '=' value {
-        err := AddEnum($1.val, $3.val)
+        err := AddEnumVal($1.val, $3.val)
         if err != nil {
             yylex.Error(err.Error())
             return 1
@@ -98,7 +98,7 @@ const_ident
     ;
 
 typedef_definition
-    : TYPEDEF declaration
+    : TYPEDEF {StartTypedef()} declaration
     ;
 
 declaration
@@ -109,17 +109,17 @@ declaration
     ;
 
 simple_declaration
-    : type_specifier variable_ident
+    : type_specifier variable_ident {AddDeclaration($2.val, $1.val)}
     ;
 
 type_specifier
     : int_spec
-    | UNSIGNED int_spec
-    | FLOAT
-    | DOUBLE
-    | BOOL
-    | STRING
-    | OPAQUE
+    | UNSIGNED int_spec {$$.val = "u"+$2.val}
+    | FLOAT             {$$.val = "float32"}
+    | DOUBLE            {$$.val = "float64"}
+    | BOOL              {$$.val = "bool"}
+    | STRING            {$$.val = "string"}
+    | OPAQUE            {$$.val = "[]byte"}
     | enum_definition
     | struct_definition
     | union_definition
@@ -127,10 +127,10 @@ type_specifier
     ;
 
 int_spec
-    : HYPER
-    | INT
-    | SHORT
-    | CHAR
+    : HYPER {$$.val = "int64"}
+    | INT   {$$.val = "int32"}
+    | SHORT {$$.val = "int16"}
+    | CHAR  {$$.val = "int8"}
     ;
 
 variable_ident
@@ -138,20 +138,20 @@ variable_ident
     ;
 
 fixed_array_declaration
-    : type_specifier variable_ident '[' value ']'
+    : type_specifier variable_ident '[' value ']'   { AddDeclaration($2.val, $1.val) } // FIXME: Handle the max size (value)?
     ;
 
 variable_array_declaration
-    : type_specifier variable_ident '<' value '>'
-    | type_specifier variable_ident '<' '>'
+    : type_specifier variable_ident '<' value '>'   { AddDeclaration($2.val, $1.val) }  // FIXME: Handle the max size (value)?
+    | type_specifier variable_ident '<' '>'         { AddDeclaration($2.val, $1.val) }
     ;
 
 pointer_declaration
-    : type_specifier '*' variable_ident
+    : type_specifier '*' variable_ident             { AddDeclaration($3.val, "*"+$1.val) }
     ;
 
 struct_definition
-    : STRUCT struct_ident '{' declaration_list '}'
+    : STRUCT struct_ident '{' {StartStruct($2.val)} declaration_list '}' {AddStruct()}
     ;
 
 struct_ident
@@ -164,7 +164,7 @@ declaration_list
     ;
 
 union_definition
-    : UNION union_ident SWITCH '(' simple_declaration ')' '{' case_list '}'
+    : UNION union_ident {StartUnion($2.val)} SWITCH '(' simple_declaration ')' '{' case_list '}' {AddUnion()}
     ;
 
 union_ident
@@ -177,8 +177,8 @@ case_list
     ;
 
 case
-    : CASE value ':' declaration
-    | DEFAULT ':' declaration
+    : CASE value {StartCase($2.val)} ':' declaration {AddCase()}
+    | DEFAULT {StartCase("default")} ':' declaration {AddCase()}
     ;
 
 program_definition
