@@ -119,7 +119,7 @@ type_specifier
     | DOUBLE            {$$.val = "float64"}
     | BOOL              {$$.val = "bool"}
     | STRING            {$$.val = "string"}
-    | OPAQUE            {$$.val = "[]byte"}
+    | OPAQUE            {$$.val = "byte"}
     | enum_definition
     | struct_definition
     | union_definition
@@ -138,12 +138,12 @@ variable_ident
     ;
 
 fixed_array_declaration
-    : type_specifier variable_ident '[' value ']'   { AddDeclaration($2.val, $1.val) } // FIXME: Handle the max size (value)?
+    : type_specifier variable_ident '[' value ']'   { AddFixedArray($2.val, $1.val, $4.val) }
     ;
 
 variable_array_declaration
-    : type_specifier variable_ident '<' value '>'   { AddDeclaration($2.val, $1.val) }  // FIXME: Handle the max size (value)?
-    | type_specifier variable_ident '<' '>'         { AddDeclaration($2.val, $1.val) }
+    : type_specifier variable_ident '<' value '>'   { AddVariableArray($2.val, $1.val, $4.val) }
+    | type_specifier variable_ident '<' '>'         { AddVariableArray($2.val, $1.val, "") }
     ;
 
 pointer_declaration
@@ -151,7 +151,7 @@ pointer_declaration
     ;
 
 struct_definition
-    : STRUCT struct_ident '{' {StartStruct($2.val)} declaration_list '}' {AddStruct()}
+    : STRUCT struct_ident '{' {StartStruct($2.val)} declaration_list '}' { AddStruct() }
     ;
 
 struct_ident

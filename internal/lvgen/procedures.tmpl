@@ -6,20 +6,82 @@
 
 package libvirt
 
+import (
+	"bytes"
+
+	"github.com/davecgh/go-xdr/xdr2"
+	"github.com/digitalocean/go-libvirt/internal/constants"
+)
+
+const (
+	VirUUIDBuflen = 16
+)
+
 // Typedefs:
 {{range .Typedefs}}type {{.Name}} {{.Type}}
 {{end}}
 // Enums:
-{{range .Enums}}	type {{.Name}} {{.Type}}
+{{range .Enums}}type {{.Name}} {{.Type}}
 {{end}}
 // Structs:
 {{range .Structs}}type {{.Name}} struct {
 {{range .Members}}	{{.Name}} {{.Type}}
 {{end -}}
 }
+
 {{end}}
 // Unions:
-{{range .Unions}}type {{.Name}} struct {
-	discriminant {{.DiscriminantType}}
+{{range .Unions}}type {{.Name}} interface {
+	Get() interface{}
 {{end -}}
 }
+
+{{range .Unions}}{{$uname := .Name}}{{range .Cases}}{{$casetype := printf "%v%v" $uname .CaseName}}
+type {{$casetype}} struct {
+	DVal uint32
+	{{.Name}} {{.Type}}
+}
+func New{{$casetype}}(v {{.Type}}) *{{$casetype}} { return &{{$casetype}}{DVal: {{.DiscriminantVal}}, {{.Name}}: v} }
+func (c *{{$casetype}}) Get() interface{} { return c.{{.Name}} }
+{{end}}
+{{- end}}
+
+// Procedures:
+{{range .Procs}}
+func (l *Libvirt) {{.Name}}({{range $ix, $arg := .Args}}{{if $ix}}, {{end}}{{.Name}} {{.Type}}{{end}}) ({{range .Ret}}r{{.Name}} {{.Type}}, {{end}}err error) {
+	var buf bytes.Buffer
+{{if .ArgsStruct}}
+	args := {{.ArgsStruct}} {
+{{range .Args}}		{{.Name}}: {{.Name}},
+{{end}}	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+{{end}}
+	var resp <-chan response
+	resp, err = l.request({{.Num}}, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+{{if .RetStruct}}
+	result := {{.RetStruct}}{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+{{range .Ret}}	r{{.Name}} = result.{{.Name}}
+{{end}}{{end}}
+	return
+}
+{{end}}

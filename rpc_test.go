@@ -106,7 +106,7 @@ var (
 		0x00, 0x00, 0x00, 0x02,
 	}
 
-	testDomain = Domain{
+	testDomain = &NonnullDomain{
 		Name: "test-domain",
 		UUID: testUUID,
 		ID:   1,
@@ -177,7 +177,7 @@ func TestDecodeEvent(t *testing.T) {
 		t.Errorf("expected uuid:\t%x, got\n\t\t\t%x", expUUID, e.Domain.UUID)
 	}
 
-	expID := 14
+	expID := int32(14)
 	if e.Domain.ID != expID {
 		t.Errorf("expected id %d, got %d", expID, e.Domain.ID)
 	}

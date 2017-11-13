@@ -26,6 +26,11 @@ import (
 // eof is returned by the lexer when there's no more input.
 const eof = -1
 
+// oneRuneTokens lists the runes the lexer will consider to be tokens when it
+// finds them. These are returned to the parser using the integer value of their
+// runes.
+var oneRuneTokens = `{}[]<>(),=;:*`
+
 type item struct {
 	typ          int
 	val          string

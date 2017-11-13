@@ -6,2487 +6,15654 @@
 
 package libvirt
 
+import (
+	"bytes"
+
+	"github.com/davecgh/go-xdr/xdr2"
+	"github.com/digitalocean/go-libvirt/internal/constants"
+)
+
+const (
+	VirUUIDBuflen = 16
+)
+
 // Typedefs:
-type nonnullString lvstring
-type lvstring *nonnullString
-type uuid []byte
-type domain *nonnullDomain
-type network *nonnullNetwork
-type nwfilter *nonnullNwfilter
-type storagePool *nonnullStoragePool
-type storageVol *nonnullStorageVol
-type nodeDevice *nonnullNodeDevice
-type secret *nonnullSecret
+type UUID [VirUUIDBuflen]byte
+type Domain *NonnullDomain
+type Network *NonnullNetwork
+type Nwfilter *NonnullNwfilter
+type StoragePool *NonnullStoragePool
+type StorageVol *NonnullStorageVol
+type NodeDevice *NonnullNodeDevice
+type Secret *NonnullSecret
 
 // Enums:
-	type authType int32
-	type procedure int32
+type AuthType int32
+type Procedure int32
 
 // Structs:
-type nonnullDomain struct {
-	name nonnullString
-	uuid uuid
-	id int32
-}
-type nonnullNetwork struct {
-	name nonnullString
-	uuid uuid
-}
-type nonnullNwfilter struct {
-	name nonnullString
-	uuid uuid
-}
-type nonnullInterface struct {
-	name nonnullString
-	mac nonnullString
-}
-type nonnullStoragePool struct {
-	name nonnullString
-	uuid uuid
-}
-type nonnullStorageVol struct {
-	pool nonnullString
-	name nonnullString
-	key nonnullString
-}
-type nonnullNodeDevice struct {
-	name nonnullString
-}
-type nonnullSecret struct {
-	uuid uuid
-	usagetype int32
-	usageid nonnullString
-}
-type nonnullDomainSnapshot struct {
-	name nonnullString
-	dom nonnullDomain
-}
-type lverror struct {
-	code int32
-	domain int32
-	message lvstring
-	level int32
-	dom domain
-	str1 lvstring
-	str2 lvstring
-	str3 lvstring
-	int1 int32
-	int2 int32
-	net network
-}
-type vcpuInfo struct {
-	number uint32
-	state int32
-	cpuTime uint64
-	cpu int32
-}
-type typedParam struct {
-	field nonnullString
-	value typedParamValue
-}
-type nodeGetCPUStats struct {
-	field nonnullString
-	value uint64
-}
-type nodeGetMemoryStats struct {
-	field nonnullString
-	value uint64
-}
-type domainDiskError struct {
-	disk nonnullString
-	lverror int32
-}
-type connectOpenArgs struct {
-	name lvstring
-	flags uint32
-}
-type connectSupportsFeatureArgs struct {
-	feature int32
-}
-type connectSupportsFeatureRet struct {
-	supported int32
-}
-type connectGetTypeRet struct {
-	lvtype nonnullString
-}
-type connectGetVersionRet struct {
-	hvVer uint64
-}
-type connectGetLibVersionRet struct {
-	libVer uint64
-}
-type connectGetHostnameRet struct {
-	hostname nonnullString
-}
-type connectGetSysinfoArgs struct {
-	flags uint32
-}
-type connectGetSysinfoRet struct {
-	sysinfo nonnullString
-}
-type connectGetUriRet struct {
-	uri nonnullString
-}
-type connectGetMaxVcpusArgs struct {
-	lvtype lvstring
-}
-type connectGetMaxVcpusRet struct {
-	maxVcpus int32
-}
-type nodeGetInfoRet struct {
-	model int8
-	memory uint64
-	cpus int32
-	mhz int32
-	nodes int32
-	sockets int32
-	cores int32
-	threads int32
-}
-type connectGetCapabilitiesRet struct {
-	capabilities nonnullString
-}
-type connectGetDomainCapabilitiesArgs struct {
-	emulatorbin lvstring
-	arch lvstring
-	machine lvstring
-	virttype lvstring
-	flags uint32
-}
-type connectGetDomainCapabilitiesRet struct {
-	capabilities nonnullString
-}
-type nodeGetCPUStatsArgs struct {
-	cpunum int32
-	nparams int32
-	flags uint32
-}
-type nodeGetCPUStatsRet struct {
-	params nodeGetCPUStats
-	nparams int32
-}
-type nodeGetMemoryStatsArgs struct {
-	nparams int32
-	cellnum int32
-	flags uint32
-}
-type nodeGetMemoryStatsRet struct {
-	params nodeGetMemoryStats
-	nparams int32
-}
-type nodeGetCellsFreeMemoryArgs struct {
-	startcell int32
-	maxcells int32
-}
-type nodeGetCellsFreeMemoryRet struct {
-	cells uint64
-}
-type nodeGetFreeMemoryRet struct {
-	freemem uint64
-}
-type domainGetSchedulerTypeArgs struct {
-	dom nonnullDomain
-}
-type domainGetSchedulerTypeRet struct {
-	lvtype nonnullString
-	nparams int32
-}
-type domainGetSchedulerParametersArgs struct {
-	dom nonnullDomain
-	nparams int32
-}
-type domainGetSchedulerParametersRet struct {
-	params typedParam
-}
-type domainGetSchedulerParametersFlagsArgs struct {
-	dom nonnullDomain
-	nparams int32
-	flags uint32
-}
-type domainGetSchedulerParametersFlagsRet struct {
-	params typedParam
-}
-type domainSetSchedulerParametersArgs struct {
-	dom nonnullDomain
-	params typedParam
-}
-type domainSetSchedulerParametersFlagsArgs struct {
-	dom nonnullDomain
-	params typedParam
-	flags uint32
-}
-type domainSetBlkioParametersArgs struct {
-	dom nonnullDomain
-	params typedParam
-	flags uint32
-}
-type domainGetBlkioParametersArgs struct {
-	dom nonnullDomain
-	nparams int32
-	flags uint32
-}
-type domainGetBlkioParametersRet struct {
-	params typedParam
-	nparams int32
-}
-type domainSetMemoryParametersArgs struct {
-	dom nonnullDomain
-	params typedParam
-	flags uint32
-}
-type domainGetMemoryParametersArgs struct {
-	dom nonnullDomain
-	nparams int32
-	flags uint32
-}
-type domainGetMemoryParametersRet struct {
-	params typedParam
-	nparams int32
-}
-type domainBlockResizeArgs struct {
-	dom nonnullDomain
-	disk nonnullString
-	size uint64
-	flags uint32
-}
-type domainSetNumaParametersArgs struct {
-	dom nonnullDomain
-	params typedParam
-	flags uint32
-}
-type domainGetNumaParametersArgs struct {
-	dom nonnullDomain
-	nparams int32
-	flags uint32
-}
-type domainGetNumaParametersRet struct {
-	params typedParam
-	nparams int32
-}
-type domainSetPerfEventsArgs struct {
-	dom nonnullDomain
-	params typedParam
-	flags uint32
-}
-type domainGetPerfEventsArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetPerfEventsRet struct {
-	params typedParam
-}
-type domainBlockStatsArgs struct {
-	dom nonnullDomain
-	path nonnullString
-}
-type domainBlockStatsRet struct {
-	rdReq int64
-	rdBytes int64
-	wrReq int64
-	wrBytes int64
-	errs int64
-}
-type domainBlockStatsFlagsArgs struct {
-	dom nonnullDomain
-	path nonnullString
-	nparams int32
-	flags uint32
-}
-type domainBlockStatsFlagsRet struct {
-	params typedParam
-	nparams int32
-}
-type domainInterfaceStatsArgs struct {
-	dom nonnullDomain
-	device nonnullString
-}
-type domainInterfaceStatsRet struct {
-	rxBytes int64
-	rxPackets int64
-	rxErrs int64
-	rxDrop int64
-	txBytes int64
-	txPackets int64
-	txErrs int64
-	txDrop int64
-}
-type domainSetInterfaceParametersArgs struct {
-	dom nonnullDomain
-	device nonnullString
-	params typedParam
-	flags uint32
-}
-type domainGetInterfaceParametersArgs struct {
-	dom nonnullDomain
-	device nonnullString
-	nparams int32
-	flags uint32
-}
-type domainGetInterfaceParametersRet struct {
-	params typedParam
-	nparams int32
-}
-type domainMemoryStatsArgs struct {
-	dom nonnullDomain
-	maxstats uint32
-	flags uint32
-}
-type domainMemoryStat struct {
-	tag int32
-	val uint64
-}
-type domainMemoryStatsRet struct {
-	stats domainMemoryStat
-}
-type domainBlockPeekArgs struct {
-	dom nonnullDomain
-	path nonnullString
-	offset uint64
-	size uint32
-	flags uint32
-}
-type domainBlockPeekRet struct {
-	buffer []byte
-}
-type domainMemoryPeekArgs struct {
-	dom nonnullDomain
-	offset uint64
-	size uint32
-	flags uint32
-}
-type domainMemoryPeekRet struct {
-	buffer []byte
-}
-type domainGetBlockInfoArgs struct {
-	dom nonnullDomain
-	path nonnullString
-	flags uint32
-}
-type domainGetBlockInfoRet struct {
-	allocation uint64
-	capacity uint64
-	physical uint64
-}
-type connectListDomainsArgs struct {
-	maxids int32
-}
-type connectListDomainsRet struct {
-	ids int32
-}
-type connectNumOfDomainsRet struct {
-	num int32
-}
-type domainCreateXMLArgs struct {
-	xmlDesc nonnullString
-	flags uint32
-}
-type domainCreateXMLRet struct {
-	dom nonnullDomain
-}
-type domainCreateXMLWithFilesArgs struct {
-	xmlDesc nonnullString
-	flags uint32
-}
-type domainCreateXMLWithFilesRet struct {
-	dom nonnullDomain
-}
-type domainLookupByIDArgs struct {
-	id int32
-}
-type domainLookupByIDRet struct {
-	dom nonnullDomain
-}
-type domainLookupByUUIDArgs struct {
-	uuid uuid
-}
-type domainLookupByUUIDRet struct {
-	dom nonnullDomain
-}
-type domainLookupByNameArgs struct {
-	name nonnullString
-}
-type domainLookupByNameRet struct {
-	dom nonnullDomain
-}
-type domainSuspendArgs struct {
-	dom nonnullDomain
-}
-type domainResumeArgs struct {
-	dom nonnullDomain
-}
-type domainPmSuspendForDurationArgs struct {
-	dom nonnullDomain
-	target uint32
-	duration uint64
-	flags uint32
-}
-type domainPmWakeupArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainShutdownArgs struct {
-	dom nonnullDomain
-}
-type domainRebootArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainResetArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainDestroyArgs struct {
-	dom nonnullDomain
-}
-type domainDestroyFlagsArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetOsTypeArgs struct {
-	dom nonnullDomain
-}
-type domainGetOsTypeRet struct {
-	lvtype nonnullString
-}
-type domainGetMaxMemoryArgs struct {
-	dom nonnullDomain
-}
-type domainGetMaxMemoryRet struct {
-	memory uint64
-}
-type domainSetMaxMemoryArgs struct {
-	dom nonnullDomain
-	memory uint64
-}
-type domainSetMemoryArgs struct {
-	dom nonnullDomain
-	memory uint64
-}
-type domainSetMemoryFlagsArgs struct {
-	dom nonnullDomain
-	memory uint64
-	flags uint32
-}
-type domainSetMemoryStatsPeriodArgs struct {
-	dom nonnullDomain
-	period int32
-	flags uint32
-}
-type domainGetInfoArgs struct {
-	dom nonnullDomain
-}
-type domainGetInfoRet struct {
-	state uint8
-	maxmem uint64
-	memory uint64
-	nrvirtcpu uint16
-	cputime uint64
-}
-type domainSaveArgs struct {
-	dom nonnullDomain
-	to nonnullString
-}
-type domainSaveFlagsArgs struct {
-	dom nonnullDomain
-	to nonnullString
-	dxml lvstring
-	flags uint32
-}
-type domainRestoreArgs struct {
-	from nonnullString
-}
-type domainRestoreFlagsArgs struct {
-	from nonnullString
-	dxml lvstring
-	flags uint32
-}
-type domainSaveImageGetXMLDescArgs struct {
-	file nonnullString
-	flags uint32
-}
-type domainSaveImageGetXMLDescRet struct {
-	xml nonnullString
-}
-type domainSaveImageDefineXMLArgs struct {
-	file nonnullString
-	dxml nonnullString
-	flags uint32
-}
-type domainCoreDumpArgs struct {
-	dom nonnullDomain
-	to nonnullString
-	flags uint32
-}
-type domainCoreDumpWithFormatArgs struct {
-	dom nonnullDomain
-	to nonnullString
-	dumpformat uint32
-	flags uint32
-}
-type domainScreenshotArgs struct {
-	dom nonnullDomain
-	screen uint32
-	flags uint32
-}
-type domainScreenshotRet struct {
-	mime lvstring
-}
-type domainGetXMLDescArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetXMLDescRet struct {
-	xml nonnullString
-}
-type domainMigratePrepareArgs struct {
-	uriIn lvstring
-	flags uint64
-	dname lvstring
-	resource uint64
-}
-type domainMigratePrepareRet struct {
-	cookie []byte
-	uriOut lvstring
-}
-type domainMigratePerformArgs struct {
-	dom nonnullDomain
-	cookie []byte
-	uri nonnullString
-	flags uint64
-	dname lvstring
-	resource uint64
-}
-type domainMigrateFinishArgs struct {
-	dname nonnullString
-	cookie []byte
-	uri nonnullString
-	flags uint64
-}
-type domainMigrateFinishRet struct {
-	ddom nonnullDomain
-}
-type domainMigratePrepare2Args struct {
-	uriIn lvstring
-	flags uint64
-	dname lvstring
-	resource uint64
-	domXML nonnullString
-}
-type domainMigratePrepare2Ret struct {
-	cookie []byte
-	uriOut lvstring
-}
-type domainMigrateFinish2Args struct {
-	dname nonnullString
-	cookie []byte
-	uri nonnullString
-	flags uint64
-	retcode int32
-}
-type domainMigrateFinish2Ret struct {
-	ddom nonnullDomain
-}
-type connectListDefinedDomainsArgs struct {
-	maxnames int32
-}
-type connectListDefinedDomainsRet struct {
-	names nonnullString
-}
-type connectNumOfDefinedDomainsRet struct {
-	num int32
-}
-type domainCreateArgs struct {
-	dom nonnullDomain
-}
-type domainCreateWithFlagsArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainCreateWithFlagsRet struct {
-	dom nonnullDomain
-}
-type domainCreateWithFilesArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainCreateWithFilesRet struct {
-	dom nonnullDomain
-}
-type domainDefineXMLArgs struct {
-	xml nonnullString
-}
-type domainDefineXMLRet struct {
-	dom nonnullDomain
-}
-type domainDefineXMLFlagsArgs struct {
-	xml nonnullString
-	flags uint32
-}
-type domainDefineXMLFlagsRet struct {
-	dom nonnullDomain
-}
-type domainUndefineArgs struct {
-	dom nonnullDomain
-}
-type domainUndefineFlagsArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainInjectNmiArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainSendKeyArgs struct {
-	dom nonnullDomain
-	codeset uint32
-	holdtime uint32
-	keycodes uint32
-	flags uint32
-}
-type domainSendProcessSignalArgs struct {
-	dom nonnullDomain
-	pidValue int64
-	signum uint32
-	flags uint32
-}
-type domainSetVcpusArgs struct {
-	dom nonnullDomain
-	nvcpus uint32
-}
-type domainSetVcpusFlagsArgs struct {
-	dom nonnullDomain
-	nvcpus uint32
-	flags uint32
-}
-type domainGetVcpusFlagsArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetVcpusFlagsRet struct {
-	num int32
-}
-type domainPinVcpuArgs struct {
-	dom nonnullDomain
-	vcpu uint32
-	cpumap []byte
-}
-type domainPinVcpuFlagsArgs struct {
-	dom nonnullDomain
-	vcpu uint32
-	cpumap []byte
-	flags uint32
-}
-type domainGetVcpuPinInfoArgs struct {
-	dom nonnullDomain
-	ncpumaps int32
-	maplen int32
-	flags uint32
-}
-type domainGetVcpuPinInfoRet struct {
-	cpumaps []byte
-	num int32
-}
-type domainPinEmulatorArgs struct {
-	dom nonnullDomain
-	cpumap []byte
-	flags uint32
-}
-type domainGetEmulatorPinInfoArgs struct {
-	dom nonnullDomain
-	maplen int32
-	flags uint32
-}
-type domainGetEmulatorPinInfoRet struct {
-	cpumaps []byte
-	ret int32
-}
-type domainGetVcpusArgs struct {
-	dom nonnullDomain
-	maxinfo int32
-	maplen int32
-}
-type domainGetVcpusRet struct {
-	info vcpuInfo
-	cpumaps []byte
-}
-type domainGetMaxVcpusArgs struct {
-	dom nonnullDomain
-}
-type domainGetMaxVcpusRet struct {
-	num int32
-}
-type domainIothreadInfo struct {
-	iothreadID uint32
-	cpumap []byte
-}
-type domainGetIothreadInfoArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetIothreadInfoRet struct {
-	info domainIothreadInfo
-	ret uint32
-}
-type domainPinIothreadArgs struct {
-	dom nonnullDomain
-	iothreadsID uint32
-	cpumap []byte
-	flags uint32
-}
-type domainAddIothreadArgs struct {
-	dom nonnullDomain
-	iothreadID uint32
-	flags uint32
-}
-type domainDelIothreadArgs struct {
-	dom nonnullDomain
-	iothreadID uint32
-	flags uint32
-}
-type domainGetSecurityLabelArgs struct {
-	dom nonnullDomain
-}
-type domainGetSecurityLabelRet struct {
-	label int8
-	enforcing int32
-}
-type domainGetSecurityLabelListArgs struct {
-	dom nonnullDomain
-}
-type domainGetSecurityLabelListRet struct {
-	labels domainGetSecurityLabelRet
-	ret int32
-}
-type nodeGetSecurityModelRet struct {
-	model int8
-	doi int8
-}
-type domainAttachDeviceArgs struct {
-	dom nonnullDomain
-	xml nonnullString
-}
-type domainAttachDeviceFlagsArgs struct {
-	dom nonnullDomain
-	xml nonnullString
-	flags uint32
-}
-type domainDetachDeviceArgs struct {
-	dom nonnullDomain
-	xml nonnullString
-}
-type domainDetachDeviceFlagsArgs struct {
-	dom nonnullDomain
-	xml nonnullString
-	flags uint32
-}
-type domainUpdateDeviceFlagsArgs struct {
-	dom nonnullDomain
-	xml nonnullString
-	flags uint32
-}
-type domainGetAutostartArgs struct {
-	dom nonnullDomain
-}
-type domainGetAutostartRet struct {
-	autostart int32
-}
-type domainSetAutostartArgs struct {
-	dom nonnullDomain
-	autostart int32
-}
-type domainSetMetadataArgs struct {
-	dom nonnullDomain
-	lvtype int32
-	metadata lvstring
-	key lvstring
-	uri lvstring
-	flags uint32
-}
-type domainGetMetadataArgs struct {
-	dom nonnullDomain
-	lvtype int32
-	uri lvstring
-	flags uint32
-}
-type domainGetMetadataRet struct {
-	metadata nonnullString
-}
-type domainBlockJobAbortArgs struct {
-	dom nonnullDomain
-	path nonnullString
-	flags uint32
-}
-type domainGetBlockJobInfoArgs struct {
-	dom nonnullDomain
-	path nonnullString
-	flags uint32
-}
-type domainGetBlockJobInfoRet struct {
-	found int32
-	lvtype int32
-	bandwidth uint64
-	cur uint64
-	end uint64
-}
-type domainBlockJobSetSpeedArgs struct {
-	dom nonnullDomain
-	path nonnullString
-	bandwidth uint64
-	flags uint32
-}
-type domainBlockPullArgs struct {
-	dom nonnullDomain
-	path nonnullString
-	bandwidth uint64
-	flags uint32
-}
-type domainBlockRebaseArgs struct {
-	dom nonnullDomain
-	path nonnullString
-	base lvstring
-	bandwidth uint64
-	flags uint32
-}
-type domainBlockCopyArgs struct {
-	dom nonnullDomain
-	path nonnullString
-	destxml nonnullString
-	params typedParam
-	flags uint32
-}
-type domainBlockCommitArgs struct {
-	dom nonnullDomain
-	disk nonnullString
-	base lvstring
-	top lvstring
-	bandwidth uint64
-	flags uint32
-}
-type domainSetBlockIOTuneArgs struct {
-	dom nonnullDomain
-	disk nonnullString
-	params typedParam
-	flags uint32
-}
-type domainGetBlockIOTuneArgs struct {
-	dom nonnullDomain
-	disk lvstring
-	nparams int32
-	flags uint32
-}
-type domainGetBlockIOTuneRet struct {
-	params typedParam
-	nparams int32
-}
-type domainGetCPUStatsArgs struct {
-	dom nonnullDomain
-	nparams uint32
-	startCPU int32
-	ncpus uint32
-	flags uint32
-}
-type domainGetCPUStatsRet struct {
-	params typedParam
-	nparams int32
-}
-type domainGetHostnameArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetHostnameRet struct {
-	hostname nonnullString
-}
-type connectNumOfNetworksRet struct {
-	num int32
-}
-type connectListNetworksArgs struct {
-	maxnames int32
-}
-type connectListNetworksRet struct {
-	names nonnullString
-}
-type connectNumOfDefinedNetworksRet struct {
-	num int32
-}
-type connectListDefinedNetworksArgs struct {
-	maxnames int32
-}
-type connectListDefinedNetworksRet struct {
-	names nonnullString
-}
-type networkLookupByUUIDArgs struct {
-	uuid uuid
-}
-type networkLookupByUUIDRet struct {
-	net nonnullNetwork
-}
-type networkLookupByNameArgs struct {
-	name nonnullString
-}
-type networkLookupByNameRet struct {
-	net nonnullNetwork
-}
-type networkCreateXMLArgs struct {
-	xml nonnullString
-}
-type networkCreateXMLRet struct {
-	net nonnullNetwork
-}
-type networkDefineXMLArgs struct {
-	xml nonnullString
-}
-type networkDefineXMLRet struct {
-	net nonnullNetwork
-}
-type networkUndefineArgs struct {
-	net nonnullNetwork
-}
-type networkUpdateArgs struct {
-	net nonnullNetwork
-	command uint32
-	section uint32
-	parentindex int32
-	xml nonnullString
-	flags uint32
-}
-type networkCreateArgs struct {
-	net nonnullNetwork
-}
-type networkDestroyArgs struct {
-	net nonnullNetwork
-}
-type networkGetXMLDescArgs struct {
-	net nonnullNetwork
-	flags uint32
-}
-type networkGetXMLDescRet struct {
-	xml nonnullString
-}
-type networkGetBridgeNameArgs struct {
-	net nonnullNetwork
-}
-type networkGetBridgeNameRet struct {
-	name nonnullString
-}
-type networkGetAutostartArgs struct {
-	net nonnullNetwork
-}
-type networkGetAutostartRet struct {
-	autostart int32
-}
-type networkSetAutostartArgs struct {
-	net nonnullNetwork
-	autostart int32
-}
-type connectNumOfNwfiltersRet struct {
-	num int32
-}
-type connectListNwfiltersArgs struct {
-	maxnames int32
-}
-type connectListNwfiltersRet struct {
-	names nonnullString
-}
-type nwfilterLookupByUUIDArgs struct {
-	uuid uuid
-}
-type nwfilterLookupByUUIDRet struct {
-	nwfilter nonnullNwfilter
-}
-type nwfilterLookupByNameArgs struct {
-	name nonnullString
-}
-type nwfilterLookupByNameRet struct {
-	nwfilter nonnullNwfilter
-}
-type nwfilterDefineXMLArgs struct {
-	xml nonnullString
-}
-type nwfilterDefineXMLRet struct {
-	nwfilter nonnullNwfilter
-}
-type nwfilterUndefineArgs struct {
-	nwfilter nonnullNwfilter
-}
-type nwfilterGetXMLDescArgs struct {
-	nwfilter nonnullNwfilter
-	flags uint32
-}
-type nwfilterGetXMLDescRet struct {
-	xml nonnullString
-}
-type connectNumOfInterfacesRet struct {
-	num int32
-}
-type connectListInterfacesArgs struct {
-	maxnames int32
-}
-type connectListInterfacesRet struct {
-	names nonnullString
-}
-type connectNumOfDefinedInterfacesRet struct {
-	num int32
-}
-type connectListDefinedInterfacesArgs struct {
-	maxnames int32
-}
-type connectListDefinedInterfacesRet struct {
-	names nonnullString
-}
-type interfaceLookupByNameArgs struct {
-	name nonnullString
-}
-type interfaceLookupByNameRet struct {
-	iface nonnullInterface
-}
-type interfaceLookupByMacStringArgs struct {
-	mac nonnullString
-}
-type interfaceLookupByMacStringRet struct {
-	iface nonnullInterface
-}
-type interfaceGetXMLDescArgs struct {
-	iface nonnullInterface
-	flags uint32
-}
-type interfaceGetXMLDescRet struct {
-	xml nonnullString
-}
-type interfaceDefineXMLArgs struct {
-	xml nonnullString
-	flags uint32
-}
-type interfaceDefineXMLRet struct {
-	iface nonnullInterface
-}
-type interfaceUndefineArgs struct {
-	iface nonnullInterface
-}
-type interfaceCreateArgs struct {
-	iface nonnullInterface
-	flags uint32
-}
-type interfaceDestroyArgs struct {
-	iface nonnullInterface
-	flags uint32
-}
-type interfaceChangeBeginArgs struct {
-	flags uint32
-}
-type interfaceChangeCommitArgs struct {
-	flags uint32
-}
-type interfaceChangeRollbackArgs struct {
-	flags uint32
-}
-type authListRet struct {
-	types authType
-}
-type authSaslInitRet struct {
-	mechlist nonnullString
-}
-type authSaslStartArgs struct {
-	mech nonnullString
-	nil int32
-	data int8
-}
-type authSaslStartRet struct {
-	complete int32
-	nil int32
-	data int8
-}
-type authSaslStepArgs struct {
-	nil int32
-	data int8
-}
-type authSaslStepRet struct {
-	complete int32
-	nil int32
-	data int8
-}
-type authPolkitRet struct {
-	complete int32
-}
-type connectNumOfStoragePoolsRet struct {
-	num int32
-}
-type connectListStoragePoolsArgs struct {
-	maxnames int32
-}
-type connectListStoragePoolsRet struct {
-	names nonnullString
-}
-type connectNumOfDefinedStoragePoolsRet struct {
-	num int32
-}
-type connectListDefinedStoragePoolsArgs struct {
-	maxnames int32
-}
-type connectListDefinedStoragePoolsRet struct {
-	names nonnullString
-}
-type connectFindStoragePoolSourcesArgs struct {
-	lvtype nonnullString
-	srcspec lvstring
-	flags uint32
-}
-type connectFindStoragePoolSourcesRet struct {
-	xml nonnullString
-}
-type storagePoolLookupByUUIDArgs struct {
-	uuid uuid
-}
-type storagePoolLookupByUUIDRet struct {
-	pool nonnullStoragePool
-}
-type storagePoolLookupByNameArgs struct {
-	name nonnullString
-}
-type storagePoolLookupByNameRet struct {
-	pool nonnullStoragePool
-}
-type storagePoolLookupByVolumeArgs struct {
-	vol nonnullStorageVol
-}
-type storagePoolLookupByVolumeRet struct {
-	pool nonnullStoragePool
-}
-type storagePoolCreateXMLArgs struct {
-	xml nonnullString
-	flags uint32
-}
-type storagePoolCreateXMLRet struct {
-	pool nonnullStoragePool
-}
-type storagePoolDefineXMLArgs struct {
-	xml nonnullString
-	flags uint32
-}
-type storagePoolDefineXMLRet struct {
-	pool nonnullStoragePool
-}
-type storagePoolBuildArgs struct {
-	pool nonnullStoragePool
-	flags uint32
-}
-type storagePoolUndefineArgs struct {
-	pool nonnullStoragePool
-}
-type storagePoolCreateArgs struct {
-	pool nonnullStoragePool
-	flags uint32
-}
-type storagePoolDestroyArgs struct {
-	pool nonnullStoragePool
-}
-type storagePoolDeleteArgs struct {
-	pool nonnullStoragePool
-	flags uint32
-}
-type storagePoolRefreshArgs struct {
-	pool nonnullStoragePool
-	flags uint32
-}
-type storagePoolGetXMLDescArgs struct {
-	pool nonnullStoragePool
-	flags uint32
-}
-type storagePoolGetXMLDescRet struct {
-	xml nonnullString
-}
-type storagePoolGetInfoArgs struct {
-	pool nonnullStoragePool
-}
-type storagePoolGetInfoRet struct {
-	state uint8
-	capacity uint64
-	allocation uint64
-	available uint64
-}
-type storagePoolGetAutostartArgs struct {
-	pool nonnullStoragePool
-}
-type storagePoolGetAutostartRet struct {
-	autostart int32
-}
-type storagePoolSetAutostartArgs struct {
-	pool nonnullStoragePool
-	autostart int32
-}
-type storagePoolNumOfVolumesArgs struct {
-	pool nonnullStoragePool
-}
-type storagePoolNumOfVolumesRet struct {
-	num int32
-}
-type storagePoolListVolumesArgs struct {
-	pool nonnullStoragePool
-	maxnames int32
-}
-type storagePoolListVolumesRet struct {
-	names nonnullString
-}
-type storageVolLookupByNameArgs struct {
-	pool nonnullStoragePool
-	name nonnullString
-}
-type storageVolLookupByNameRet struct {
-	vol nonnullStorageVol
-}
-type storageVolLookupByKeyArgs struct {
-	key nonnullString
-}
-type storageVolLookupByKeyRet struct {
-	vol nonnullStorageVol
-}
-type storageVolLookupByPathArgs struct {
-	path nonnullString
-}
-type storageVolLookupByPathRet struct {
-	vol nonnullStorageVol
-}
-type storageVolCreateXMLArgs struct {
-	pool nonnullStoragePool
-	xml nonnullString
-	flags uint32
-}
-type storageVolCreateXMLRet struct {
-	vol nonnullStorageVol
-}
-type storageVolCreateXMLFromArgs struct {
-	pool nonnullStoragePool
-	xml nonnullString
-	clonevol nonnullStorageVol
-	flags uint32
-}
-type storageVolCreateXMLFromRet struct {
-	vol nonnullStorageVol
-}
-type storageVolDeleteArgs struct {
-	vol nonnullStorageVol
-	flags uint32
-}
-type storageVolWipeArgs struct {
-	vol nonnullStorageVol
-	flags uint32
-}
-type storageVolWipePatternArgs struct {
-	vol nonnullStorageVol
-	algorithm uint32
-	flags uint32
-}
-type storageVolGetXMLDescArgs struct {
-	vol nonnullStorageVol
-	flags uint32
-}
-type storageVolGetXMLDescRet struct {
-	xml nonnullString
-}
-type storageVolGetInfoArgs struct {
-	vol nonnullStorageVol
-}
-type storageVolGetInfoRet struct {
-	lvtype int8
-	capacity uint64
-	allocation uint64
-}
-type storageVolGetInfoFlagsArgs struct {
-	vol nonnullStorageVol
-	flags uint32
-}
-type storageVolGetInfoFlagsRet struct {
-	lvtype int8
-	capacity uint64
-	allocation uint64
-}
-type storageVolGetPathArgs struct {
-	vol nonnullStorageVol
-}
-type storageVolGetPathRet struct {
-	name nonnullString
-}
-type storageVolResizeArgs struct {
-	vol nonnullStorageVol
-	capacity uint64
-	flags uint32
-}
-type nodeNumOfDevicesArgs struct {
-	cap lvstring
-	flags uint32
-}
-type nodeNumOfDevicesRet struct {
-	num int32
-}
-type nodeListDevicesArgs struct {
-	cap lvstring
-	maxnames int32
-	flags uint32
-}
-type nodeListDevicesRet struct {
-	names nonnullString
-}
-type nodeDeviceLookupByNameArgs struct {
-	name nonnullString
-}
-type nodeDeviceLookupByNameRet struct {
-	dev nonnullNodeDevice
-}
-type nodeDeviceLookupScsiHostByWwnArgs struct {
-	wwnn nonnullString
-	wwpn nonnullString
-	flags uint32
-}
-type nodeDeviceLookupScsiHostByWwnRet struct {
-	dev nonnullNodeDevice
-}
-type nodeDeviceGetXMLDescArgs struct {
-	name nonnullString
-	flags uint32
-}
-type nodeDeviceGetXMLDescRet struct {
-	xml nonnullString
-}
-type nodeDeviceGetParentArgs struct {
-	name nonnullString
-}
-type nodeDeviceGetParentRet struct {
-	parent lvstring
-}
-type nodeDeviceNumOfCapsArgs struct {
-	name nonnullString
-}
-type nodeDeviceNumOfCapsRet struct {
-	num int32
-}
-type nodeDeviceListCapsArgs struct {
-	name nonnullString
-	maxnames int32
-}
-type nodeDeviceListCapsRet struct {
-	names nonnullString
-}
-type nodeDeviceDettachArgs struct {
-	name nonnullString
-}
-type nodeDeviceDetachFlagsArgs struct {
-	name nonnullString
-	drivername lvstring
-	flags uint32
-}
-type nodeDeviceReAttachArgs struct {
-	name nonnullString
-}
-type nodeDeviceResetArgs struct {
-	name nonnullString
-}
-type nodeDeviceCreateXMLArgs struct {
-	xmlDesc nonnullString
-	flags uint32
-}
-type nodeDeviceCreateXMLRet struct {
-	dev nonnullNodeDevice
-}
-type nodeDeviceDestroyArgs struct {
-	name nonnullString
-}
-type connectDomainEventRegisterRet struct {
-	cbRegistered int32
-}
-type connectDomainEventDeregisterRet struct {
-	cbRegistered int32
-}
-type domainEventLifecycleMsg struct {
-	dom nonnullDomain
-	event int32
-	detail int32
-}
-type domainEventCallbackLifecycleMsg struct {
-	callbackid int32
-	msg domainEventLifecycleMsg
-}
-type connectDomainXMLFromNativeArgs struct {
-	nativeformat nonnullString
-	nativeconfig nonnullString
-	flags uint32
-}
-type connectDomainXMLFromNativeRet struct {
-	domainxml nonnullString
-}
-type connectDomainXMLToNativeArgs struct {
-	nativeformat nonnullString
-	domainxml nonnullString
-	flags uint32
-}
-type connectDomainXMLToNativeRet struct {
-	nativeconfig nonnullString
-}
-type connectNumOfSecretsRet struct {
-	num int32
-}
-type connectListSecretsArgs struct {
-	maxuuids int32
-}
-type connectListSecretsRet struct {
-	uuids nonnullString
-}
-type secretLookupByUUIDArgs struct {
-	uuid uuid
-}
-type secretLookupByUUIDRet struct {
-	secret nonnullSecret
-}
-type secretDefineXMLArgs struct {
-	xml nonnullString
-	flags uint32
-}
-type secretDefineXMLRet struct {
-	secret nonnullSecret
-}
-type secretGetXMLDescArgs struct {
-	secret nonnullSecret
-	flags uint32
-}
-type secretGetXMLDescRet struct {
-	xml nonnullString
-}
-type secretSetValueArgs struct {
-	secret nonnullSecret
-	value []byte
-	flags uint32
-}
-type secretGetValueArgs struct {
-	secret nonnullSecret
-	flags uint32
-}
-type secretGetValueRet struct {
-	value []byte
-}
-type secretUndefineArgs struct {
-	secret nonnullSecret
-}
-type secretLookupByUsageArgs struct {
-	usagetype int32
-	usageid nonnullString
-}
-type secretLookupByUsageRet struct {
-	secret nonnullSecret
-}
-type domainMigratePrepareTunnelArgs struct {
-	flags uint64
-	dname lvstring
-	resource uint64
-	domXML nonnullString
-}
-type connectIsSecureRet struct {
-	secure int32
-}
-type domainIsActiveArgs struct {
-	dom nonnullDomain
-}
-type domainIsActiveRet struct {
-	active int32
-}
-type domainIsPersistentArgs struct {
-	dom nonnullDomain
-}
-type domainIsPersistentRet struct {
-	persistent int32
-}
-type domainIsUpdatedArgs struct {
-	dom nonnullDomain
-}
-type domainIsUpdatedRet struct {
-	updated int32
-}
-type networkIsActiveArgs struct {
-	net nonnullNetwork
-}
-type networkIsActiveRet struct {
-	active int32
-}
-type networkIsPersistentArgs struct {
-	net nonnullNetwork
-}
-type networkIsPersistentRet struct {
-	persistent int32
-}
-type storagePoolIsActiveArgs struct {
-	pool nonnullStoragePool
-}
-type storagePoolIsActiveRet struct {
-	active int32
-}
-type storagePoolIsPersistentArgs struct {
-	pool nonnullStoragePool
-}
-type storagePoolIsPersistentRet struct {
-	persistent int32
-}
-type interfaceIsActiveArgs struct {
-	iface nonnullInterface
-}
-type interfaceIsActiveRet struct {
-	active int32
-}
-type connectCompareCPUArgs struct {
-	xml nonnullString
-	flags uint32
-}
-type connectCompareCPURet struct {
-	result int32
-}
-type connectBaselineCPUArgs struct {
-	xmlcpus nonnullString
-	flags uint32
-}
-type connectBaselineCPURet struct {
-	cpu nonnullString
-}
-type domainGetJobInfoArgs struct {
-	dom nonnullDomain
-}
-type domainGetJobInfoRet struct {
-	lvtype int32
-	timeelapsed uint64
-	timeremaining uint64
-	datatotal uint64
-	dataprocessed uint64
-	dataremaining uint64
-	memtotal uint64
-	memprocessed uint64
-	memremaining uint64
-	filetotal uint64
-	fileprocessed uint64
-	fileremaining uint64
-}
-type domainGetJobStatsArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetJobStatsRet struct {
-	lvtype int32
-	params typedParam
-}
-type domainAbortJobArgs struct {
-	dom nonnullDomain
-}
-type domainMigrateGetMaxDowntimeArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainMigrateGetMaxDowntimeRet struct {
-	downtime uint64
-}
-type domainMigrateSetMaxDowntimeArgs struct {
-	dom nonnullDomain
-	downtime uint64
-	flags uint32
-}
-type domainMigrateGetCompressionCacheArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainMigrateGetCompressionCacheRet struct {
-	cachesize uint64
-}
-type domainMigrateSetCompressionCacheArgs struct {
-	dom nonnullDomain
-	cachesize uint64
-	flags uint32
-}
-type domainMigrateSetMaxSpeedArgs struct {
-	dom nonnullDomain
-	bandwidth uint64
-	flags uint32
-}
-type domainMigrateGetMaxSpeedArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainMigrateGetMaxSpeedRet struct {
-	bandwidth uint64
-}
-type connectDomainEventRegisterAnyArgs struct {
-	eventid int32
-}
-type connectDomainEventDeregisterAnyArgs struct {
-	eventid int32
-}
-type connectDomainEventCallbackRegisterAnyArgs struct {
-	eventid int32
-	dom domain
-}
-type connectDomainEventCallbackRegisterAnyRet struct {
-	callbackid int32
-}
-type connectDomainEventCallbackDeregisterAnyArgs struct {
-	callbackid int32
-}
-type domainEventRebootMsg struct {
-	dom nonnullDomain
-}
-type domainEventCallbackRebootMsg struct {
-	callbackid int32
-	msg domainEventRebootMsg
-}
-type domainEventRtcChangeMsg struct {
-	dom nonnullDomain
-	offset int64
-}
-type domainEventCallbackRtcChangeMsg struct {
-	callbackid int32
-	msg domainEventRtcChangeMsg
-}
-type domainEventWatchdogMsg struct {
-	dom nonnullDomain
-	action int32
-}
-type domainEventCallbackWatchdogMsg struct {
-	callbackid int32
-	msg domainEventWatchdogMsg
-}
-type domainEventIOErrorMsg struct {
-	dom nonnullDomain
-	srcpath nonnullString
-	devalias nonnullString
-	action int32
-}
-type domainEventCallbackIOErrorMsg struct {
-	callbackid int32
-	msg domainEventIOErrorMsg
-}
-type domainEventIOErrorReasonMsg struct {
-	dom nonnullDomain
-	srcpath nonnullString
-	devalias nonnullString
-	action int32
-	reason nonnullString
-}
-type domainEventCallbackIOErrorReasonMsg struct {
-	callbackid int32
-	msg domainEventIOErrorReasonMsg
-}
-type domainEventGraphicsAddress struct {
-	family int32
-	node nonnullString
-	service nonnullString
-}
-type domainEventGraphicsIdentity struct {
-	lvtype nonnullString
-	name nonnullString
-}
-type domainEventGraphicsMsg struct {
-	dom nonnullDomain
-	phase int32
-	local domainEventGraphicsAddress
-	remote domainEventGraphicsAddress
-	authscheme nonnullString
-	subject domainEventGraphicsIdentity
-}
-type domainEventCallbackGraphicsMsg struct {
-	callbackid int32
-	msg domainEventGraphicsMsg
-}
-type domainEventBlockJobMsg struct {
-	dom nonnullDomain
-	path nonnullString
-	lvtype int32
-	status int32
-}
-type domainEventCallbackBlockJobMsg struct {
-	callbackid int32
-	msg domainEventBlockJobMsg
-}
-type domainEventDiskChangeMsg struct {
-	dom nonnullDomain
-	oldsrcpath lvstring
-	newsrcpath lvstring
-	devalias nonnullString
-	reason int32
-}
-type domainEventCallbackDiskChangeMsg struct {
-	callbackid int32
-	msg domainEventDiskChangeMsg
-}
-type domainEventTrayChangeMsg struct {
-	dom nonnullDomain
-	devalias nonnullString
-	reason int32
-}
-type domainEventCallbackTrayChangeMsg struct {
-	callbackid int32
-	msg domainEventTrayChangeMsg
-}
-type domainEventPmwakeupMsg struct {
-	dom nonnullDomain
-}
-type domainEventCallbackPmwakeupMsg struct {
-	callbackid int32
-	reason int32
-	msg domainEventPmwakeupMsg
-}
-type domainEventPmsuspendMsg struct {
-	dom nonnullDomain
-}
-type domainEventCallbackPmsuspendMsg struct {
-	callbackid int32
-	reason int32
-	msg domainEventPmsuspendMsg
-}
-type domainEventBalloonChangeMsg struct {
-	dom nonnullDomain
-	actual uint64
-}
-type domainEventCallbackBalloonChangeMsg struct {
-	callbackid int32
-	msg domainEventBalloonChangeMsg
-}
-type domainEventPmsuspendDiskMsg struct {
-	dom nonnullDomain
-}
-type domainEventCallbackPmsuspendDiskMsg struct {
-	callbackid int32
-	reason int32
-	msg domainEventPmsuspendDiskMsg
-}
-type domainManagedSaveArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainHasManagedSaveImageArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainHasManagedSaveImageRet struct {
-	result int32
-}
-type domainManagedSaveRemoveArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainManagedSaveGetXMLDescArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainManagedSaveGetXMLDescRet struct {
-	xml nonnullString
-}
-type domainManagedSaveDefineXMLArgs struct {
-	dom nonnullDomain
-	dxml lvstring
-	flags uint32
-}
-type domainSnapshotCreateXMLArgs struct {
-	dom nonnullDomain
-	xmlDesc nonnullString
-	flags uint32
-}
-type domainSnapshotCreateXMLRet struct {
-	snap nonnullDomainSnapshot
-}
-type domainSnapshotGetXMLDescArgs struct {
-	snap nonnullDomainSnapshot
-	flags uint32
-}
-type domainSnapshotGetXMLDescRet struct {
-	xml nonnullString
-}
-type domainSnapshotNumArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainSnapshotNumRet struct {
-	num int32
-}
-type domainSnapshotListNamesArgs struct {
-	dom nonnullDomain
-	maxnames int32
-	flags uint32
-}
-type domainSnapshotListNamesRet struct {
-	names nonnullString
-}
-type domainListAllSnapshotsArgs struct {
-	dom nonnullDomain
-	needResults int32
-	flags uint32
-}
-type domainListAllSnapshotsRet struct {
-	snapshots nonnullDomainSnapshot
-	ret int32
-}
-type domainSnapshotNumChildrenArgs struct {
-	snap nonnullDomainSnapshot
-	flags uint32
-}
-type domainSnapshotNumChildrenRet struct {
-	num int32
-}
-type domainSnapshotListChildrenNamesArgs struct {
-	snap nonnullDomainSnapshot
-	maxnames int32
-	flags uint32
-}
-type domainSnapshotListChildrenNamesRet struct {
-	names nonnullString
-}
-type domainSnapshotListAllChildrenArgs struct {
-	snapshot nonnullDomainSnapshot
-	needResults int32
-	flags uint32
-}
-type domainSnapshotListAllChildrenRet struct {
-	snapshots nonnullDomainSnapshot
-	ret int32
-}
-type domainSnapshotLookupByNameArgs struct {
-	dom nonnullDomain
-	name nonnullString
-	flags uint32
-}
-type domainSnapshotLookupByNameRet struct {
-	snap nonnullDomainSnapshot
-}
-type domainHasCurrentSnapshotArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainHasCurrentSnapshotRet struct {
-	result int32
-}
-type domainSnapshotGetParentArgs struct {
-	snap nonnullDomainSnapshot
-	flags uint32
-}
-type domainSnapshotGetParentRet struct {
-	snap nonnullDomainSnapshot
-}
-type domainSnapshotCurrentArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainSnapshotCurrentRet struct {
-	snap nonnullDomainSnapshot
-}
-type domainSnapshotIsCurrentArgs struct {
-	snap nonnullDomainSnapshot
-	flags uint32
-}
-type domainSnapshotIsCurrentRet struct {
-	current int32
-}
-type domainSnapshotHasMetadataArgs struct {
-	snap nonnullDomainSnapshot
-	flags uint32
-}
-type domainSnapshotHasMetadataRet struct {
-	metadata int32
-}
-type domainRevertToSnapshotArgs struct {
-	snap nonnullDomainSnapshot
-	flags uint32
-}
-type domainSnapshotDeleteArgs struct {
-	snap nonnullDomainSnapshot
-	flags uint32
-}
-type domainOpenConsoleArgs struct {
-	dom nonnullDomain
-	devName lvstring
-	flags uint32
-}
-type domainOpenChannelArgs struct {
-	dom nonnullDomain
-	name lvstring
-	flags uint32
-}
-type storageVolUploadArgs struct {
-	vol nonnullStorageVol
-	offset uint64
-	length uint64
-	flags uint32
-}
-type storageVolDownloadArgs struct {
-	vol nonnullStorageVol
-	offset uint64
-	length uint64
-	flags uint32
-}
-type domainGetStateArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetStateRet struct {
-	state int32
-	reason int32
-}
-type domainMigrateBegin3Args struct {
-	dom nonnullDomain
-	xmlin lvstring
-	flags uint64
-	dname lvstring
-	resource uint64
-}
-type domainMigrateBegin3Ret struct {
-	cookieOut []byte
-	xml nonnullString
-}
-type domainMigratePrepare3Args struct {
-	cookieIn []byte
-	uriIn lvstring
-	flags uint64
-	dname lvstring
-	resource uint64
-	domXML nonnullString
-}
-type domainMigratePrepare3Ret struct {
-	cookieOut []byte
-	uriOut lvstring
-}
-type domainMigratePrepareTunnel3Args struct {
-	cookieIn []byte
-	flags uint64
-	dname lvstring
-	resource uint64
-	domXML nonnullString
-}
-type domainMigratePrepareTunnel3Ret struct {
-	cookieOut []byte
-}
-type domainMigratePerform3Args struct {
-	dom nonnullDomain
-	xmlin lvstring
-	cookieIn []byte
-	dconnuri lvstring
-	uri lvstring
-	flags uint64
-	dname lvstring
-	resource uint64
-}
-type domainMigratePerform3Ret struct {
-	cookieOut []byte
-}
-type domainMigrateFinish3Args struct {
-	dname nonnullString
-	cookieIn []byte
-	dconnuri lvstring
-	uri lvstring
-	flags uint64
-	cancelled int32
-}
-type domainMigrateFinish3Ret struct {
-	dom nonnullDomain
-	cookieOut []byte
-}
-type domainMigrateConfirm3Args struct {
-	dom nonnullDomain
-	cookieIn []byte
-	flags uint64
-	cancelled int32
-}
-type domainEventControlErrorMsg struct {
-	dom nonnullDomain
-}
-type domainEventCallbackControlErrorMsg struct {
-	callbackid int32
-	msg domainEventControlErrorMsg
-}
-type domainGetControlInfoArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetControlInfoRet struct {
-	state uint32
-	details uint32
-	statetime uint64
-}
-type domainOpenGraphicsArgs struct {
-	dom nonnullDomain
-	idx uint32
-	flags uint32
-}
-type domainOpenGraphicsFdArgs struct {
-	dom nonnullDomain
-	idx uint32
-	flags uint32
-}
-type nodeSuspendForDurationArgs struct {
-	target uint32
-	duration uint64
-	flags uint32
-}
-type domainShutdownFlagsArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetDiskErrorsArgs struct {
-	dom nonnullDomain
-	maxerrors uint32
-	flags uint32
-}
-type domainGetDiskErrorsRet struct {
-	errors domainDiskError
-	nerrors int32
-}
-type connectListAllDomainsArgs struct {
-	needResults int32
-	flags uint32
-}
-type connectListAllDomainsRet struct {
-	domains nonnullDomain
-	ret uint32
-}
-type connectListAllStoragePoolsArgs struct {
-	needResults int32
-	flags uint32
-}
-type connectListAllStoragePoolsRet struct {
-	pools nonnullStoragePool
-	ret uint32
-}
-type storagePoolListAllVolumesArgs struct {
-	pool nonnullStoragePool
-	needResults int32
-	flags uint32
-}
-type storagePoolListAllVolumesRet struct {
-	vols nonnullStorageVol
-	ret uint32
-}
-type connectListAllNetworksArgs struct {
-	needResults int32
-	flags uint32
-}
-type connectListAllNetworksRet struct {
-	nets nonnullNetwork
-	ret uint32
-}
-type connectListAllInterfacesArgs struct {
-	needResults int32
-	flags uint32
-}
-type connectListAllInterfacesRet struct {
-	ifaces nonnullInterface
-	ret uint32
-}
-type connectListAllNodeDevicesArgs struct {
-	needResults int32
-	flags uint32
-}
-type connectListAllNodeDevicesRet struct {
-	devices nonnullNodeDevice
-	ret uint32
-}
-type connectListAllNwfiltersArgs struct {
-	needResults int32
-	flags uint32
-}
-type connectListAllNwfiltersRet struct {
-	filters nonnullNwfilter
-	ret uint32
-}
-type connectListAllSecretsArgs struct {
-	needResults int32
-	flags uint32
-}
-type connectListAllSecretsRet struct {
-	secrets nonnullSecret
-	ret uint32
-}
-type nodeSetMemoryParametersArgs struct {
-	params typedParam
-	flags uint32
-}
-type nodeGetMemoryParametersArgs struct {
-	nparams int32
-	flags uint32
-}
-type nodeGetMemoryParametersRet struct {
-	params typedParam
-	nparams int32
-}
-type nodeGetCPUMapArgs struct {
-	needMap int32
-	needOnline int32
-	flags uint32
-}
-type nodeGetCPUMapRet struct {
-	cpumap []byte
-	online uint32
-	ret int32
-}
-type domainFstrimArgs struct {
-	dom nonnullDomain
-	mountpoint lvstring
-	minimum uint64
-	flags uint32
-}
-type domainGetTimeArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetTimeRet struct {
-	seconds int64
-	nseconds uint32
-}
-type domainSetTimeArgs struct {
-	dom nonnullDomain
-	seconds int64
-	nseconds uint32
-	flags uint32
-}
-type domainMigrateBegin3ParamsArgs struct {
-	dom nonnullDomain
-	params typedParam
-	flags uint32
-}
-type domainMigrateBegin3ParamsRet struct {
-	cookieOut []byte
-	xml nonnullString
-}
-type domainMigratePrepare3ParamsArgs struct {
-	params typedParam
-	cookieIn []byte
-	flags uint32
-}
-type domainMigratePrepare3ParamsRet struct {
-	cookieOut []byte
-	uriOut lvstring
-}
-type domainMigratePrepareTunnel3ParamsArgs struct {
-	params typedParam
-	cookieIn []byte
-	flags uint32
-}
-type domainMigratePrepareTunnel3ParamsRet struct {
-	cookieOut []byte
-}
-type domainMigratePerform3ParamsArgs struct {
-	dom nonnullDomain
-	dconnuri lvstring
-	params typedParam
-	cookieIn []byte
-	flags uint32
-}
-type domainMigratePerform3ParamsRet struct {
-	cookieOut []byte
-}
-type domainMigrateFinish3ParamsArgs struct {
-	params typedParam
-	cookieIn []byte
-	flags uint32
-	cancelled int32
-}
-type domainMigrateFinish3ParamsRet struct {
-	dom nonnullDomain
-	cookieOut []byte
-}
-type domainMigrateConfirm3ParamsArgs struct {
-	dom nonnullDomain
-	params typedParam
-	cookieIn []byte
-	flags uint32
-	cancelled int32
-}
-type domainEventDeviceRemovedMsg struct {
-	dom nonnullDomain
-	devalias nonnullString
-}
-type domainEventCallbackDeviceRemovedMsg struct {
-	callbackid int32
-	msg domainEventDeviceRemovedMsg
-}
-type domainEventBlockJob2Msg struct {
-	callbackid int32
-	dom nonnullDomain
-	dst nonnullString
-	lvtype int32
-	status int32
-}
-type domainEventBlockThresholdMsg struct {
-	callbackid int32
-	dom nonnullDomain
-	dev nonnullString
-	path lvstring
-	threshold uint64
-	excess uint64
-}
-type domainEventCallbackTunableMsg struct {
-	callbackid int32
-	dom nonnullDomain
-	params typedParam
-}
-type domainEventCallbackDeviceAddedMsg struct {
-	callbackid int32
-	dom nonnullDomain
-	devalias nonnullString
-}
-type connectEventConnectionClosedMsg struct {
-	reason int32
-}
-type connectGetCPUModelNamesArgs struct {
-	arch nonnullString
-	needResults int32
-	flags uint32
-}
-type connectGetCPUModelNamesRet struct {
-	models nonnullString
-	ret int32
-}
-type connectNetworkEventRegisterAnyArgs struct {
-	eventid int32
-	net network
-}
-type connectNetworkEventRegisterAnyRet struct {
-	callbackid int32
-}
-type connectNetworkEventDeregisterAnyArgs struct {
-	callbackid int32
-}
-type networkEventLifecycleMsg struct {
-	callbackid int32
-	net nonnullNetwork
-	event int32
-	detail int32
-}
-type connectStoragePoolEventRegisterAnyArgs struct {
-	eventid int32
-	pool storagePool
-}
-type connectStoragePoolEventRegisterAnyRet struct {
-	callbackid int32
-}
-type connectStoragePoolEventDeregisterAnyArgs struct {
-	callbackid int32
-}
-type storagePoolEventLifecycleMsg struct {
-	callbackid int32
-	pool nonnullStoragePool
-	event int32
-	detail int32
-}
-type storagePoolEventRefreshMsg struct {
-	callbackid int32
-	pool nonnullStoragePool
-}
-type connectNodeDeviceEventRegisterAnyArgs struct {
-	eventid int32
-	dev nodeDevice
-}
-type connectNodeDeviceEventRegisterAnyRet struct {
-	callbackid int32
-}
-type connectNodeDeviceEventDeregisterAnyArgs struct {
-	callbackid int32
-}
-type nodeDeviceEventLifecycleMsg struct {
-	callbackid int32
-	dev nonnullNodeDevice
-	event int32
-	detail int32
-}
-type nodeDeviceEventUpdateMsg struct {
-	callbackid int32
-	dev nonnullNodeDevice
-}
-type domainFsfreezeArgs struct {
-	dom nonnullDomain
-	mountpoints nonnullString
-	flags uint32
-}
-type domainFsfreezeRet struct {
-	filesystems int32
-}
-type domainFsthawArgs struct {
-	dom nonnullDomain
-	mountpoints nonnullString
-	flags uint32
-}
-type domainFsthawRet struct {
-	filesystems int32
-}
-type nodeGetFreePagesArgs struct {
-	pages uint32
-	startcell int32
-	cellcount uint32
-	flags uint32
-}
-type nodeGetFreePagesRet struct {
-	counts uint64
-}
-type nodeAllocPagesArgs struct {
-	pagesizes uint32
-	pagecounts uint64
-	startcell int32
-	cellcount uint32
-	flags uint32
-}
-type nodeAllocPagesRet struct {
-	ret int32
-}
-type networkDhcpLease struct {
-	iface nonnullString
-	expirytime int64
-	lvtype int32
-	mac lvstring
-	iaid lvstring
-	ipaddr nonnullString
-	prefix uint32
-	hostname lvstring
-	clientid lvstring
-}
-type networkGetDhcpLeasesArgs struct {
-	net nonnullNetwork
-	mac lvstring
-	needResults int32
-	flags uint32
-}
-type networkGetDhcpLeasesRet struct {
-	leases networkDhcpLease
-	ret uint32
-}
-type domainStatsRecord struct {
-	dom nonnullDomain
-	params typedParam
-}
-type connectGetAllDomainStatsArgs struct {
-	doms nonnullDomain
-	stats uint32
-	flags uint32
-}
-type domainEventCallbackAgentLifecycleMsg struct {
-	callbackid int32
-	dom nonnullDomain
-	state int32
-	reason int32
-}
-type connectGetAllDomainStatsRet struct {
-	retstats domainStatsRecord
-}
-type domainFsinfo struct {
-	mountpoint nonnullString
-	name nonnullString
-	fstype nonnullString
-	devAliases nonnullString
-}
-type domainGetFsinfoArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetFsinfoRet struct {
-	info domainFsinfo
-	ret uint32
-}
-type domainIPAddr struct {
-	lvtype int32
-	addr nonnullString
-	prefix uint32
-}
-type domainInterface struct {
-	name nonnullString
-	hwaddr lvstring
-	addrs domainIPAddr
-}
-type domainInterfaceAddressesArgs struct {
-	dom nonnullDomain
-	source uint32
-	flags uint32
-}
-type domainInterfaceAddressesRet struct {
-	ifaces domainInterface
-}
-type domainSetUserPasswordArgs struct {
-	dom nonnullDomain
-	user lvstring
-	password lvstring
-	flags uint32
-}
-type domainRenameArgs struct {
-	dom nonnullDomain
-	newName lvstring
-	flags uint32
-}
-type domainRenameRet struct {
-	retcode int32
-}
-type domainEventCallbackMigrationIterationMsg struct {
-	callbackid int32
-	dom nonnullDomain
-	iteration int32
-}
-type domainEventCallbackJobCompletedMsg struct {
-	callbackid int32
-	dom nonnullDomain
-	params typedParam
-}
-type domainMigrateStartPostCopyArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainEventCallbackDeviceRemovalFailedMsg struct {
-	callbackid int32
-	dom nonnullDomain
-	devalias nonnullString
-}
-type domainGetGuestVcpusArgs struct {
-	dom nonnullDomain
-	flags uint32
-}
-type domainGetGuestVcpusRet struct {
-	params typedParam
-}
-type domainSetGuestVcpusArgs struct {
-	dom nonnullDomain
-	cpumap nonnullString
-	state int32
-	flags uint32
-}
-type domainSetVcpuArgs struct {
-	dom nonnullDomain
-	cpumap nonnullString
-	state int32
-	flags uint32
-}
-type domainEventCallbackMetadataChangeMsg struct {
-	callbackid int32
-	dom nonnullDomain
-	lvtype int32
-	nsuri lvstring
-}
-type connectSecretEventRegisterAnyArgs struct {
-	eventid int32
-	secret secret
-}
-type connectSecretEventRegisterAnyRet struct {
-	callbackid int32
-}
-type connectSecretEventDeregisterAnyArgs struct {
-	callbackid int32
-}
-type secretEventLifecycleMsg struct {
-	callbackid int32
-	secret nonnullSecret
-	event int32
-	detail int32
-}
-type secretEventValueChangedMsg struct {
-	callbackid int32
-	secret nonnullSecret
-}
-type domainSetBlockThresholdArgs struct {
-	dom nonnullDomain
-	dev nonnullString
-	threshold uint64
-	flags uint32
-}
-type domainSetLifecycleActionArgs struct {
-	dom nonnullDomain
-	lvtype uint32
-	action uint32
-	flags uint32
+type NonnullDomain struct {
+	Name string
+	UUID UUID
+	ID int32
 }
 
-// Unions:
-type typedParamValue struct {
-	discriminant int32
+type NonnullNetwork struct {
+	Name string
+	UUID UUID
 }
+
+type NonnullNwfilter struct {
+	Name string
+	UUID UUID
+}
+
+type NonnullInterface struct {
+	Name string
+	Mac string
+}
+
+type NonnullStoragePool struct {
+	Name string
+	UUID UUID
+}
+
+type NonnullStorageVol struct {
+	Pool string
+	Name string
+	Key string
+}
+
+type NonnullNodeDevice struct {
+	Name string
+}
+
+type NonnullSecret struct {
+	UUID UUID
+	UsageType int32
+	UsageID string
+}
+
+type NonnullDomainSnapshot struct {
+	Name string
+	Dom NonnullDomain
+}
+
+type Error struct {
+	Code int32
+	Domain int32
+	Message string
+	Level int32
+	Dom Domain
+	Str1 string
+	Str2 string
+	Str3 string
+	Int1 int32
+	Int2 int32
+	Net Network
+}
+
+type VcpuInfo struct {
+	Number uint32
+	State int32
+	CPUTime uint64
+	CPU int32
+}
+
+type TypedParam struct {
+	Field string
+	Value TypedParamValue
+}
+
+type NodeGetCPUStats struct {
+	Field string
+	Value uint64
+}
+
+type NodeGetMemoryStats struct {
+	Field string
+	Value uint64
+}
+
+type DomainDiskError struct {
+	Disk string
+	Error int32
+}
+
+type ConnectOpenArgs struct {
+	Name string
+	Flags uint32
+}
+
+type ConnectSupportsFeatureArgs struct {
+	Feature int32
+}
+
+type ConnectSupportsFeatureRet struct {
+	Supported int32
+}
+
+type ConnectGetTypeRet struct {
+	Type string
+}
+
+type ConnectGetVersionRet struct {
+	HvVer uint64
+}
+
+type ConnectGetLibVersionRet struct {
+	LibVer uint64
+}
+
+type ConnectGetHostnameRet struct {
+	Hostname string
+}
+
+type ConnectGetSysinfoArgs struct {
+	Flags uint32
+}
+
+type ConnectGetSysinfoRet struct {
+	Sysinfo string
+}
+
+type ConnectGetUriRet struct {
+	Uri string
+}
+
+type ConnectGetMaxVcpusArgs struct {
+	Type string
+}
+
+type ConnectGetMaxVcpusRet struct {
+	MaxVcpus int32
+}
+
+type NodeGetInfoRet struct {
+	Model [32]int8
+	Memory uint64
+	Cpus int32
+	Mhz int32
+	Nodes int32
+	Sockets int32
+	Cores int32
+	Threads int32
+}
+
+type ConnectGetCapabilitiesRet struct {
+	Capabilities string
+}
+
+type ConnectGetDomainCapabilitiesArgs struct {
+	Emulatorbin string
+	Arch string
+	Machine string
+	Virttype string
+	Flags uint32
+}
+
+type ConnectGetDomainCapabilitiesRet struct {
+	Capabilities string
+}
+
+type NodeGetCPUStatsArgs struct {
+	CPUNum int32
+	Nparams int32
+	Flags uint32
+}
+
+type NodeGetCPUStatsRet struct {
+	Params []NodeGetCPUStats
+	Nparams int32
+}
+
+type NodeGetMemoryStatsArgs struct {
+	Nparams int32
+	CellNum int32
+	Flags uint32
+}
+
+type NodeGetMemoryStatsRet struct {
+	Params []NodeGetMemoryStats
+	Nparams int32
+}
+
+type NodeGetCellsFreeMemoryArgs struct {
+	StartCell int32
+	Maxcells int32
+}
+
+type NodeGetCellsFreeMemoryRet struct {
+	Cells []uint64
+}
+
+type NodeGetFreeMemoryRet struct {
+	FreeMem uint64
+}
+
+type DomainGetSchedulerTypeArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainGetSchedulerTypeRet struct {
+	Type string
+	Nparams int32
+}
+
+type DomainGetSchedulerParametersArgs struct {
+	Dom NonnullDomain
+	Nparams int32
+}
+
+type DomainGetSchedulerParametersRet struct {
+	Params []TypedParam
+}
+
+type DomainGetSchedulerParametersFlagsArgs struct {
+	Dom NonnullDomain
+	Nparams int32
+	Flags uint32
+}
+
+type DomainGetSchedulerParametersFlagsRet struct {
+	Params []TypedParam
+}
+
+type DomainSetSchedulerParametersArgs struct {
+	Dom NonnullDomain
+	Params []TypedParam
+}
+
+type DomainSetSchedulerParametersFlagsArgs struct {
+	Dom NonnullDomain
+	Params []TypedParam
+	Flags uint32
+}
+
+type DomainSetBlkioParametersArgs struct {
+	Dom NonnullDomain
+	Params []TypedParam
+	Flags uint32
+}
+
+type DomainGetBlkioParametersArgs struct {
+	Dom NonnullDomain
+	Nparams int32
+	Flags uint32
+}
+
+type DomainGetBlkioParametersRet struct {
+	Params []TypedParam
+	Nparams int32
+}
+
+type DomainSetMemoryParametersArgs struct {
+	Dom NonnullDomain
+	Params []TypedParam
+	Flags uint32
+}
+
+type DomainGetMemoryParametersArgs struct {
+	Dom NonnullDomain
+	Nparams int32
+	Flags uint32
+}
+
+type DomainGetMemoryParametersRet struct {
+	Params []TypedParam
+	Nparams int32
+}
+
+type DomainBlockResizeArgs struct {
+	Dom NonnullDomain
+	Disk string
+	Size uint64
+	Flags uint32
+}
+
+type DomainSetNumaParametersArgs struct {
+	Dom NonnullDomain
+	Params []TypedParam
+	Flags uint32
+}
+
+type DomainGetNumaParametersArgs struct {
+	Dom NonnullDomain
+	Nparams int32
+	Flags uint32
+}
+
+type DomainGetNumaParametersRet struct {
+	Params []TypedParam
+	Nparams int32
+}
+
+type DomainSetPerfEventsArgs struct {
+	Dom NonnullDomain
+	Params []TypedParam
+	Flags uint32
+}
+
+type DomainGetPerfEventsArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetPerfEventsRet struct {
+	Params []TypedParam
+}
+
+type DomainBlockStatsArgs struct {
+	Dom NonnullDomain
+	Path string
+}
+
+type DomainBlockStatsRet struct {
+	RdReq int64
+	RdBytes int64
+	WrReq int64
+	WrBytes int64
+	Errs int64
+}
+
+type DomainBlockStatsFlagsArgs struct {
+	Dom NonnullDomain
+	Path string
+	Nparams int32
+	Flags uint32
+}
+
+type DomainBlockStatsFlagsRet struct {
+	Params []TypedParam
+	Nparams int32
+}
+
+type DomainInterfaceStatsArgs struct {
+	Dom NonnullDomain
+	Device string
+}
+
+type DomainInterfaceStatsRet struct {
+	RxBytes int64
+	RxPackets int64
+	RxErrs int64
+	RxDrop int64
+	TxBytes int64
+	TxPackets int64
+	TxErrs int64
+	TxDrop int64
+}
+
+type DomainSetInterfaceParametersArgs struct {
+	Dom NonnullDomain
+	Device string
+	Params []TypedParam
+	Flags uint32
+}
+
+type DomainGetInterfaceParametersArgs struct {
+	Dom NonnullDomain
+	Device string
+	Nparams int32
+	Flags uint32
+}
+
+type DomainGetInterfaceParametersRet struct {
+	Params []TypedParam
+	Nparams int32
+}
+
+type DomainMemoryStatsArgs struct {
+	Dom NonnullDomain
+	MaxStats uint32
+	Flags uint32
+}
+
+type DomainMemoryStat struct {
+	Tag int32
+	Val uint64
+}
+
+type DomainMemoryStatsRet struct {
+	Stats []DomainMemoryStat
+}
+
+type DomainBlockPeekArgs struct {
+	Dom NonnullDomain
+	Path string
+	Offset uint64
+	Size uint32
+	Flags uint32
+}
+
+type DomainBlockPeekRet struct {
+	Buffer []byte
+}
+
+type DomainMemoryPeekArgs struct {
+	Dom NonnullDomain
+	Offset uint64
+	Size uint32
+	Flags uint32
+}
+
+type DomainMemoryPeekRet struct {
+	Buffer []byte
+}
+
+type DomainGetBlockInfoArgs struct {
+	Dom NonnullDomain
+	Path string
+	Flags uint32
+}
+
+type DomainGetBlockInfoRet struct {
+	Allocation uint64
+	Capacity uint64
+	Physical uint64
+}
+
+type ConnectListDomainsArgs struct {
+	Maxids int32
+}
+
+type ConnectListDomainsRet struct {
+	Ids []int32
+}
+
+type ConnectNumOfDomainsRet struct {
+	Num int32
+}
+
+type DomainCreateXMLArgs struct {
+	XMLDesc string
+	Flags uint32
+}
+
+type DomainCreateXMLRet struct {
+	Dom NonnullDomain
+}
+
+type DomainCreateXMLWithFilesArgs struct {
+	XMLDesc string
+	Flags uint32
+}
+
+type DomainCreateXMLWithFilesRet struct {
+	Dom NonnullDomain
+}
+
+type DomainLookupByIDArgs struct {
+	ID int32
+}
+
+type DomainLookupByIDRet struct {
+	Dom NonnullDomain
+}
+
+type DomainLookupByUUIDArgs struct {
+	UUID UUID
+}
+
+type DomainLookupByUUIDRet struct {
+	Dom NonnullDomain
+}
+
+type DomainLookupByNameArgs struct {
+	Name string
+}
+
+type DomainLookupByNameRet struct {
+	Dom NonnullDomain
+}
+
+type DomainSuspendArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainResumeArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainPmSuspendForDurationArgs struct {
+	Dom NonnullDomain
+	Target uint32
+	Duration uint64
+	Flags uint32
+}
+
+type DomainPmWakeupArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainShutdownArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainRebootArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainResetArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainDestroyArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainDestroyFlagsArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetOsTypeArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainGetOsTypeRet struct {
+	Type string
+}
+
+type DomainGetMaxMemoryArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainGetMaxMemoryRet struct {
+	Memory uint64
+}
+
+type DomainSetMaxMemoryArgs struct {
+	Dom NonnullDomain
+	Memory uint64
+}
+
+type DomainSetMemoryArgs struct {
+	Dom NonnullDomain
+	Memory uint64
+}
+
+type DomainSetMemoryFlagsArgs struct {
+	Dom NonnullDomain
+	Memory uint64
+	Flags uint32
+}
+
+type DomainSetMemoryStatsPeriodArgs struct {
+	Dom NonnullDomain
+	Period int32
+	Flags uint32
+}
+
+type DomainGetInfoArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainGetInfoRet struct {
+	State uint8
+	MaxMem uint64
+	Memory uint64
+	NrVirtCPU uint16
+	CPUTime uint64
+}
+
+type DomainSaveArgs struct {
+	Dom NonnullDomain
+	To string
+}
+
+type DomainSaveFlagsArgs struct {
+	Dom NonnullDomain
+	To string
+	Dxml string
+	Flags uint32
+}
+
+type DomainRestoreArgs struct {
+	From string
+}
+
+type DomainRestoreFlagsArgs struct {
+	From string
+	Dxml string
+	Flags uint32
+}
+
+type DomainSaveImageGetXMLDescArgs struct {
+	File string
+	Flags uint32
+}
+
+type DomainSaveImageGetXMLDescRet struct {
+	XML string
+}
+
+type DomainSaveImageDefineXMLArgs struct {
+	File string
+	Dxml string
+	Flags uint32
+}
+
+type DomainCoreDumpArgs struct {
+	Dom NonnullDomain
+	To string
+	Flags uint32
+}
+
+type DomainCoreDumpWithFormatArgs struct {
+	Dom NonnullDomain
+	To string
+	Dumpformat uint32
+	Flags uint32
+}
+
+type DomainScreenshotArgs struct {
+	Dom NonnullDomain
+	Screen uint32
+	Flags uint32
+}
+
+type DomainScreenshotRet struct {
+	Mime string
+}
+
+type DomainGetXMLDescArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetXMLDescRet struct {
+	XML string
+}
+
+type DomainMigratePrepareArgs struct {
+	UriIn string
+	Flags uint64
+	Dname string
+	Resource uint64
+}
+
+type DomainMigratePrepareRet struct {
+	Cookie []byte
+	UriOut string
+}
+
+type DomainMigratePerformArgs struct {
+	Dom NonnullDomain
+	Cookie []byte
+	Uri string
+	Flags uint64
+	Dname string
+	Resource uint64
+}
+
+type DomainMigrateFinishArgs struct {
+	Dname string
+	Cookie []byte
+	Uri string
+	Flags uint64
+}
+
+type DomainMigrateFinishRet struct {
+	Ddom NonnullDomain
+}
+
+type DomainMigratePrepare2Args struct {
+	UriIn string
+	Flags uint64
+	Dname string
+	Resource uint64
+	DomXML string
+}
+
+type DomainMigratePrepare2Ret struct {
+	Cookie []byte
+	UriOut string
+}
+
+type DomainMigrateFinish2Args struct {
+	Dname string
+	Cookie []byte
+	Uri string
+	Flags uint64
+	Retcode int32
+}
+
+type DomainMigrateFinish2Ret struct {
+	Ddom NonnullDomain
+}
+
+type ConnectListDefinedDomainsArgs struct {
+	Maxnames int32
+}
+
+type ConnectListDefinedDomainsRet struct {
+	Names []string
+}
+
+type ConnectNumOfDefinedDomainsRet struct {
+	Num int32
+}
+
+type DomainCreateArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainCreateWithFlagsArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainCreateWithFlagsRet struct {
+	Dom NonnullDomain
+}
+
+type DomainCreateWithFilesArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainCreateWithFilesRet struct {
+	Dom NonnullDomain
+}
+
+type DomainDefineXMLArgs struct {
+	XML string
+}
+
+type DomainDefineXMLRet struct {
+	Dom NonnullDomain
+}
+
+type DomainDefineXMLFlagsArgs struct {
+	XML string
+	Flags uint32
+}
+
+type DomainDefineXMLFlagsRet struct {
+	Dom NonnullDomain
+}
+
+type DomainUndefineArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainUndefineFlagsArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainInjectNmiArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainSendKeyArgs struct {
+	Dom NonnullDomain
+	Codeset uint32
+	Holdtime uint32
+	Keycodes []uint32
+	Flags uint32
+}
+
+type DomainSendProcessSignalArgs struct {
+	Dom NonnullDomain
+	PidValue int64
+	Signum uint32
+	Flags uint32
+}
+
+type DomainSetVcpusArgs struct {
+	Dom NonnullDomain
+	Nvcpus uint32
+}
+
+type DomainSetVcpusFlagsArgs struct {
+	Dom NonnullDomain
+	Nvcpus uint32
+	Flags uint32
+}
+
+type DomainGetVcpusFlagsArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetVcpusFlagsRet struct {
+	Num int32
+}
+
+type DomainPinVcpuArgs struct {
+	Dom NonnullDomain
+	Vcpu uint32
+	Cpumap []byte
+}
+
+type DomainPinVcpuFlagsArgs struct {
+	Dom NonnullDomain
+	Vcpu uint32
+	Cpumap []byte
+	Flags uint32
+}
+
+type DomainGetVcpuPinInfoArgs struct {
+	Dom NonnullDomain
+	Ncpumaps int32
+	Maplen int32
+	Flags uint32
+}
+
+type DomainGetVcpuPinInfoRet struct {
+	Cpumaps []byte
+	Num int32
+}
+
+type DomainPinEmulatorArgs struct {
+	Dom NonnullDomain
+	Cpumap []byte
+	Flags uint32
+}
+
+type DomainGetEmulatorPinInfoArgs struct {
+	Dom NonnullDomain
+	Maplen int32
+	Flags uint32
+}
+
+type DomainGetEmulatorPinInfoRet struct {
+	Cpumaps []byte
+	Ret int32
+}
+
+type DomainGetVcpusArgs struct {
+	Dom NonnullDomain
+	Maxinfo int32
+	Maplen int32
+}
+
+type DomainGetVcpusRet struct {
+	Info []VcpuInfo
+	Cpumaps []byte
+}
+
+type DomainGetMaxVcpusArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainGetMaxVcpusRet struct {
+	Num int32
+}
+
+type DomainIothreadInfo struct {
+	IothreadID uint32
+	Cpumap []byte
+}
+
+type DomainGetIothreadInfoArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetIothreadInfoRet struct {
+	Info []DomainIothreadInfo
+	Ret uint32
+}
+
+type DomainPinIothreadArgs struct {
+	Dom NonnullDomain
+	IothreadsID uint32
+	Cpumap []byte
+	Flags uint32
+}
+
+type DomainAddIothreadArgs struct {
+	Dom NonnullDomain
+	IothreadID uint32
+	Flags uint32
+}
+
+type DomainDelIothreadArgs struct {
+	Dom NonnullDomain
+	IothreadID uint32
+	Flags uint32
+}
+
+type DomainGetSecurityLabelArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainGetSecurityLabelRet struct {
+	Label []int8
+	Enforcing int32
+}
+
+type DomainGetSecurityLabelListArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainGetSecurityLabelListRet struct {
+	Labels []DomainGetSecurityLabelRet
+	Ret int32
+}
+
+type NodeGetSecurityModelRet struct {
+	Model []int8
+	Doi []int8
+}
+
+type DomainAttachDeviceArgs struct {
+	Dom NonnullDomain
+	XML string
+}
+
+type DomainAttachDeviceFlagsArgs struct {
+	Dom NonnullDomain
+	XML string
+	Flags uint32
+}
+
+type DomainDetachDeviceArgs struct {
+	Dom NonnullDomain
+	XML string
+}
+
+type DomainDetachDeviceFlagsArgs struct {
+	Dom NonnullDomain
+	XML string
+	Flags uint32
+}
+
+type DomainUpdateDeviceFlagsArgs struct {
+	Dom NonnullDomain
+	XML string
+	Flags uint32
+}
+
+type DomainGetAutostartArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainGetAutostartRet struct {
+	Autostart int32
+}
+
+type DomainSetAutostartArgs struct {
+	Dom NonnullDomain
+	Autostart int32
+}
+
+type DomainSetMetadataArgs struct {
+	Dom NonnullDomain
+	Type int32
+	Metadata string
+	Key string
+	Uri string
+	Flags uint32
+}
+
+type DomainGetMetadataArgs struct {
+	Dom NonnullDomain
+	Type int32
+	Uri string
+	Flags uint32
+}
+
+type DomainGetMetadataRet struct {
+	Metadata string
+}
+
+type DomainBlockJobAbortArgs struct {
+	Dom NonnullDomain
+	Path string
+	Flags uint32
+}
+
+type DomainGetBlockJobInfoArgs struct {
+	Dom NonnullDomain
+	Path string
+	Flags uint32
+}
+
+type DomainGetBlockJobInfoRet struct {
+	Found int32
+	Type int32
+	Bandwidth uint64
+	Cur uint64
+	End uint64
+}
+
+type DomainBlockJobSetSpeedArgs struct {
+	Dom NonnullDomain
+	Path string
+	Bandwidth uint64
+	Flags uint32
+}
+
+type DomainBlockPullArgs struct {
+	Dom NonnullDomain
+	Path string
+	Bandwidth uint64
+	Flags uint32
+}
+
+type DomainBlockRebaseArgs struct {
+	Dom NonnullDomain
+	Path string
+	Base string
+	Bandwidth uint64
+	Flags uint32
+}
+
+type DomainBlockCopyArgs struct {
+	Dom NonnullDomain
+	Path string
+	Destxml string
+	Params []TypedParam
+	Flags uint32
+}
+
+type DomainBlockCommitArgs struct {
+	Dom NonnullDomain
+	Disk string
+	Base string
+	Top string
+	Bandwidth uint64
+	Flags uint32
+}
+
+type DomainSetBlockIOTuneArgs struct {
+	Dom NonnullDomain
+	Disk string
+	Params []TypedParam
+	Flags uint32
+}
+
+type DomainGetBlockIOTuneArgs struct {
+	Dom NonnullDomain
+	Disk string
+	Nparams int32
+	Flags uint32
+}
+
+type DomainGetBlockIOTuneRet struct {
+	Params []TypedParam
+	Nparams int32
+}
+
+type DomainGetCPUStatsArgs struct {
+	Dom NonnullDomain
+	Nparams uint32
+	StartCPU int32
+	Ncpus uint32
+	Flags uint32
+}
+
+type DomainGetCPUStatsRet struct {
+	Params []TypedParam
+	Nparams int32
+}
+
+type DomainGetHostnameArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetHostnameRet struct {
+	Hostname string
+}
+
+type ConnectNumOfNetworksRet struct {
+	Num int32
+}
+
+type ConnectListNetworksArgs struct {
+	Maxnames int32
+}
+
+type ConnectListNetworksRet struct {
+	Names []string
+}
+
+type ConnectNumOfDefinedNetworksRet struct {
+	Num int32
+}
+
+type ConnectListDefinedNetworksArgs struct {
+	Maxnames int32
+}
+
+type ConnectListDefinedNetworksRet struct {
+	Names []string
+}
+
+type NetworkLookupByUUIDArgs struct {
+	UUID UUID
+}
+
+type NetworkLookupByUUIDRet struct {
+	Net NonnullNetwork
+}
+
+type NetworkLookupByNameArgs struct {
+	Name string
+}
+
+type NetworkLookupByNameRet struct {
+	Net NonnullNetwork
+}
+
+type NetworkCreateXMLArgs struct {
+	XML string
+}
+
+type NetworkCreateXMLRet struct {
+	Net NonnullNetwork
+}
+
+type NetworkDefineXMLArgs struct {
+	XML string
+}
+
+type NetworkDefineXMLRet struct {
+	Net NonnullNetwork
+}
+
+type NetworkUndefineArgs struct {
+	Net NonnullNetwork
+}
+
+type NetworkUpdateArgs struct {
+	Net NonnullNetwork
+	Command uint32
+	Section uint32
+	ParentIndex int32
+	XML string
+	Flags uint32
+}
+
+type NetworkCreateArgs struct {
+	Net NonnullNetwork
+}
+
+type NetworkDestroyArgs struct {
+	Net NonnullNetwork
+}
+
+type NetworkGetXMLDescArgs struct {
+	Net NonnullNetwork
+	Flags uint32
+}
+
+type NetworkGetXMLDescRet struct {
+	XML string
+}
+
+type NetworkGetBridgeNameArgs struct {
+	Net NonnullNetwork
+}
+
+type NetworkGetBridgeNameRet struct {
+	Name string
+}
+
+type NetworkGetAutostartArgs struct {
+	Net NonnullNetwork
+}
+
+type NetworkGetAutostartRet struct {
+	Autostart int32
+}
+
+type NetworkSetAutostartArgs struct {
+	Net NonnullNetwork
+	Autostart int32
+}
+
+type ConnectNumOfNwfiltersRet struct {
+	Num int32
+}
+
+type ConnectListNwfiltersArgs struct {
+	Maxnames int32
+}
+
+type ConnectListNwfiltersRet struct {
+	Names []string
+}
+
+type NwfilterLookupByUUIDArgs struct {
+	UUID UUID
+}
+
+type NwfilterLookupByUUIDRet struct {
+	Nwfilter NonnullNwfilter
+}
+
+type NwfilterLookupByNameArgs struct {
+	Name string
+}
+
+type NwfilterLookupByNameRet struct {
+	Nwfilter NonnullNwfilter
+}
+
+type NwfilterDefineXMLArgs struct {
+	XML string
+}
+
+type NwfilterDefineXMLRet struct {
+	Nwfilter NonnullNwfilter
+}
+
+type NwfilterUndefineArgs struct {
+	Nwfilter NonnullNwfilter
+}
+
+type NwfilterGetXMLDescArgs struct {
+	Nwfilter NonnullNwfilter
+	Flags uint32
+}
+
+type NwfilterGetXMLDescRet struct {
+	XML string
+}
+
+type ConnectNumOfInterfacesRet struct {
+	Num int32
+}
+
+type ConnectListInterfacesArgs struct {
+	Maxnames int32
+}
+
+type ConnectListInterfacesRet struct {
+	Names []string
+}
+
+type ConnectNumOfDefinedInterfacesRet struct {
+	Num int32
+}
+
+type ConnectListDefinedInterfacesArgs struct {
+	Maxnames int32
+}
+
+type ConnectListDefinedInterfacesRet struct {
+	Names []string
+}
+
+type InterfaceLookupByNameArgs struct {
+	Name string
+}
+
+type InterfaceLookupByNameRet struct {
+	Iface NonnullInterface
+}
+
+type InterfaceLookupByMacStringArgs struct {
+	Mac string
+}
+
+type InterfaceLookupByMacStringRet struct {
+	Iface NonnullInterface
+}
+
+type InterfaceGetXMLDescArgs struct {
+	Iface NonnullInterface
+	Flags uint32
+}
+
+type InterfaceGetXMLDescRet struct {
+	XML string
+}
+
+type InterfaceDefineXMLArgs struct {
+	XML string
+	Flags uint32
+}
+
+type InterfaceDefineXMLRet struct {
+	Iface NonnullInterface
+}
+
+type InterfaceUndefineArgs struct {
+	Iface NonnullInterface
+}
+
+type InterfaceCreateArgs struct {
+	Iface NonnullInterface
+	Flags uint32
+}
+
+type InterfaceDestroyArgs struct {
+	Iface NonnullInterface
+	Flags uint32
+}
+
+type InterfaceChangeBeginArgs struct {
+	Flags uint32
+}
+
+type InterfaceChangeCommitArgs struct {
+	Flags uint32
+}
+
+type InterfaceChangeRollbackArgs struct {
+	Flags uint32
+}
+
+type AuthListRet struct {
+	Types []AuthType
+}
+
+type AuthSaslInitRet struct {
+	Mechlist string
+}
+
+type AuthSaslStartArgs struct {
+	Mech string
+	Nil int32
+	Data []int8
+}
+
+type AuthSaslStartRet struct {
+	Complete int32
+	Nil int32
+	Data []int8
+}
+
+type AuthSaslStepArgs struct {
+	Nil int32
+	Data []int8
+}
+
+type AuthSaslStepRet struct {
+	Complete int32
+	Nil int32
+	Data []int8
+}
+
+type AuthPolkitRet struct {
+	Complete int32
+}
+
+type ConnectNumOfStoragePoolsRet struct {
+	Num int32
+}
+
+type ConnectListStoragePoolsArgs struct {
+	Maxnames int32
+}
+
+type ConnectListStoragePoolsRet struct {
+	Names []string
+}
+
+type ConnectNumOfDefinedStoragePoolsRet struct {
+	Num int32
+}
+
+type ConnectListDefinedStoragePoolsArgs struct {
+	Maxnames int32
+}
+
+type ConnectListDefinedStoragePoolsRet struct {
+	Names []string
+}
+
+type ConnectFindStoragePoolSourcesArgs struct {
+	Type string
+	SrcSpec string
+	Flags uint32
+}
+
+type ConnectFindStoragePoolSourcesRet struct {
+	XML string
+}
+
+type StoragePoolLookupByUUIDArgs struct {
+	UUID UUID
+}
+
+type StoragePoolLookupByUUIDRet struct {
+	Pool NonnullStoragePool
+}
+
+type StoragePoolLookupByNameArgs struct {
+	Name string
+}
+
+type StoragePoolLookupByNameRet struct {
+	Pool NonnullStoragePool
+}
+
+type StoragePoolLookupByVolumeArgs struct {
+	Vol NonnullStorageVol
+}
+
+type StoragePoolLookupByVolumeRet struct {
+	Pool NonnullStoragePool
+}
+
+type StoragePoolCreateXMLArgs struct {
+	XML string
+	Flags uint32
+}
+
+type StoragePoolCreateXMLRet struct {
+	Pool NonnullStoragePool
+}
+
+type StoragePoolDefineXMLArgs struct {
+	XML string
+	Flags uint32
+}
+
+type StoragePoolDefineXMLRet struct {
+	Pool NonnullStoragePool
+}
+
+type StoragePoolBuildArgs struct {
+	Pool NonnullStoragePool
+	Flags uint32
+}
+
+type StoragePoolUndefineArgs struct {
+	Pool NonnullStoragePool
+}
+
+type StoragePoolCreateArgs struct {
+	Pool NonnullStoragePool
+	Flags uint32
+}
+
+type StoragePoolDestroyArgs struct {
+	Pool NonnullStoragePool
+}
+
+type StoragePoolDeleteArgs struct {
+	Pool NonnullStoragePool
+	Flags uint32
+}
+
+type StoragePoolRefreshArgs struct {
+	Pool NonnullStoragePool
+	Flags uint32
+}
+
+type StoragePoolGetXMLDescArgs struct {
+	Pool NonnullStoragePool
+	Flags uint32
+}
+
+type StoragePoolGetXMLDescRet struct {
+	XML string
+}
+
+type StoragePoolGetInfoArgs struct {
+	Pool NonnullStoragePool
+}
+
+type StoragePoolGetInfoRet struct {
+	State uint8
+	Capacity uint64
+	Allocation uint64
+	Available uint64
+}
+
+type StoragePoolGetAutostartArgs struct {
+	Pool NonnullStoragePool
+}
+
+type StoragePoolGetAutostartRet struct {
+	Autostart int32
+}
+
+type StoragePoolSetAutostartArgs struct {
+	Pool NonnullStoragePool
+	Autostart int32
+}
+
+type StoragePoolNumOfVolumesArgs struct {
+	Pool NonnullStoragePool
+}
+
+type StoragePoolNumOfVolumesRet struct {
+	Num int32
+}
+
+type StoragePoolListVolumesArgs struct {
+	Pool NonnullStoragePool
+	Maxnames int32
+}
+
+type StoragePoolListVolumesRet struct {
+	Names []string
+}
+
+type StorageVolLookupByNameArgs struct {
+	Pool NonnullStoragePool
+	Name string
+}
+
+type StorageVolLookupByNameRet struct {
+	Vol NonnullStorageVol
+}
+
+type StorageVolLookupByKeyArgs struct {
+	Key string
+}
+
+type StorageVolLookupByKeyRet struct {
+	Vol NonnullStorageVol
+}
+
+type StorageVolLookupByPathArgs struct {
+	Path string
+}
+
+type StorageVolLookupByPathRet struct {
+	Vol NonnullStorageVol
+}
+
+type StorageVolCreateXMLArgs struct {
+	Pool NonnullStoragePool
+	XML string
+	Flags uint32
+}
+
+type StorageVolCreateXMLRet struct {
+	Vol NonnullStorageVol
+}
+
+type StorageVolCreateXMLFromArgs struct {
+	Pool NonnullStoragePool
+	XML string
+	Clonevol NonnullStorageVol
+	Flags uint32
+}
+
+type StorageVolCreateXMLFromRet struct {
+	Vol NonnullStorageVol
+}
+
+type StorageVolDeleteArgs struct {
+	Vol NonnullStorageVol
+	Flags uint32
+}
+
+type StorageVolWipeArgs struct {
+	Vol NonnullStorageVol
+	Flags uint32
+}
+
+type StorageVolWipePatternArgs struct {
+	Vol NonnullStorageVol
+	Algorithm uint32
+	Flags uint32
+}
+
+type StorageVolGetXMLDescArgs struct {
+	Vol NonnullStorageVol
+	Flags uint32
+}
+
+type StorageVolGetXMLDescRet struct {
+	XML string
+}
+
+type StorageVolGetInfoArgs struct {
+	Vol NonnullStorageVol
+}
+
+type StorageVolGetInfoRet struct {
+	Type int8
+	Capacity uint64
+	Allocation uint64
+}
+
+type StorageVolGetInfoFlagsArgs struct {
+	Vol NonnullStorageVol
+	Flags uint32
+}
+
+type StorageVolGetInfoFlagsRet struct {
+	Type int8
+	Capacity uint64
+	Allocation uint64
+}
+
+type StorageVolGetPathArgs struct {
+	Vol NonnullStorageVol
+}
+
+type StorageVolGetPathRet struct {
+	Name string
+}
+
+type StorageVolResizeArgs struct {
+	Vol NonnullStorageVol
+	Capacity uint64
+	Flags uint32
+}
+
+type NodeNumOfDevicesArgs struct {
+	Cap string
+	Flags uint32
+}
+
+type NodeNumOfDevicesRet struct {
+	Num int32
+}
+
+type NodeListDevicesArgs struct {
+	Cap string
+	Maxnames int32
+	Flags uint32
+}
+
+type NodeListDevicesRet struct {
+	Names []string
+}
+
+type NodeDeviceLookupByNameArgs struct {
+	Name string
+}
+
+type NodeDeviceLookupByNameRet struct {
+	Dev NonnullNodeDevice
+}
+
+type NodeDeviceLookupScsiHostByWwnArgs struct {
+	Wwnn string
+	Wwpn string
+	Flags uint32
+}
+
+type NodeDeviceLookupScsiHostByWwnRet struct {
+	Dev NonnullNodeDevice
+}
+
+type NodeDeviceGetXMLDescArgs struct {
+	Name string
+	Flags uint32
+}
+
+type NodeDeviceGetXMLDescRet struct {
+	XML string
+}
+
+type NodeDeviceGetParentArgs struct {
+	Name string
+}
+
+type NodeDeviceGetParentRet struct {
+	Parent string
+}
+
+type NodeDeviceNumOfCapsArgs struct {
+	Name string
+}
+
+type NodeDeviceNumOfCapsRet struct {
+	Num int32
+}
+
+type NodeDeviceListCapsArgs struct {
+	Name string
+	Maxnames int32
+}
+
+type NodeDeviceListCapsRet struct {
+	Names []string
+}
+
+type NodeDeviceDettachArgs struct {
+	Name string
+}
+
+type NodeDeviceDetachFlagsArgs struct {
+	Name string
+	DriverName string
+	Flags uint32
+}
+
+type NodeDeviceReAttachArgs struct {
+	Name string
+}
+
+type NodeDeviceResetArgs struct {
+	Name string
+}
+
+type NodeDeviceCreateXMLArgs struct {
+	XMLDesc string
+	Flags uint32
+}
+
+type NodeDeviceCreateXMLRet struct {
+	Dev NonnullNodeDevice
+}
+
+type NodeDeviceDestroyArgs struct {
+	Name string
+}
+
+type ConnectDomainEventRegisterRet struct {
+	CbRegistered int32
+}
+
+type ConnectDomainEventDeregisterRet struct {
+	CbRegistered int32
+}
+
+type DomainEventLifecycleMsg struct {
+	Dom NonnullDomain
+	Event int32
+	Detail int32
+}
+
+type DomainEventCallbackLifecycleMsg struct {
+	CallbackID int32
+	Msg DomainEventLifecycleMsg
+}
+
+type ConnectDomainXMLFromNativeArgs struct {
+	NativeFormat string
+	NativeConfig string
+	Flags uint32
+}
+
+type ConnectDomainXMLFromNativeRet struct {
+	DomainXML string
+}
+
+type ConnectDomainXMLToNativeArgs struct {
+	NativeFormat string
+	DomainXML string
+	Flags uint32
+}
+
+type ConnectDomainXMLToNativeRet struct {
+	NativeConfig string
+}
+
+type ConnectNumOfSecretsRet struct {
+	Num int32
+}
+
+type ConnectListSecretsArgs struct {
+	Maxuuids int32
+}
+
+type ConnectListSecretsRet struct {
+	Uuids []string
+}
+
+type SecretLookupByUUIDArgs struct {
+	UUID UUID
+}
+
+type SecretLookupByUUIDRet struct {
+	Secret NonnullSecret
+}
+
+type SecretDefineXMLArgs struct {
+	XML string
+	Flags uint32
+}
+
+type SecretDefineXMLRet struct {
+	Secret NonnullSecret
+}
+
+type SecretGetXMLDescArgs struct {
+	Secret NonnullSecret
+	Flags uint32
+}
+
+type SecretGetXMLDescRet struct {
+	XML string
+}
+
+type SecretSetValueArgs struct {
+	Secret NonnullSecret
+	Value []byte
+	Flags uint32
+}
+
+type SecretGetValueArgs struct {
+	Secret NonnullSecret
+	Flags uint32
+}
+
+type SecretGetValueRet struct {
+	Value []byte
+}
+
+type SecretUndefineArgs struct {
+	Secret NonnullSecret
+}
+
+type SecretLookupByUsageArgs struct {
+	UsageType int32
+	UsageID string
+}
+
+type SecretLookupByUsageRet struct {
+	Secret NonnullSecret
+}
+
+type DomainMigratePrepareTunnelArgs struct {
+	Flags uint64
+	Dname string
+	Resource uint64
+	DomXML string
+}
+
+type ConnectIsSecureRet struct {
+	Secure int32
+}
+
+type DomainIsActiveArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainIsActiveRet struct {
+	Active int32
+}
+
+type DomainIsPersistentArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainIsPersistentRet struct {
+	Persistent int32
+}
+
+type DomainIsUpdatedArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainIsUpdatedRet struct {
+	Updated int32
+}
+
+type NetworkIsActiveArgs struct {
+	Net NonnullNetwork
+}
+
+type NetworkIsActiveRet struct {
+	Active int32
+}
+
+type NetworkIsPersistentArgs struct {
+	Net NonnullNetwork
+}
+
+type NetworkIsPersistentRet struct {
+	Persistent int32
+}
+
+type StoragePoolIsActiveArgs struct {
+	Pool NonnullStoragePool
+}
+
+type StoragePoolIsActiveRet struct {
+	Active int32
+}
+
+type StoragePoolIsPersistentArgs struct {
+	Pool NonnullStoragePool
+}
+
+type StoragePoolIsPersistentRet struct {
+	Persistent int32
+}
+
+type InterfaceIsActiveArgs struct {
+	Iface NonnullInterface
+}
+
+type InterfaceIsActiveRet struct {
+	Active int32
+}
+
+type ConnectCompareCPUArgs struct {
+	XML string
+	Flags uint32
+}
+
+type ConnectCompareCPURet struct {
+	Result int32
+}
+
+type ConnectBaselineCPUArgs struct {
+	XMLCPUs []string
+	Flags uint32
+}
+
+type ConnectBaselineCPURet struct {
+	CPU string
+}
+
+type DomainGetJobInfoArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainGetJobInfoRet struct {
+	Type int32
+	TimeElapsed uint64
+	TimeRemaining uint64
+	DataTotal uint64
+	DataProcessed uint64
+	DataRemaining uint64
+	MemTotal uint64
+	MemProcessed uint64
+	MemRemaining uint64
+	FileTotal uint64
+	FileProcessed uint64
+	FileRemaining uint64
+}
+
+type DomainGetJobStatsArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetJobStatsRet struct {
+	Type int32
+	Params []TypedParam
+}
+
+type DomainAbortJobArgs struct {
+	Dom NonnullDomain
+}
+
+type DomainMigrateGetMaxDowntimeArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainMigrateGetMaxDowntimeRet struct {
+	Downtime uint64
+}
+
+type DomainMigrateSetMaxDowntimeArgs struct {
+	Dom NonnullDomain
+	Downtime uint64
+	Flags uint32
+}
+
+type DomainMigrateGetCompressionCacheArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainMigrateGetCompressionCacheRet struct {
+	CacheSize uint64
+}
+
+type DomainMigrateSetCompressionCacheArgs struct {
+	Dom NonnullDomain
+	CacheSize uint64
+	Flags uint32
+}
+
+type DomainMigrateSetMaxSpeedArgs struct {
+	Dom NonnullDomain
+	Bandwidth uint64
+	Flags uint32
+}
+
+type DomainMigrateGetMaxSpeedArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainMigrateGetMaxSpeedRet struct {
+	Bandwidth uint64
+}
+
+type ConnectDomainEventRegisterAnyArgs struct {
+	EventID int32
+}
+
+type ConnectDomainEventDeregisterAnyArgs struct {
+	EventID int32
+}
+
+type ConnectDomainEventCallbackRegisterAnyArgs struct {
+	EventID int32
+	Dom Domain
+}
+
+type ConnectDomainEventCallbackRegisterAnyRet struct {
+	CallbackID int32
+}
+
+type ConnectDomainEventCallbackDeregisterAnyArgs struct {
+	CallbackID int32
+}
+
+type DomainEventRebootMsg struct {
+	Dom NonnullDomain
+}
+
+type DomainEventCallbackRebootMsg struct {
+	CallbackID int32
+	Msg DomainEventRebootMsg
+}
+
+type DomainEventRtcChangeMsg struct {
+	Dom NonnullDomain
+	Offset int64
+}
+
+type DomainEventCallbackRtcChangeMsg struct {
+	CallbackID int32
+	Msg DomainEventRtcChangeMsg
+}
+
+type DomainEventWatchdogMsg struct {
+	Dom NonnullDomain
+	Action int32
+}
+
+type DomainEventCallbackWatchdogMsg struct {
+	CallbackID int32
+	Msg DomainEventWatchdogMsg
+}
+
+type DomainEventIOErrorMsg struct {
+	Dom NonnullDomain
+	SrcPath string
+	DevAlias string
+	Action int32
+}
+
+type DomainEventCallbackIOErrorMsg struct {
+	CallbackID int32
+	Msg DomainEventIOErrorMsg
+}
+
+type DomainEventIOErrorReasonMsg struct {
+	Dom NonnullDomain
+	SrcPath string
+	DevAlias string
+	Action int32
+	Reason string
+}
+
+type DomainEventCallbackIOErrorReasonMsg struct {
+	CallbackID int32
+	Msg DomainEventIOErrorReasonMsg
+}
+
+type DomainEventGraphicsAddress struct {
+	Family int32
+	Node string
+	Service string
+}
+
+type DomainEventGraphicsIdentity struct {
+	Type string
+	Name string
+}
+
+type DomainEventGraphicsMsg struct {
+	Dom NonnullDomain
+	Phase int32
+	Local DomainEventGraphicsAddress
+	Remote DomainEventGraphicsAddress
+	AuthScheme string
+	Subject []DomainEventGraphicsIdentity
+}
+
+type DomainEventCallbackGraphicsMsg struct {
+	CallbackID int32
+	Msg DomainEventGraphicsMsg
+}
+
+type DomainEventBlockJobMsg struct {
+	Dom NonnullDomain
+	Path string
+	Type int32
+	Status int32
+}
+
+type DomainEventCallbackBlockJobMsg struct {
+	CallbackID int32
+	Msg DomainEventBlockJobMsg
+}
+
+type DomainEventDiskChangeMsg struct {
+	Dom NonnullDomain
+	OldSrcPath string
+	NewSrcPath string
+	DevAlias string
+	Reason int32
+}
+
+type DomainEventCallbackDiskChangeMsg struct {
+	CallbackID int32
+	Msg DomainEventDiskChangeMsg
+}
+
+type DomainEventTrayChangeMsg struct {
+	Dom NonnullDomain
+	DevAlias string
+	Reason int32
+}
+
+type DomainEventCallbackTrayChangeMsg struct {
+	CallbackID int32
+	Msg DomainEventTrayChangeMsg
+}
+
+type DomainEventPmwakeupMsg struct {
+	Dom NonnullDomain
+}
+
+type DomainEventCallbackPmwakeupMsg struct {
+	CallbackID int32
+	Reason int32
+	Msg DomainEventPmwakeupMsg
+}
+
+type DomainEventPmsuspendMsg struct {
+	Dom NonnullDomain
+}
+
+type DomainEventCallbackPmsuspendMsg struct {
+	CallbackID int32
+	Reason int32
+	Msg DomainEventPmsuspendMsg
+}
+
+type DomainEventBalloonChangeMsg struct {
+	Dom NonnullDomain
+	Actual uint64
+}
+
+type DomainEventCallbackBalloonChangeMsg struct {
+	CallbackID int32
+	Msg DomainEventBalloonChangeMsg
+}
+
+type DomainEventPmsuspendDiskMsg struct {
+	Dom NonnullDomain
+}
+
+type DomainEventCallbackPmsuspendDiskMsg struct {
+	CallbackID int32
+	Reason int32
+	Msg DomainEventPmsuspendDiskMsg
+}
+
+type DomainManagedSaveArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainHasManagedSaveImageArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainHasManagedSaveImageRet struct {
+	Result int32
+}
+
+type DomainManagedSaveRemoveArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainManagedSaveGetXMLDescArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainManagedSaveGetXMLDescRet struct {
+	XML string
+}
+
+type DomainManagedSaveDefineXMLArgs struct {
+	Dom NonnullDomain
+	Dxml string
+	Flags uint32
+}
+
+type DomainSnapshotCreateXMLArgs struct {
+	Dom NonnullDomain
+	XMLDesc string
+	Flags uint32
+}
+
+type DomainSnapshotCreateXMLRet struct {
+	Snap NonnullDomainSnapshot
+}
+
+type DomainSnapshotGetXMLDescArgs struct {
+	Snap NonnullDomainSnapshot
+	Flags uint32
+}
+
+type DomainSnapshotGetXMLDescRet struct {
+	XML string
+}
+
+type DomainSnapshotNumArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainSnapshotNumRet struct {
+	Num int32
+}
+
+type DomainSnapshotListNamesArgs struct {
+	Dom NonnullDomain
+	Maxnames int32
+	Flags uint32
+}
+
+type DomainSnapshotListNamesRet struct {
+	Names []string
+}
+
+type DomainListAllSnapshotsArgs struct {
+	Dom NonnullDomain
+	NeedResults int32
+	Flags uint32
+}
+
+type DomainListAllSnapshotsRet struct {
+	Snapshots []NonnullDomainSnapshot
+	Ret int32
+}
+
+type DomainSnapshotNumChildrenArgs struct {
+	Snap NonnullDomainSnapshot
+	Flags uint32
+}
+
+type DomainSnapshotNumChildrenRet struct {
+	Num int32
+}
+
+type DomainSnapshotListChildrenNamesArgs struct {
+	Snap NonnullDomainSnapshot
+	Maxnames int32
+	Flags uint32
+}
+
+type DomainSnapshotListChildrenNamesRet struct {
+	Names []string
+}
+
+type DomainSnapshotListAllChildrenArgs struct {
+	Snapshot NonnullDomainSnapshot
+	NeedResults int32
+	Flags uint32
+}
+
+type DomainSnapshotListAllChildrenRet struct {
+	Snapshots []NonnullDomainSnapshot
+	Ret int32
+}
+
+type DomainSnapshotLookupByNameArgs struct {
+	Dom NonnullDomain
+	Name string
+	Flags uint32
+}
+
+type DomainSnapshotLookupByNameRet struct {
+	Snap NonnullDomainSnapshot
+}
+
+type DomainHasCurrentSnapshotArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainHasCurrentSnapshotRet struct {
+	Result int32
+}
+
+type DomainSnapshotGetParentArgs struct {
+	Snap NonnullDomainSnapshot
+	Flags uint32
+}
+
+type DomainSnapshotGetParentRet struct {
+	Snap NonnullDomainSnapshot
+}
+
+type DomainSnapshotCurrentArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainSnapshotCurrentRet struct {
+	Snap NonnullDomainSnapshot
+}
+
+type DomainSnapshotIsCurrentArgs struct {
+	Snap NonnullDomainSnapshot
+	Flags uint32
+}
+
+type DomainSnapshotIsCurrentRet struct {
+	Current int32
+}
+
+type DomainSnapshotHasMetadataArgs struct {
+	Snap NonnullDomainSnapshot
+	Flags uint32
+}
+
+type DomainSnapshotHasMetadataRet struct {
+	Metadata int32
+}
+
+type DomainRevertToSnapshotArgs struct {
+	Snap NonnullDomainSnapshot
+	Flags uint32
+}
+
+type DomainSnapshotDeleteArgs struct {
+	Snap NonnullDomainSnapshot
+	Flags uint32
+}
+
+type DomainOpenConsoleArgs struct {
+	Dom NonnullDomain
+	DevName string
+	Flags uint32
+}
+
+type DomainOpenChannelArgs struct {
+	Dom NonnullDomain
+	Name string
+	Flags uint32
+}
+
+type StorageVolUploadArgs struct {
+	Vol NonnullStorageVol
+	Offset uint64
+	Length uint64
+	Flags uint32
+}
+
+type StorageVolDownloadArgs struct {
+	Vol NonnullStorageVol
+	Offset uint64
+	Length uint64
+	Flags uint32
+}
+
+type DomainGetStateArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetStateRet struct {
+	State int32
+	Reason int32
+}
+
+type DomainMigrateBegin3Args struct {
+	Dom NonnullDomain
+	Xmlin string
+	Flags uint64
+	Dname string
+	Resource uint64
+}
+
+type DomainMigrateBegin3Ret struct {
+	CookieOut []byte
+	XML string
+}
+
+type DomainMigratePrepare3Args struct {
+	CookieIn []byte
+	UriIn string
+	Flags uint64
+	Dname string
+	Resource uint64
+	DomXML string
+}
+
+type DomainMigratePrepare3Ret struct {
+	CookieOut []byte
+	UriOut string
+}
+
+type DomainMigratePrepareTunnel3Args struct {
+	CookieIn []byte
+	Flags uint64
+	Dname string
+	Resource uint64
+	DomXML string
+}
+
+type DomainMigratePrepareTunnel3Ret struct {
+	CookieOut []byte
+}
+
+type DomainMigratePerform3Args struct {
+	Dom NonnullDomain
+	Xmlin string
+	CookieIn []byte
+	Dconnuri string
+	Uri string
+	Flags uint64
+	Dname string
+	Resource uint64
+}
+
+type DomainMigratePerform3Ret struct {
+	CookieOut []byte
+}
+
+type DomainMigrateFinish3Args struct {
+	Dname string
+	CookieIn []byte
+	Dconnuri string
+	Uri string
+	Flags uint64
+	Cancelled int32
+}
+
+type DomainMigrateFinish3Ret struct {
+	Dom NonnullDomain
+	CookieOut []byte
+}
+
+type DomainMigrateConfirm3Args struct {
+	Dom NonnullDomain
+	CookieIn []byte
+	Flags uint64
+	Cancelled int32
+}
+
+type DomainEventControlErrorMsg struct {
+	Dom NonnullDomain
+}
+
+type DomainEventCallbackControlErrorMsg struct {
+	CallbackID int32
+	Msg DomainEventControlErrorMsg
+}
+
+type DomainGetControlInfoArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetControlInfoRet struct {
+	State uint32
+	Details uint32
+	StateTime uint64
+}
+
+type DomainOpenGraphicsArgs struct {
+	Dom NonnullDomain
+	Idx uint32
+	Flags uint32
+}
+
+type DomainOpenGraphicsFdArgs struct {
+	Dom NonnullDomain
+	Idx uint32
+	Flags uint32
+}
+
+type NodeSuspendForDurationArgs struct {
+	Target uint32
+	Duration uint64
+	Flags uint32
+}
+
+type DomainShutdownFlagsArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetDiskErrorsArgs struct {
+	Dom NonnullDomain
+	Maxerrors uint32
+	Flags uint32
+}
+
+type DomainGetDiskErrorsRet struct {
+	Errors []DomainDiskError
+	Nerrors int32
+}
+
+type ConnectListAllDomainsArgs struct {
+	NeedResults int32
+	Flags uint32
+}
+
+type ConnectListAllDomainsRet struct {
+	Domains []NonnullDomain
+	Ret uint32
+}
+
+type ConnectListAllStoragePoolsArgs struct {
+	NeedResults int32
+	Flags uint32
+}
+
+type ConnectListAllStoragePoolsRet struct {
+	Pools []NonnullStoragePool
+	Ret uint32
+}
+
+type StoragePoolListAllVolumesArgs struct {
+	Pool NonnullStoragePool
+	NeedResults int32
+	Flags uint32
+}
+
+type StoragePoolListAllVolumesRet struct {
+	Vols []NonnullStorageVol
+	Ret uint32
+}
+
+type ConnectListAllNetworksArgs struct {
+	NeedResults int32
+	Flags uint32
+}
+
+type ConnectListAllNetworksRet struct {
+	Nets []NonnullNetwork
+	Ret uint32
+}
+
+type ConnectListAllInterfacesArgs struct {
+	NeedResults int32
+	Flags uint32
+}
+
+type ConnectListAllInterfacesRet struct {
+	Ifaces []NonnullInterface
+	Ret uint32
+}
+
+type ConnectListAllNodeDevicesArgs struct {
+	NeedResults int32
+	Flags uint32
+}
+
+type ConnectListAllNodeDevicesRet struct {
+	Devices []NonnullNodeDevice
+	Ret uint32
+}
+
+type ConnectListAllNwfiltersArgs struct {
+	NeedResults int32
+	Flags uint32
+}
+
+type ConnectListAllNwfiltersRet struct {
+	Filters []NonnullNwfilter
+	Ret uint32
+}
+
+type ConnectListAllSecretsArgs struct {
+	NeedResults int32
+	Flags uint32
+}
+
+type ConnectListAllSecretsRet struct {
+	Secrets []NonnullSecret
+	Ret uint32
+}
+
+type NodeSetMemoryParametersArgs struct {
+	Params []TypedParam
+	Flags uint32
+}
+
+type NodeGetMemoryParametersArgs struct {
+	Nparams int32
+	Flags uint32
+}
+
+type NodeGetMemoryParametersRet struct {
+	Params []TypedParam
+	Nparams int32
+}
+
+type NodeGetCPUMapArgs struct {
+	NeedMap int32
+	NeedOnline int32
+	Flags uint32
+}
+
+type NodeGetCPUMapRet struct {
+	Cpumap []byte
+	Online uint32
+	Ret int32
+}
+
+type DomainFstrimArgs struct {
+	Dom NonnullDomain
+	MountPoint string
+	Minimum uint64
+	Flags uint32
+}
+
+type DomainGetTimeArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetTimeRet struct {
+	Seconds int64
+	Nseconds uint32
+}
+
+type DomainSetTimeArgs struct {
+	Dom NonnullDomain
+	Seconds int64
+	Nseconds uint32
+	Flags uint32
+}
+
+type DomainMigrateBegin3ParamsArgs struct {
+	Dom NonnullDomain
+	Params []TypedParam
+	Flags uint32
+}
+
+type DomainMigrateBegin3ParamsRet struct {
+	CookieOut []byte
+	XML string
+}
+
+type DomainMigratePrepare3ParamsArgs struct {
+	Params []TypedParam
+	CookieIn []byte
+	Flags uint32
+}
+
+type DomainMigratePrepare3ParamsRet struct {
+	CookieOut []byte
+	UriOut string
+}
+
+type DomainMigratePrepareTunnel3ParamsArgs struct {
+	Params []TypedParam
+	CookieIn []byte
+	Flags uint32
+}
+
+type DomainMigratePrepareTunnel3ParamsRet struct {
+	CookieOut []byte
+}
+
+type DomainMigratePerform3ParamsArgs struct {
+	Dom NonnullDomain
+	Dconnuri string
+	Params []TypedParam
+	CookieIn []byte
+	Flags uint32
+}
+
+type DomainMigratePerform3ParamsRet struct {
+	CookieOut []byte
+}
+
+type DomainMigrateFinish3ParamsArgs struct {
+	Params []TypedParam
+	CookieIn []byte
+	Flags uint32
+	Cancelled int32
+}
+
+type DomainMigrateFinish3ParamsRet struct {
+	Dom NonnullDomain
+	CookieOut []byte
+}
+
+type DomainMigrateConfirm3ParamsArgs struct {
+	Dom NonnullDomain
+	Params []TypedParam
+	CookieIn []byte
+	Flags uint32
+	Cancelled int32
+}
+
+type DomainEventDeviceRemovedMsg struct {
+	Dom NonnullDomain
+	DevAlias string
+}
+
+type DomainEventCallbackDeviceRemovedMsg struct {
+	CallbackID int32
+	Msg DomainEventDeviceRemovedMsg
+}
+
+type DomainEventBlockJob2Msg struct {
+	CallbackID int32
+	Dom NonnullDomain
+	Dst string
+	Type int32
+	Status int32
+}
+
+type DomainEventBlockThresholdMsg struct {
+	CallbackID int32
+	Dom NonnullDomain
+	Dev string
+	Path string
+	Threshold uint64
+	Excess uint64
+}
+
+type DomainEventCallbackTunableMsg struct {
+	CallbackID int32
+	Dom NonnullDomain
+	Params []TypedParam
+}
+
+type DomainEventCallbackDeviceAddedMsg struct {
+	CallbackID int32
+	Dom NonnullDomain
+	DevAlias string
+}
+
+type ConnectEventConnectionClosedMsg struct {
+	Reason int32
+}
+
+type ConnectGetCPUModelNamesArgs struct {
+	Arch string
+	NeedResults int32
+	Flags uint32
+}
+
+type ConnectGetCPUModelNamesRet struct {
+	Models []string
+	Ret int32
+}
+
+type ConnectNetworkEventRegisterAnyArgs struct {
+	EventID int32
+	Net Network
+}
+
+type ConnectNetworkEventRegisterAnyRet struct {
+	CallbackID int32
+}
+
+type ConnectNetworkEventDeregisterAnyArgs struct {
+	CallbackID int32
+}
+
+type NetworkEventLifecycleMsg struct {
+	CallbackID int32
+	Net NonnullNetwork
+	Event int32
+	Detail int32
+}
+
+type ConnectStoragePoolEventRegisterAnyArgs struct {
+	EventID int32
+	Pool StoragePool
+}
+
+type ConnectStoragePoolEventRegisterAnyRet struct {
+	CallbackID int32
+}
+
+type ConnectStoragePoolEventDeregisterAnyArgs struct {
+	CallbackID int32
+}
+
+type StoragePoolEventLifecycleMsg struct {
+	CallbackID int32
+	Pool NonnullStoragePool
+	Event int32
+	Detail int32
+}
+
+type StoragePoolEventRefreshMsg struct {
+	CallbackID int32
+	Pool NonnullStoragePool
+}
+
+type ConnectNodeDeviceEventRegisterAnyArgs struct {
+	EventID int32
+	Dev NodeDevice
+}
+
+type ConnectNodeDeviceEventRegisterAnyRet struct {
+	CallbackID int32
+}
+
+type ConnectNodeDeviceEventDeregisterAnyArgs struct {
+	CallbackID int32
+}
+
+type NodeDeviceEventLifecycleMsg struct {
+	CallbackID int32
+	Dev NonnullNodeDevice
+	Event int32
+	Detail int32
+}
+
+type NodeDeviceEventUpdateMsg struct {
+	CallbackID int32
+	Dev NonnullNodeDevice
+}
+
+type DomainFsfreezeArgs struct {
+	Dom NonnullDomain
+	Mountpoints []string
+	Flags uint32
+}
+
+type DomainFsfreezeRet struct {
+	Filesystems int32
+}
+
+type DomainFsthawArgs struct {
+	Dom NonnullDomain
+	Mountpoints []string
+	Flags uint32
+}
+
+type DomainFsthawRet struct {
+	Filesystems int32
+}
+
+type NodeGetFreePagesArgs struct {
+	Pages []uint32
+	StartCell int32
+	CellCount uint32
+	Flags uint32
+}
+
+type NodeGetFreePagesRet struct {
+	Counts []uint64
+}
+
+type NodeAllocPagesArgs struct {
+	PageSizes []uint32
+	PageCounts []uint64
+	StartCell int32
+	CellCount uint32
+	Flags uint32
+}
+
+type NodeAllocPagesRet struct {
+	Ret int32
+}
+
+type NetworkDhcpLease struct {
+	Iface string
+	Expirytime int64
+	Type int32
+	Mac string
+	Iaid string
+	Ipaddr string
+	Prefix uint32
+	Hostname string
+	Clientid string
+}
+
+type NetworkGetDhcpLeasesArgs struct {
+	Net NonnullNetwork
+	Mac string
+	NeedResults int32
+	Flags uint32
+}
+
+type NetworkGetDhcpLeasesRet struct {
+	Leases []NetworkDhcpLease
+	Ret uint32
+}
+
+type DomainStatsRecord struct {
+	Dom NonnullDomain
+	Params []TypedParam
+}
+
+type ConnectGetAllDomainStatsArgs struct {
+	Doms []NonnullDomain
+	Stats uint32
+	Flags uint32
+}
+
+type DomainEventCallbackAgentLifecycleMsg struct {
+	CallbackID int32
+	Dom NonnullDomain
+	State int32
+	Reason int32
+}
+
+type ConnectGetAllDomainStatsRet struct {
+	RetStats []DomainStatsRecord
+}
+
+type DomainFsinfo struct {
+	Mountpoint string
+	Name string
+	Fstype string
+	DevAliases []string
+}
+
+type DomainGetFsinfoArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetFsinfoRet struct {
+	Info []DomainFsinfo
+	Ret uint32
+}
+
+type DomainIPAddr struct {
+	Type int32
+	Addr string
+	Prefix uint32
+}
+
+type DomainInterface struct {
+	Name string
+	Hwaddr string
+	Addrs []DomainIPAddr
+}
+
+type DomainInterfaceAddressesArgs struct {
+	Dom NonnullDomain
+	Source uint32
+	Flags uint32
+}
+
+type DomainInterfaceAddressesRet struct {
+	Ifaces []DomainInterface
+}
+
+type DomainSetUserPasswordArgs struct {
+	Dom NonnullDomain
+	User string
+	Password string
+	Flags uint32
+}
+
+type DomainRenameArgs struct {
+	Dom NonnullDomain
+	NewName string
+	Flags uint32
+}
+
+type DomainRenameRet struct {
+	Retcode int32
+}
+
+type DomainEventCallbackMigrationIterationMsg struct {
+	CallbackID int32
+	Dom NonnullDomain
+	Iteration int32
+}
+
+type DomainEventCallbackJobCompletedMsg struct {
+	CallbackID int32
+	Dom NonnullDomain
+	Params []TypedParam
+}
+
+type DomainMigrateStartPostCopyArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainEventCallbackDeviceRemovalFailedMsg struct {
+	CallbackID int32
+	Dom NonnullDomain
+	DevAlias string
+}
+
+type DomainGetGuestVcpusArgs struct {
+	Dom NonnullDomain
+	Flags uint32
+}
+
+type DomainGetGuestVcpusRet struct {
+	Params []TypedParam
+}
+
+type DomainSetGuestVcpusArgs struct {
+	Dom NonnullDomain
+	Cpumap string
+	State int32
+	Flags uint32
+}
+
+type DomainSetVcpuArgs struct {
+	Dom NonnullDomain
+	Cpumap string
+	State int32
+	Flags uint32
+}
+
+type DomainEventCallbackMetadataChangeMsg struct {
+	CallbackID int32
+	Dom NonnullDomain
+	Type int32
+	Nsuri string
+}
+
+type ConnectSecretEventRegisterAnyArgs struct {
+	EventID int32
+	Secret Secret
+}
+
+type ConnectSecretEventRegisterAnyRet struct {
+	CallbackID int32
+}
+
+type ConnectSecretEventDeregisterAnyArgs struct {
+	CallbackID int32
+}
+
+type SecretEventLifecycleMsg struct {
+	CallbackID int32
+	Secret NonnullSecret
+	Event int32
+	Detail int32
+}
+
+type SecretEventValueChangedMsg struct {
+	CallbackID int32
+	Secret NonnullSecret
+}
+
+type DomainSetBlockThresholdArgs struct {
+	Dom NonnullDomain
+	Dev string
+	Threshold uint64
+	Flags uint32
+}
+
+type DomainSetLifecycleActionArgs struct {
+	Dom NonnullDomain
+	Type uint32
+	Action uint32
+	Flags uint32
+}
+
+
+// Unions:
+type TypedParamValue interface {
+	Get() interface{}
+}
+
+
+type TypedParamValueInt struct {
+	DVal uint32
+	I int32
+}
+func NewTypedParamValueInt(v int32) *TypedParamValueInt { return &TypedParamValueInt{DVal: 1, I: v} }
+func (c *TypedParamValueInt) Get() interface{} { return c.I }
+
+type TypedParamValueUint struct {
+	DVal uint32
+	Ui uint32
+}
+func NewTypedParamValueUint(v uint32) *TypedParamValueUint { return &TypedParamValueUint{DVal: 2, Ui: v} }
+func (c *TypedParamValueUint) Get() interface{} { return c.Ui }
+
+type TypedParamValueLlong struct {
+	DVal uint32
+	L int64
+}
+func NewTypedParamValueLlong(v int64) *TypedParamValueLlong { return &TypedParamValueLlong{DVal: 3, L: v} }
+func (c *TypedParamValueLlong) Get() interface{} { return c.L }
+
+type TypedParamValueUllong struct {
+	DVal uint32
+	Ul uint64
+}
+func NewTypedParamValueUllong(v uint64) *TypedParamValueUllong { return &TypedParamValueUllong{DVal: 4, Ul: v} }
+func (c *TypedParamValueUllong) Get() interface{} { return c.Ul }
+
+type TypedParamValueDouble struct {
+	DVal uint32
+	D float64
+}
+func NewTypedParamValueDouble(v float64) *TypedParamValueDouble { return &TypedParamValueDouble{DVal: 5, D: v} }
+func (c *TypedParamValueDouble) Get() interface{} { return c.D }
+
+type TypedParamValueBoolean struct {
+	DVal uint32
+	B int32
+}
+func NewTypedParamValueBoolean(v int32) *TypedParamValueBoolean { return &TypedParamValueBoolean{DVal: 6, B: v} }
+func (c *TypedParamValueBoolean) Get() interface{} { return c.B }
+
+type TypedParamValueString struct {
+	DVal uint32
+	S string
+}
+func NewTypedParamValueString(v string) *TypedParamValueString { return &TypedParamValueString{DVal: 7, S: v} }
+func (c *TypedParamValueString) Get() interface{} { return c.S }
+
+
+// Procedures:
+
+func (l *Libvirt) ConnectOpen(Name string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := ConnectOpenArgs {
+		Name: Name,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(1, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectClose() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(2, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectGetType() (rType string, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(3, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectGetTypeRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rType = result.Type
+
+	return
+}
+
+func (l *Libvirt) ConnectGetVersion() (rHvVer uint64, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(4, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectGetVersionRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rHvVer = result.HvVer
+
+	return
+}
+
+func (l *Libvirt) ConnectGetMaxVcpus(Type string) (rMaxVcpus int32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectGetMaxVcpusArgs {
+		Type: Type,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(5, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectGetMaxVcpusRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rMaxVcpus = result.MaxVcpus
+
+	return
+}
+
+func (l *Libvirt) NodeGetInfo() (rModel [32]int8, rMemory uint64, rCpus int32, rMhz int32, rNodes int32, rSockets int32, rCores int32, rThreads int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(6, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeGetInfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rModel = result.Model
+	rMemory = result.Memory
+	rCpus = result.Cpus
+	rMhz = result.Mhz
+	rNodes = result.Nodes
+	rSockets = result.Sockets
+	rCores = result.Cores
+	rThreads = result.Threads
+
+	return
+}
+
+func (l *Libvirt) ConnectGetCapabilities() (rCapabilities string, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(7, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectGetCapabilitiesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCapabilities = result.Capabilities
+
+	return
+}
+
+func (l *Libvirt) DomainAttachDevice(Dom NonnullDomain, XML string) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainAttachDeviceArgs {
+		Dom: Dom,
+		XML: XML,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(8, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainCreate(Dom NonnullDomain) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainCreateArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(9, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainCreateXML(XMLDesc string, Flags uint32) (rDom NonnullDomain, err error) {
+	var buf bytes.Buffer
+
+	args := DomainCreateXMLArgs {
+		XMLDesc: XMLDesc,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(10, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainCreateXMLRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDom = result.Dom
+
+	return
+}
+
+func (l *Libvirt) DomainDefineXML(XML string) (rDom NonnullDomain, err error) {
+	var buf bytes.Buffer
+
+	args := DomainDefineXMLArgs {
+		XML: XML,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(11, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainDefineXMLRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDom = result.Dom
+
+	return
+}
+
+func (l *Libvirt) DomainDestroy(Dom NonnullDomain) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainDestroyArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(12, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainDetachDevice(Dom NonnullDomain, XML string) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainDetachDeviceArgs {
+		Dom: Dom,
+		XML: XML,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(13, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetXMLDesc(Dom NonnullDomain, Flags uint32) (rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetXMLDescArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(14, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetXMLDescRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) DomainGetAutostart(Dom NonnullDomain) (rAutostart int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetAutostartArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(15, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetAutostartRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rAutostart = result.Autostart
+
+	return
+}
+
+func (l *Libvirt) DomainGetInfo(Dom NonnullDomain) (rState uint8, rMaxMem uint64, rMemory uint64, rNrVirtCPU uint16, rCPUTime uint64, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetInfoArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(16, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetInfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rState = result.State
+	rMaxMem = result.MaxMem
+	rMemory = result.Memory
+	rNrVirtCPU = result.NrVirtCPU
+	rCPUTime = result.CPUTime
+
+	return
+}
+
+func (l *Libvirt) DomainGetMaxMemory(Dom NonnullDomain) (rMemory uint64, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetMaxMemoryArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(17, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetMaxMemoryRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rMemory = result.Memory
+
+	return
+}
+
+func (l *Libvirt) DomainGetMaxVcpus(Dom NonnullDomain) (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetMaxVcpusArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(18, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetMaxVcpusRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) DomainGetOsType(Dom NonnullDomain) (rType string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetOsTypeArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(19, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetOsTypeRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rType = result.Type
+
+	return
+}
+
+func (l *Libvirt) DomainGetVcpus(Dom NonnullDomain, Maxinfo int32, Maplen int32) (rInfo []VcpuInfo, rCpumaps []byte, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetVcpusArgs {
+		Dom: Dom,
+		Maxinfo: Maxinfo,
+		Maplen: Maplen,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(20, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetVcpusRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rInfo = result.Info
+	rCpumaps = result.Cpumaps
+
+	return
+}
+
+func (l *Libvirt) ConnectListDefinedDomains(Maxnames int32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListDefinedDomainsArgs {
+		Maxnames: Maxnames,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(21, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListDefinedDomainsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) DomainLookupByID(ID int32) (rDom NonnullDomain, err error) {
+	var buf bytes.Buffer
+
+	args := DomainLookupByIDArgs {
+		ID: ID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(22, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainLookupByIDRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDom = result.Dom
+
+	return
+}
+
+func (l *Libvirt) DomainLookupByName(Name string) (rDom NonnullDomain, err error) {
+	var buf bytes.Buffer
+
+	args := DomainLookupByNameArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(23, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainLookupByNameRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDom = result.Dom
+
+	return
+}
+
+func (l *Libvirt) DomainLookupByUUID(UUID UUID) (rDom NonnullDomain, err error) {
+	var buf bytes.Buffer
+
+	args := DomainLookupByUUIDArgs {
+		UUID: UUID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(24, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainLookupByUUIDRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDom = result.Dom
+
+	return
+}
+
+func (l *Libvirt) ConnectNumOfDefinedDomains() (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(25, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectNumOfDefinedDomainsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) DomainPinVcpu(Dom NonnullDomain, Vcpu uint32, Cpumap []byte) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainPinVcpuArgs {
+		Dom: Dom,
+		Vcpu: Vcpu,
+		Cpumap: Cpumap,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(26, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainReboot(Dom NonnullDomain, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainRebootArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(27, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainResume(Dom NonnullDomain) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainResumeArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(28, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSetAutostart(Dom NonnullDomain, Autostart int32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetAutostartArgs {
+		Dom: Dom,
+		Autostart: Autostart,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(29, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSetMaxMemory(Dom NonnullDomain, Memory uint64) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetMaxMemoryArgs {
+		Dom: Dom,
+		Memory: Memory,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(30, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSetMemory(Dom NonnullDomain, Memory uint64) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetMemoryArgs {
+		Dom: Dom,
+		Memory: Memory,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(31, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSetVcpus(Dom NonnullDomain, Nvcpus uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetVcpusArgs {
+		Dom: Dom,
+		Nvcpus: Nvcpus,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(32, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainShutdown(Dom NonnullDomain) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainShutdownArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(33, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSuspend(Dom NonnullDomain) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSuspendArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(34, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainUndefine(Dom NonnullDomain) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainUndefineArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(35, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectListDefinedNetworks(Maxnames int32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListDefinedNetworksArgs {
+		Maxnames: Maxnames,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(36, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListDefinedNetworksRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) ConnectListDomains(Maxids int32) (rIds []int32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListDomainsArgs {
+		Maxids: Maxids,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(37, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListDomainsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rIds = result.Ids
+
+	return
+}
+
+func (l *Libvirt) ConnectListNetworks(Maxnames int32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListNetworksArgs {
+		Maxnames: Maxnames,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(38, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListNetworksRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) NetworkCreate(Net NonnullNetwork) (err error) {
+	var buf bytes.Buffer
+
+	args := NetworkCreateArgs {
+		Net: Net,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(39, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NetworkCreateXML(XML string) (rNet NonnullNetwork, err error) {
+	var buf bytes.Buffer
+
+	args := NetworkCreateXMLArgs {
+		XML: XML,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(40, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NetworkCreateXMLRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNet = result.Net
+
+	return
+}
+
+func (l *Libvirt) NetworkDefineXML(XML string) (rNet NonnullNetwork, err error) {
+	var buf bytes.Buffer
+
+	args := NetworkDefineXMLArgs {
+		XML: XML,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(41, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NetworkDefineXMLRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNet = result.Net
+
+	return
+}
+
+func (l *Libvirt) NetworkDestroy(Net NonnullNetwork) (err error) {
+	var buf bytes.Buffer
+
+	args := NetworkDestroyArgs {
+		Net: Net,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(42, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NetworkGetXMLDesc(Net NonnullNetwork, Flags uint32) (rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := NetworkGetXMLDescArgs {
+		Net: Net,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(43, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NetworkGetXMLDescRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) NetworkGetAutostart(Net NonnullNetwork) (rAutostart int32, err error) {
+	var buf bytes.Buffer
+
+	args := NetworkGetAutostartArgs {
+		Net: Net,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(44, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NetworkGetAutostartRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rAutostart = result.Autostart
+
+	return
+}
+
+func (l *Libvirt) NetworkGetBridgeName(Net NonnullNetwork) (rName string, err error) {
+	var buf bytes.Buffer
+
+	args := NetworkGetBridgeNameArgs {
+		Net: Net,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(45, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NetworkGetBridgeNameRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rName = result.Name
+
+	return
+}
+
+func (l *Libvirt) NetworkLookupByName(Name string) (rNet NonnullNetwork, err error) {
+	var buf bytes.Buffer
+
+	args := NetworkLookupByNameArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(46, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NetworkLookupByNameRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNet = result.Net
+
+	return
+}
+
+func (l *Libvirt) NetworkLookupByUUID(UUID UUID) (rNet NonnullNetwork, err error) {
+	var buf bytes.Buffer
+
+	args := NetworkLookupByUUIDArgs {
+		UUID: UUID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(47, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NetworkLookupByUUIDRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNet = result.Net
+
+	return
+}
+
+func (l *Libvirt) NetworkSetAutostart(Net NonnullNetwork, Autostart int32) (err error) {
+	var buf bytes.Buffer
+
+	args := NetworkSetAutostartArgs {
+		Net: Net,
+		Autostart: Autostart,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(48, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NetworkUndefine(Net NonnullNetwork) (err error) {
+	var buf bytes.Buffer
+
+	args := NetworkUndefineArgs {
+		Net: Net,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(49, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectNumOfDefinedNetworks() (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(50, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectNumOfDefinedNetworksRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) ConnectNumOfDomains() (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(51, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectNumOfDomainsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) ConnectNumOfNetworks() (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(52, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectNumOfNetworksRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) DomainCoreDump(Dom NonnullDomain, To string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainCoreDumpArgs {
+		Dom: Dom,
+		To: To,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(53, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainRestore(From string) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainRestoreArgs {
+		From: From,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(54, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSave(Dom NonnullDomain, To string) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSaveArgs {
+		Dom: Dom,
+		To: To,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(55, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetSchedulerType(Dom NonnullDomain) (rType string, rNparams int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetSchedulerTypeArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(56, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetSchedulerTypeRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rType = result.Type
+	rNparams = result.Nparams
+
+	return
+}
+
+func (l *Libvirt) DomainGetSchedulerParameters(Dom NonnullDomain, Nparams int32) (rParams []TypedParam, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetSchedulerParametersArgs {
+		Dom: Dom,
+		Nparams: Nparams,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(57, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetSchedulerParametersRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+
+	return
+}
+
+func (l *Libvirt) DomainSetSchedulerParameters(Dom NonnullDomain, Params []TypedParam) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetSchedulerParametersArgs {
+		Dom: Dom,
+		Params: Params,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(58, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectGetHostname() (rHostname string, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(59, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectGetHostnameRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rHostname = result.Hostname
+
+	return
+}
+
+func (l *Libvirt) ConnectSupportsFeature(Feature int32) (rSupported int32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectSupportsFeatureArgs {
+		Feature: Feature,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(60, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectSupportsFeatureRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSupported = result.Supported
+
+	return
+}
+
+func (l *Libvirt) DomainMigratePrepare(UriIn string, Flags uint64, Dname string, Resource uint64) (rCookie []byte, rUriOut string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigratePrepareArgs {
+		UriIn: UriIn,
+		Flags: Flags,
+		Dname: Dname,
+		Resource: Resource,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(61, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigratePrepareRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCookie = result.Cookie
+	rUriOut = result.UriOut
+
+	return
+}
+
+func (l *Libvirt) DomainMigratePerform(Dom NonnullDomain, Cookie []byte, Uri string, Flags uint64, Dname string, Resource uint64) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigratePerformArgs {
+		Dom: Dom,
+		Cookie: Cookie,
+		Uri: Uri,
+		Flags: Flags,
+		Dname: Dname,
+		Resource: Resource,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(62, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateFinish(Dname string, Cookie []byte, Uri string, Flags uint64) (rDdom NonnullDomain, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateFinishArgs {
+		Dname: Dname,
+		Cookie: Cookie,
+		Uri: Uri,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(63, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigrateFinishRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDdom = result.Ddom
+
+	return
+}
+
+func (l *Libvirt) DomainBlockStats(Dom NonnullDomain, Path string) (rRdReq int64, rRdBytes int64, rWrReq int64, rWrBytes int64, rErrs int64, err error) {
+	var buf bytes.Buffer
+
+	args := DomainBlockStatsArgs {
+		Dom: Dom,
+		Path: Path,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(64, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainBlockStatsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rRdReq = result.RdReq
+	rRdBytes = result.RdBytes
+	rWrReq = result.WrReq
+	rWrBytes = result.WrBytes
+	rErrs = result.Errs
+
+	return
+}
+
+func (l *Libvirt) DomainInterfaceStats(Dom NonnullDomain, Device string) (rRxBytes int64, rRxPackets int64, rRxErrs int64, rRxDrop int64, rTxBytes int64, rTxPackets int64, rTxErrs int64, rTxDrop int64, err error) {
+	var buf bytes.Buffer
+
+	args := DomainInterfaceStatsArgs {
+		Dom: Dom,
+		Device: Device,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(65, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainInterfaceStatsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rRxBytes = result.RxBytes
+	rRxPackets = result.RxPackets
+	rRxErrs = result.RxErrs
+	rRxDrop = result.RxDrop
+	rTxBytes = result.TxBytes
+	rTxPackets = result.TxPackets
+	rTxErrs = result.TxErrs
+	rTxDrop = result.TxDrop
+
+	return
+}
+
+func (l *Libvirt) AuthList() (rTypes []AuthType, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(66, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := AuthListRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rTypes = result.Types
+
+	return
+}
+
+func (l *Libvirt) AuthSaslInit() (rMechlist string, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(67, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := AuthSaslInitRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rMechlist = result.Mechlist
+
+	return
+}
+
+func (l *Libvirt) AuthSaslStart(Mech string, Nil int32, Data []int8) (rComplete int32, rNil int32, rData []int8, err error) {
+	var buf bytes.Buffer
+
+	args := AuthSaslStartArgs {
+		Mech: Mech,
+		Nil: Nil,
+		Data: Data,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(68, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := AuthSaslStartRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rComplete = result.Complete
+	rNil = result.Nil
+	rData = result.Data
+
+	return
+}
+
+func (l *Libvirt) AuthSaslStep(Nil int32, Data []int8) (rComplete int32, rNil int32, rData []int8, err error) {
+	var buf bytes.Buffer
+
+	args := AuthSaslStepArgs {
+		Nil: Nil,
+		Data: Data,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(69, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := AuthSaslStepRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rComplete = result.Complete
+	rNil = result.Nil
+	rData = result.Data
+
+	return
+}
+
+func (l *Libvirt) AuthPolkit() (rComplete int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(70, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := AuthPolkitRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rComplete = result.Complete
+
+	return
+}
+
+func (l *Libvirt) ConnectNumOfStoragePools() (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(71, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectNumOfStoragePoolsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) ConnectListStoragePools(Maxnames int32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListStoragePoolsArgs {
+		Maxnames: Maxnames,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(72, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListStoragePoolsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) ConnectNumOfDefinedStoragePools() (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(73, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectNumOfDefinedStoragePoolsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) ConnectListDefinedStoragePools(Maxnames int32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListDefinedStoragePoolsArgs {
+		Maxnames: Maxnames,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(74, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListDefinedStoragePoolsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) ConnectFindStoragePoolSources(Type string, SrcSpec string, Flags uint32) (rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectFindStoragePoolSourcesArgs {
+		Type: Type,
+		SrcSpec: SrcSpec,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(75, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectFindStoragePoolSourcesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) StoragePoolCreateXML(XML string, Flags uint32) (rPool NonnullStoragePool, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolCreateXMLArgs {
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(76, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolCreateXMLRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rPool = result.Pool
+
+	return
+}
+
+func (l *Libvirt) StoragePoolDefineXML(XML string, Flags uint32) (rPool NonnullStoragePool, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolDefineXMLArgs {
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(77, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolDefineXMLRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rPool = result.Pool
+
+	return
+}
+
+func (l *Libvirt) StoragePoolCreate(Pool NonnullStoragePool, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolCreateArgs {
+		Pool: Pool,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(78, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StoragePoolBuild(Pool NonnullStoragePool, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolBuildArgs {
+		Pool: Pool,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(79, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StoragePoolDestroy(Pool NonnullStoragePool) (err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolDestroyArgs {
+		Pool: Pool,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(80, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StoragePoolDelete(Pool NonnullStoragePool, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolDeleteArgs {
+		Pool: Pool,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(81, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StoragePoolUndefine(Pool NonnullStoragePool) (err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolUndefineArgs {
+		Pool: Pool,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(82, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StoragePoolRefresh(Pool NonnullStoragePool, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolRefreshArgs {
+		Pool: Pool,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(83, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StoragePoolLookupByName(Name string) (rPool NonnullStoragePool, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolLookupByNameArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(84, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolLookupByNameRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rPool = result.Pool
+
+	return
+}
+
+func (l *Libvirt) StoragePoolLookupByUUID(UUID UUID) (rPool NonnullStoragePool, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolLookupByUUIDArgs {
+		UUID: UUID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(85, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolLookupByUUIDRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rPool = result.Pool
+
+	return
+}
+
+func (l *Libvirt) StoragePoolLookupByVolume(Vol NonnullStorageVol) (rPool NonnullStoragePool, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolLookupByVolumeArgs {
+		Vol: Vol,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(86, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolLookupByVolumeRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rPool = result.Pool
+
+	return
+}
+
+func (l *Libvirt) StoragePoolGetInfo(Pool NonnullStoragePool) (rState uint8, rCapacity uint64, rAllocation uint64, rAvailable uint64, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolGetInfoArgs {
+		Pool: Pool,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(87, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolGetInfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rState = result.State
+	rCapacity = result.Capacity
+	rAllocation = result.Allocation
+	rAvailable = result.Available
+
+	return
+}
+
+func (l *Libvirt) StoragePoolGetXMLDesc(Pool NonnullStoragePool, Flags uint32) (rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolGetXMLDescArgs {
+		Pool: Pool,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(88, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolGetXMLDescRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) StoragePoolGetAutostart(Pool NonnullStoragePool) (rAutostart int32, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolGetAutostartArgs {
+		Pool: Pool,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(89, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolGetAutostartRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rAutostart = result.Autostart
+
+	return
+}
+
+func (l *Libvirt) StoragePoolSetAutostart(Pool NonnullStoragePool, Autostart int32) (err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolSetAutostartArgs {
+		Pool: Pool,
+		Autostart: Autostart,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(90, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StoragePoolNumOfVolumes(Pool NonnullStoragePool) (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolNumOfVolumesArgs {
+		Pool: Pool,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(91, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolNumOfVolumesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) StoragePoolListVolumes(Pool NonnullStoragePool, Maxnames int32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolListVolumesArgs {
+		Pool: Pool,
+		Maxnames: Maxnames,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(92, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolListVolumesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) StorageVolCreateXML(Pool NonnullStoragePool, XML string, Flags uint32) (rVol NonnullStorageVol, err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolCreateXMLArgs {
+		Pool: Pool,
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(93, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StorageVolCreateXMLRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rVol = result.Vol
+
+	return
+}
+
+func (l *Libvirt) StorageVolDelete(Vol NonnullStorageVol, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolDeleteArgs {
+		Vol: Vol,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(94, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StorageVolLookupByName(Pool NonnullStoragePool, Name string) (rVol NonnullStorageVol, err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolLookupByNameArgs {
+		Pool: Pool,
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(95, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StorageVolLookupByNameRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rVol = result.Vol
+
+	return
+}
+
+func (l *Libvirt) StorageVolLookupByKey(Key string) (rVol NonnullStorageVol, err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolLookupByKeyArgs {
+		Key: Key,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(96, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StorageVolLookupByKeyRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rVol = result.Vol
+
+	return
+}
+
+func (l *Libvirt) StorageVolLookupByPath(Path string) (rVol NonnullStorageVol, err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolLookupByPathArgs {
+		Path: Path,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(97, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StorageVolLookupByPathRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rVol = result.Vol
+
+	return
+}
+
+func (l *Libvirt) StorageVolGetInfo(Vol NonnullStorageVol) (rType int8, rCapacity uint64, rAllocation uint64, err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolGetInfoArgs {
+		Vol: Vol,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(98, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StorageVolGetInfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rType = result.Type
+	rCapacity = result.Capacity
+	rAllocation = result.Allocation
+
+	return
+}
+
+func (l *Libvirt) StorageVolGetXMLDesc(Vol NonnullStorageVol, Flags uint32) (rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolGetXMLDescArgs {
+		Vol: Vol,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(99, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StorageVolGetXMLDescRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) StorageVolGetPath(Vol NonnullStorageVol) (rName string, err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolGetPathArgs {
+		Vol: Vol,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(100, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StorageVolGetPathRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rName = result.Name
+
+	return
+}
+
+func (l *Libvirt) NodeGetCellsFreeMemory(StartCell int32, Maxcells int32) (rCells []uint64, err error) {
+	var buf bytes.Buffer
+
+	args := NodeGetCellsFreeMemoryArgs {
+		StartCell: StartCell,
+		Maxcells: Maxcells,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(101, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeGetCellsFreeMemoryRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCells = result.Cells
+
+	return
+}
+
+func (l *Libvirt) NodeGetFreeMemory() (rFreeMem uint64, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(102, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeGetFreeMemoryRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rFreeMem = result.FreeMem
+
+	return
+}
+
+func (l *Libvirt) DomainBlockPeek(Dom NonnullDomain, Path string, Offset uint64, Size uint32, Flags uint32) (rBuffer []byte, err error) {
+	var buf bytes.Buffer
+
+	args := DomainBlockPeekArgs {
+		Dom: Dom,
+		Path: Path,
+		Offset: Offset,
+		Size: Size,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(103, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainBlockPeekRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rBuffer = result.Buffer
+
+	return
+}
+
+func (l *Libvirt) DomainMemoryPeek(Dom NonnullDomain, Offset uint64, Size uint32, Flags uint32) (rBuffer []byte, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMemoryPeekArgs {
+		Dom: Dom,
+		Offset: Offset,
+		Size: Size,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(104, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMemoryPeekRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rBuffer = result.Buffer
+
+	return
+}
+
+func (l *Libvirt) ConnectDomainEventRegister() (rCbRegistered int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(105, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectDomainEventRegisterRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCbRegistered = result.CbRegistered
+
+	return
+}
+
+func (l *Libvirt) ConnectDomainEventDeregister() (rCbRegistered int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(106, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectDomainEventDeregisterRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCbRegistered = result.CbRegistered
+
+	return
+}
+
+func (l *Libvirt) DomainEventLifecycle() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(107, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainMigratePrepare2(UriIn string, Flags uint64, Dname string, Resource uint64, DomXML string) (rCookie []byte, rUriOut string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigratePrepare2Args {
+		UriIn: UriIn,
+		Flags: Flags,
+		Dname: Dname,
+		Resource: Resource,
+		DomXML: DomXML,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(108, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigratePrepare2Ret{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCookie = result.Cookie
+	rUriOut = result.UriOut
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateFinish2(Dname string, Cookie []byte, Uri string, Flags uint64, Retcode int32) (rDdom NonnullDomain, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateFinish2Args {
+		Dname: Dname,
+		Cookie: Cookie,
+		Uri: Uri,
+		Flags: Flags,
+		Retcode: Retcode,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(109, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigrateFinish2Ret{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDdom = result.Ddom
+
+	return
+}
+
+func (l *Libvirt) ConnectGetUri() (rUri string, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(110, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectGetUriRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rUri = result.Uri
+
+	return
+}
+
+func (l *Libvirt) NodeNumOfDevices(Cap string, Flags uint32) (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	args := NodeNumOfDevicesArgs {
+		Cap: Cap,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(111, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeNumOfDevicesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) NodeListDevices(Cap string, Maxnames int32, Flags uint32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := NodeListDevicesArgs {
+		Cap: Cap,
+		Maxnames: Maxnames,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(112, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeListDevicesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceLookupByName(Name string) (rDev NonnullNodeDevice, err error) {
+	var buf bytes.Buffer
+
+	args := NodeDeviceLookupByNameArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(113, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeDeviceLookupByNameRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDev = result.Dev
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceGetXMLDesc(Name string, Flags uint32) (rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := NodeDeviceGetXMLDescArgs {
+		Name: Name,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(114, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeDeviceGetXMLDescRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceGetParent(Name string) (rParent string, err error) {
+	var buf bytes.Buffer
+
+	args := NodeDeviceGetParentArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(115, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeDeviceGetParentRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParent = result.Parent
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceNumOfCaps(Name string) (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	args := NodeDeviceNumOfCapsArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(116, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeDeviceNumOfCapsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceListCaps(Name string, Maxnames int32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := NodeDeviceListCapsArgs {
+		Name: Name,
+		Maxnames: Maxnames,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(117, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeDeviceListCapsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceDettach(Name string) (err error) {
+	var buf bytes.Buffer
+
+	args := NodeDeviceDettachArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(118, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceReAttach(Name string) (err error) {
+	var buf bytes.Buffer
+
+	args := NodeDeviceReAttachArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(119, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceReset(Name string) (err error) {
+	var buf bytes.Buffer
+
+	args := NodeDeviceResetArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(120, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetSecurityLabel(Dom NonnullDomain) (rLabel []int8, rEnforcing int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetSecurityLabelArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(121, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetSecurityLabelRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rLabel = result.Label
+	rEnforcing = result.Enforcing
+
+	return
+}
+
+func (l *Libvirt) NodeGetSecurityModel() (rModel []int8, rDoi []int8, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(122, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeGetSecurityModelRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rModel = result.Model
+	rDoi = result.Doi
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceCreateXML(XMLDesc string, Flags uint32) (rDev NonnullNodeDevice, err error) {
+	var buf bytes.Buffer
+
+	args := NodeDeviceCreateXMLArgs {
+		XMLDesc: XMLDesc,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(123, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeDeviceCreateXMLRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDev = result.Dev
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceDestroy(Name string) (err error) {
+	var buf bytes.Buffer
+
+	args := NodeDeviceDestroyArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(124, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StorageVolCreateXMLFrom(Pool NonnullStoragePool, XML string, Clonevol NonnullStorageVol, Flags uint32) (rVol NonnullStorageVol, err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolCreateXMLFromArgs {
+		Pool: Pool,
+		XML: XML,
+		Clonevol: Clonevol,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(125, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StorageVolCreateXMLFromRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rVol = result.Vol
+
+	return
+}
+
+func (l *Libvirt) ConnectNumOfInterfaces() (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(126, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectNumOfInterfacesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) ConnectListInterfaces(Maxnames int32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListInterfacesArgs {
+		Maxnames: Maxnames,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(127, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListInterfacesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) InterfaceLookupByName(Name string) (rIface NonnullInterface, err error) {
+	var buf bytes.Buffer
+
+	args := InterfaceLookupByNameArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(128, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := InterfaceLookupByNameRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rIface = result.Iface
+
+	return
+}
+
+func (l *Libvirt) InterfaceLookupByMacString(Mac string) (rIface NonnullInterface, err error) {
+	var buf bytes.Buffer
+
+	args := InterfaceLookupByMacStringArgs {
+		Mac: Mac,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(129, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := InterfaceLookupByMacStringRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rIface = result.Iface
+
+	return
+}
+
+func (l *Libvirt) InterfaceGetXMLDesc(Iface NonnullInterface, Flags uint32) (rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := InterfaceGetXMLDescArgs {
+		Iface: Iface,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(130, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := InterfaceGetXMLDescRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) InterfaceDefineXML(XML string, Flags uint32) (rIface NonnullInterface, err error) {
+	var buf bytes.Buffer
+
+	args := InterfaceDefineXMLArgs {
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(131, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := InterfaceDefineXMLRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rIface = result.Iface
+
+	return
+}
+
+func (l *Libvirt) InterfaceUndefine(Iface NonnullInterface) (err error) {
+	var buf bytes.Buffer
+
+	args := InterfaceUndefineArgs {
+		Iface: Iface,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(132, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) InterfaceCreate(Iface NonnullInterface, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := InterfaceCreateArgs {
+		Iface: Iface,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(133, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) InterfaceDestroy(Iface NonnullInterface, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := InterfaceDestroyArgs {
+		Iface: Iface,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(134, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectDomainXMLFromNative(NativeFormat string, NativeConfig string, Flags uint32) (rDomainXML string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectDomainXMLFromNativeArgs {
+		NativeFormat: NativeFormat,
+		NativeConfig: NativeConfig,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(135, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectDomainXMLFromNativeRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDomainXML = result.DomainXML
+
+	return
+}
+
+func (l *Libvirt) ConnectDomainXMLToNative(NativeFormat string, DomainXML string, Flags uint32) (rNativeConfig string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectDomainXMLToNativeArgs {
+		NativeFormat: NativeFormat,
+		DomainXML: DomainXML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(136, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectDomainXMLToNativeRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNativeConfig = result.NativeConfig
+
+	return
+}
+
+func (l *Libvirt) ConnectNumOfDefinedInterfaces() (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(137, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectNumOfDefinedInterfacesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) ConnectListDefinedInterfaces(Maxnames int32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListDefinedInterfacesArgs {
+		Maxnames: Maxnames,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(138, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListDefinedInterfacesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) ConnectNumOfSecrets() (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(139, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectNumOfSecretsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) ConnectListSecrets(Maxuuids int32) (rUuids []string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListSecretsArgs {
+		Maxuuids: Maxuuids,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(140, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListSecretsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rUuids = result.Uuids
+
+	return
+}
+
+func (l *Libvirt) SecretLookupByUUID(UUID UUID) (rSecret NonnullSecret, err error) {
+	var buf bytes.Buffer
+
+	args := SecretLookupByUUIDArgs {
+		UUID: UUID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(141, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := SecretLookupByUUIDRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSecret = result.Secret
+
+	return
+}
+
+func (l *Libvirt) SecretDefineXML(XML string, Flags uint32) (rSecret NonnullSecret, err error) {
+	var buf bytes.Buffer
+
+	args := SecretDefineXMLArgs {
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(142, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := SecretDefineXMLRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSecret = result.Secret
+
+	return
+}
+
+func (l *Libvirt) SecretGetXMLDesc(Secret NonnullSecret, Flags uint32) (rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := SecretGetXMLDescArgs {
+		Secret: Secret,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(143, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := SecretGetXMLDescRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) SecretSetValue(Secret NonnullSecret, Value []byte, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := SecretSetValueArgs {
+		Secret: Secret,
+		Value: Value,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(144, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) SecretGetValue(Secret NonnullSecret, Flags uint32) (rValue []byte, err error) {
+	var buf bytes.Buffer
+
+	args := SecretGetValueArgs {
+		Secret: Secret,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(145, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := SecretGetValueRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rValue = result.Value
+
+	return
+}
+
+func (l *Libvirt) SecretUndefine(Secret NonnullSecret) (err error) {
+	var buf bytes.Buffer
+
+	args := SecretUndefineArgs {
+		Secret: Secret,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(146, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) SecretLookupByUsage(UsageType int32, UsageID string) (rSecret NonnullSecret, err error) {
+	var buf bytes.Buffer
+
+	args := SecretLookupByUsageArgs {
+		UsageType: UsageType,
+		UsageID: UsageID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(147, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := SecretLookupByUsageRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSecret = result.Secret
+
+	return
+}
+
+func (l *Libvirt) DomainMigratePrepareTunnel(Flags uint64, Dname string, Resource uint64, DomXML string) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigratePrepareTunnelArgs {
+		Flags: Flags,
+		Dname: Dname,
+		Resource: Resource,
+		DomXML: DomXML,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(148, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectIsSecure() (rSecure int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(149, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectIsSecureRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSecure = result.Secure
+
+	return
+}
+
+func (l *Libvirt) DomainIsActive(Dom NonnullDomain) (rActive int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainIsActiveArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(150, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainIsActiveRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rActive = result.Active
+
+	return
+}
+
+func (l *Libvirt) DomainIsPersistent(Dom NonnullDomain) (rPersistent int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainIsPersistentArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(151, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainIsPersistentRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rPersistent = result.Persistent
+
+	return
+}
+
+func (l *Libvirt) NetworkIsActive(Net NonnullNetwork) (rActive int32, err error) {
+	var buf bytes.Buffer
+
+	args := NetworkIsActiveArgs {
+		Net: Net,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(152, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NetworkIsActiveRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rActive = result.Active
+
+	return
+}
+
+func (l *Libvirt) NetworkIsPersistent(Net NonnullNetwork) (rPersistent int32, err error) {
+	var buf bytes.Buffer
+
+	args := NetworkIsPersistentArgs {
+		Net: Net,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(153, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NetworkIsPersistentRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rPersistent = result.Persistent
+
+	return
+}
+
+func (l *Libvirt) StoragePoolIsActive(Pool NonnullStoragePool) (rActive int32, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolIsActiveArgs {
+		Pool: Pool,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(154, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolIsActiveRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rActive = result.Active
+
+	return
+}
+
+func (l *Libvirt) StoragePoolIsPersistent(Pool NonnullStoragePool) (rPersistent int32, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolIsPersistentArgs {
+		Pool: Pool,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(155, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolIsPersistentRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rPersistent = result.Persistent
+
+	return
+}
+
+func (l *Libvirt) InterfaceIsActive(Iface NonnullInterface) (rActive int32, err error) {
+	var buf bytes.Buffer
+
+	args := InterfaceIsActiveArgs {
+		Iface: Iface,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(156, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := InterfaceIsActiveRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rActive = result.Active
+
+	return
+}
+
+func (l *Libvirt) ConnectGetLibVersion() (rLibVer uint64, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(157, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectGetLibVersionRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rLibVer = result.LibVer
+
+	return
+}
+
+func (l *Libvirt) ConnectCompareCPU(XML string, Flags uint32) (rResult int32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectCompareCPUArgs {
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(158, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectCompareCPURet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rResult = result.Result
+
+	return
+}
+
+func (l *Libvirt) DomainMemoryStats(Dom NonnullDomain, MaxStats uint32, Flags uint32) (rStats []DomainMemoryStat, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMemoryStatsArgs {
+		Dom: Dom,
+		MaxStats: MaxStats,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(159, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMemoryStatsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rStats = result.Stats
+
+	return
+}
+
+func (l *Libvirt) DomainAttachDeviceFlags(Dom NonnullDomain, XML string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainAttachDeviceFlagsArgs {
+		Dom: Dom,
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(160, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainDetachDeviceFlags(Dom NonnullDomain, XML string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainDetachDeviceFlagsArgs {
+		Dom: Dom,
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(161, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectBaselineCPU(XMLCPUs []string, Flags uint32) (rCPU string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectBaselineCPUArgs {
+		XMLCPUs: XMLCPUs,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(162, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectBaselineCPURet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCPU = result.CPU
+
+	return
+}
+
+func (l *Libvirt) DomainGetJobInfo(Dom NonnullDomain) (rType int32, rTimeElapsed uint64, rTimeRemaining uint64, rDataTotal uint64, rDataProcessed uint64, rDataRemaining uint64, rMemTotal uint64, rMemProcessed uint64, rMemRemaining uint64, rFileTotal uint64, rFileProcessed uint64, rFileRemaining uint64, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetJobInfoArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(163, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetJobInfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rType = result.Type
+	rTimeElapsed = result.TimeElapsed
+	rTimeRemaining = result.TimeRemaining
+	rDataTotal = result.DataTotal
+	rDataProcessed = result.DataProcessed
+	rDataRemaining = result.DataRemaining
+	rMemTotal = result.MemTotal
+	rMemProcessed = result.MemProcessed
+	rMemRemaining = result.MemRemaining
+	rFileTotal = result.FileTotal
+	rFileProcessed = result.FileProcessed
+	rFileRemaining = result.FileRemaining
+
+	return
+}
+
+func (l *Libvirt) DomainAbortJob(Dom NonnullDomain) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainAbortJobArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(164, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StorageVolWipe(Vol NonnullStorageVol, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolWipeArgs {
+		Vol: Vol,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(165, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateSetMaxDowntime(Dom NonnullDomain, Downtime uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateSetMaxDowntimeArgs {
+		Dom: Dom,
+		Downtime: Downtime,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(166, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectDomainEventRegisterAny(EventID int32) (err error) {
+	var buf bytes.Buffer
+
+	args := ConnectDomainEventRegisterAnyArgs {
+		EventID: EventID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(167, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectDomainEventDeregisterAny(EventID int32) (err error) {
+	var buf bytes.Buffer
+
+	args := ConnectDomainEventDeregisterAnyArgs {
+		EventID: EventID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(168, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventReboot() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(169, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventRtcChange() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(170, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventWatchdog() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(171, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventIOError() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(172, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventGraphics() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(173, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainUpdateDeviceFlags(Dom NonnullDomain, XML string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainUpdateDeviceFlagsArgs {
+		Dom: Dom,
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(174, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NwfilterLookupByName(Name string) (rNwfilter NonnullNwfilter, err error) {
+	var buf bytes.Buffer
+
+	args := NwfilterLookupByNameArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(175, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NwfilterLookupByNameRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNwfilter = result.Nwfilter
+
+	return
+}
+
+func (l *Libvirt) NwfilterLookupByUUID(UUID UUID) (rNwfilter NonnullNwfilter, err error) {
+	var buf bytes.Buffer
+
+	args := NwfilterLookupByUUIDArgs {
+		UUID: UUID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(176, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NwfilterLookupByUUIDRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNwfilter = result.Nwfilter
+
+	return
+}
+
+func (l *Libvirt) NwfilterGetXMLDesc(Nwfilter NonnullNwfilter, Flags uint32) (rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := NwfilterGetXMLDescArgs {
+		Nwfilter: Nwfilter,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(177, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NwfilterGetXMLDescRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) ConnectNumOfNwfilters() (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(178, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectNumOfNwfiltersRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) ConnectListNwfilters(Maxnames int32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListNwfiltersArgs {
+		Maxnames: Maxnames,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(179, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListNwfiltersRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) NwfilterDefineXML(XML string) (rNwfilter NonnullNwfilter, err error) {
+	var buf bytes.Buffer
+
+	args := NwfilterDefineXMLArgs {
+		XML: XML,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(180, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NwfilterDefineXMLRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNwfilter = result.Nwfilter
+
+	return
+}
+
+func (l *Libvirt) NwfilterUndefine(Nwfilter NonnullNwfilter) (err error) {
+	var buf bytes.Buffer
+
+	args := NwfilterUndefineArgs {
+		Nwfilter: Nwfilter,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(181, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainManagedSave(Dom NonnullDomain, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainManagedSaveArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(182, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainHasManagedSaveImage(Dom NonnullDomain, Flags uint32) (rResult int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainHasManagedSaveImageArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(183, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainHasManagedSaveImageRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rResult = result.Result
+
+	return
+}
+
+func (l *Libvirt) DomainManagedSaveRemove(Dom NonnullDomain, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainManagedSaveRemoveArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(184, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotCreateXML(Dom NonnullDomain, XMLDesc string, Flags uint32) (rSnap NonnullDomainSnapshot, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotCreateXMLArgs {
+		Dom: Dom,
+		XMLDesc: XMLDesc,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(185, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSnapshotCreateXMLRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSnap = result.Snap
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotGetXMLDesc(Snap NonnullDomainSnapshot, Flags uint32) (rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotGetXMLDescArgs {
+		Snap: Snap,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(186, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSnapshotGetXMLDescRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotNum(Dom NonnullDomain, Flags uint32) (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotNumArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(187, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSnapshotNumRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotListNames(Dom NonnullDomain, Maxnames int32, Flags uint32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotListNamesArgs {
+		Dom: Dom,
+		Maxnames: Maxnames,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(188, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSnapshotListNamesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotLookupByName(Dom NonnullDomain, Name string, Flags uint32) (rSnap NonnullDomainSnapshot, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotLookupByNameArgs {
+		Dom: Dom,
+		Name: Name,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(189, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSnapshotLookupByNameRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSnap = result.Snap
+
+	return
+}
+
+func (l *Libvirt) DomainHasCurrentSnapshot(Dom NonnullDomain, Flags uint32) (rResult int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainHasCurrentSnapshotArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(190, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainHasCurrentSnapshotRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rResult = result.Result
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotCurrent(Dom NonnullDomain, Flags uint32) (rSnap NonnullDomainSnapshot, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotCurrentArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(191, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSnapshotCurrentRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSnap = result.Snap
+
+	return
+}
+
+func (l *Libvirt) DomainRevertToSnapshot(Snap NonnullDomainSnapshot, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainRevertToSnapshotArgs {
+		Snap: Snap,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(192, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotDelete(Snap NonnullDomainSnapshot, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotDeleteArgs {
+		Snap: Snap,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(193, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetBlockInfo(Dom NonnullDomain, Path string, Flags uint32) (rAllocation uint64, rCapacity uint64, rPhysical uint64, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetBlockInfoArgs {
+		Dom: Dom,
+		Path: Path,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(194, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetBlockInfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rAllocation = result.Allocation
+	rCapacity = result.Capacity
+	rPhysical = result.Physical
+
+	return
+}
+
+func (l *Libvirt) DomainEventIOErrorReason() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(195, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainCreateWithFlags(Dom NonnullDomain, Flags uint32) (rDom NonnullDomain, err error) {
+	var buf bytes.Buffer
+
+	args := DomainCreateWithFlagsArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(196, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainCreateWithFlagsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDom = result.Dom
+
+	return
+}
+
+func (l *Libvirt) DomainSetMemoryParameters(Dom NonnullDomain, Params []TypedParam, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetMemoryParametersArgs {
+		Dom: Dom,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(197, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetMemoryParameters(Dom NonnullDomain, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetMemoryParametersArgs {
+		Dom: Dom,
+		Nparams: Nparams,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(198, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetMemoryParametersRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+	rNparams = result.Nparams
+
+	return
+}
+
+func (l *Libvirt) DomainSetVcpusFlags(Dom NonnullDomain, Nvcpus uint32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetVcpusFlagsArgs {
+		Dom: Dom,
+		Nvcpus: Nvcpus,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(199, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetVcpusFlags(Dom NonnullDomain, Flags uint32) (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetVcpusFlagsArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(200, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetVcpusFlagsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) DomainOpenConsole(Dom NonnullDomain, DevName string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainOpenConsoleArgs {
+		Dom: Dom,
+		DevName: DevName,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(201, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainIsUpdated(Dom NonnullDomain) (rUpdated int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainIsUpdatedArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(202, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainIsUpdatedRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rUpdated = result.Updated
+
+	return
+}
+
+func (l *Libvirt) ConnectGetSysinfo(Flags uint32) (rSysinfo string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectGetSysinfoArgs {
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(203, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectGetSysinfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSysinfo = result.Sysinfo
+
+	return
+}
+
+func (l *Libvirt) DomainSetMemoryFlags(Dom NonnullDomain, Memory uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetMemoryFlagsArgs {
+		Dom: Dom,
+		Memory: Memory,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(204, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSetBlkioParameters(Dom NonnullDomain, Params []TypedParam, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetBlkioParametersArgs {
+		Dom: Dom,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(205, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetBlkioParameters(Dom NonnullDomain, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetBlkioParametersArgs {
+		Dom: Dom,
+		Nparams: Nparams,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(206, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetBlkioParametersRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+	rNparams = result.Nparams
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateSetMaxSpeed(Dom NonnullDomain, Bandwidth uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateSetMaxSpeedArgs {
+		Dom: Dom,
+		Bandwidth: Bandwidth,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(207, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StorageVolUpload(Vol NonnullStorageVol, Offset uint64, Length uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolUploadArgs {
+		Vol: Vol,
+		Offset: Offset,
+		Length: Length,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(208, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StorageVolDownload(Vol NonnullStorageVol, Offset uint64, Length uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolDownloadArgs {
+		Vol: Vol,
+		Offset: Offset,
+		Length: Length,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(209, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainInjectNmi(Dom NonnullDomain, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainInjectNmiArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(210, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainScreenshot(Dom NonnullDomain, Screen uint32, Flags uint32) (rMime string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainScreenshotArgs {
+		Dom: Dom,
+		Screen: Screen,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(211, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainScreenshotRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rMime = result.Mime
+
+	return
+}
+
+func (l *Libvirt) DomainGetState(Dom NonnullDomain, Flags uint32) (rState int32, rReason int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetStateArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(212, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetStateRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rState = result.State
+	rReason = result.Reason
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateBegin3(Dom NonnullDomain, Xmlin string, Flags uint64, Dname string, Resource uint64) (rCookieOut []byte, rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateBegin3Args {
+		Dom: Dom,
+		Xmlin: Xmlin,
+		Flags: Flags,
+		Dname: Dname,
+		Resource: Resource,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(213, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigrateBegin3Ret{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCookieOut = result.CookieOut
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn string, Flags uint64, Dname string, Resource uint64, DomXML string) (rCookieOut []byte, rUriOut string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigratePrepare3Args {
+		CookieIn: CookieIn,
+		UriIn: UriIn,
+		Flags: Flags,
+		Dname: Dname,
+		Resource: Resource,
+		DomXML: DomXML,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(214, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigratePrepare3Ret{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCookieOut = result.CookieOut
+	rUriOut = result.UriOut
+
+	return
+}
+
+func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, Flags uint64, Dname string, Resource uint64, DomXML string) (rCookieOut []byte, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigratePrepareTunnel3Args {
+		CookieIn: CookieIn,
+		Flags: Flags,
+		Dname: Dname,
+		Resource: Resource,
+		DomXML: DomXML,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(215, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigratePrepareTunnel3Ret{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCookieOut = result.CookieOut
+
+	return
+}
+
+func (l *Libvirt) DomainMigratePerform3(Dom NonnullDomain, Xmlin string, CookieIn []byte, Dconnuri string, Uri string, Flags uint64, Dname string, Resource uint64) (rCookieOut []byte, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigratePerform3Args {
+		Dom: Dom,
+		Xmlin: Xmlin,
+		CookieIn: CookieIn,
+		Dconnuri: Dconnuri,
+		Uri: Uri,
+		Flags: Flags,
+		Dname: Dname,
+		Resource: Resource,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(216, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigratePerform3Ret{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCookieOut = result.CookieOut
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateFinish3(Dname string, CookieIn []byte, Dconnuri string, Uri string, Flags uint64, Cancelled int32) (rDom NonnullDomain, rCookieOut []byte, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateFinish3Args {
+		Dname: Dname,
+		CookieIn: CookieIn,
+		Dconnuri: Dconnuri,
+		Uri: Uri,
+		Flags: Flags,
+		Cancelled: Cancelled,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(217, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigrateFinish3Ret{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDom = result.Dom
+	rCookieOut = result.CookieOut
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateConfirm3(Dom NonnullDomain, CookieIn []byte, Flags uint64, Cancelled int32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateConfirm3Args {
+		Dom: Dom,
+		CookieIn: CookieIn,
+		Flags: Flags,
+		Cancelled: Cancelled,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(218, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSetSchedulerParametersFlags(Dom NonnullDomain, Params []TypedParam, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetSchedulerParametersFlagsArgs {
+		Dom: Dom,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(219, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) InterfaceChangeBegin(Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := InterfaceChangeBeginArgs {
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(220, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) InterfaceChangeCommit(Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := InterfaceChangeCommitArgs {
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(221, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) InterfaceChangeRollback(Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := InterfaceChangeRollbackArgs {
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(222, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetSchedulerParametersFlags(Dom NonnullDomain, Nparams int32, Flags uint32) (rParams []TypedParam, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetSchedulerParametersFlagsArgs {
+		Dom: Dom,
+		Nparams: Nparams,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(223, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetSchedulerParametersFlagsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+
+	return
+}
+
+func (l *Libvirt) DomainEventControlError() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(224, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainPinVcpuFlags(Dom NonnullDomain, Vcpu uint32, Cpumap []byte, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainPinVcpuFlagsArgs {
+		Dom: Dom,
+		Vcpu: Vcpu,
+		Cpumap: Cpumap,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(225, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSendKey(Dom NonnullDomain, Codeset uint32, Holdtime uint32, Keycodes []uint32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSendKeyArgs {
+		Dom: Dom,
+		Codeset: Codeset,
+		Holdtime: Holdtime,
+		Keycodes: Keycodes,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(226, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NodeGetCPUStats(CPUNum int32, Nparams int32, Flags uint32) (rParams []NodeGetCPUStats, rNparams int32, err error) {
+	var buf bytes.Buffer
+
+	args := NodeGetCPUStatsArgs {
+		CPUNum: CPUNum,
+		Nparams: Nparams,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(227, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeGetCPUStatsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+	rNparams = result.Nparams
+
+	return
+}
+
+func (l *Libvirt) NodeGetMemoryStats(Nparams int32, CellNum int32, Flags uint32) (rParams []NodeGetMemoryStats, rNparams int32, err error) {
+	var buf bytes.Buffer
+
+	args := NodeGetMemoryStatsArgs {
+		Nparams: Nparams,
+		CellNum: CellNum,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(228, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeGetMemoryStatsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+	rNparams = result.Nparams
+
+	return
+}
+
+func (l *Libvirt) DomainGetControlInfo(Dom NonnullDomain, Flags uint32) (rState uint32, rDetails uint32, rStateTime uint64, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetControlInfoArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(229, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetControlInfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rState = result.State
+	rDetails = result.Details
+	rStateTime = result.StateTime
+
+	return
+}
+
+func (l *Libvirt) DomainGetVcpuPinInfo(Dom NonnullDomain, Ncpumaps int32, Maplen int32, Flags uint32) (rCpumaps []byte, rNum int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetVcpuPinInfoArgs {
+		Dom: Dom,
+		Ncpumaps: Ncpumaps,
+		Maplen: Maplen,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(230, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetVcpuPinInfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCpumaps = result.Cpumaps
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) DomainUndefineFlags(Dom NonnullDomain, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainUndefineFlagsArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(231, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSaveFlags(Dom NonnullDomain, To string, Dxml string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSaveFlagsArgs {
+		Dom: Dom,
+		To: To,
+		Dxml: Dxml,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(232, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainRestoreFlags(From string, Dxml string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainRestoreFlagsArgs {
+		From: From,
+		Dxml: Dxml,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(233, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainDestroyFlags(Dom NonnullDomain, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainDestroyFlagsArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(234, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSaveImageGetXMLDesc(File string, Flags uint32) (rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSaveImageGetXMLDescArgs {
+		File: File,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(235, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSaveImageGetXMLDescRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) DomainSaveImageDefineXML(File string, Dxml string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSaveImageDefineXMLArgs {
+		File: File,
+		Dxml: Dxml,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(236, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainBlockJobAbort(Dom NonnullDomain, Path string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainBlockJobAbortArgs {
+		Dom: Dom,
+		Path: Path,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(237, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetBlockJobInfo(Dom NonnullDomain, Path string, Flags uint32) (rFound int32, rType int32, rBandwidth uint64, rCur uint64, rEnd uint64, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetBlockJobInfoArgs {
+		Dom: Dom,
+		Path: Path,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(238, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetBlockJobInfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rFound = result.Found
+	rType = result.Type
+	rBandwidth = result.Bandwidth
+	rCur = result.Cur
+	rEnd = result.End
+
+	return
+}
+
+func (l *Libvirt) DomainBlockJobSetSpeed(Dom NonnullDomain, Path string, Bandwidth uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainBlockJobSetSpeedArgs {
+		Dom: Dom,
+		Path: Path,
+		Bandwidth: Bandwidth,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(239, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainBlockPull(Dom NonnullDomain, Path string, Bandwidth uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainBlockPullArgs {
+		Dom: Dom,
+		Path: Path,
+		Bandwidth: Bandwidth,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(240, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventBlockJob() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(241, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateGetMaxSpeed(Dom NonnullDomain, Flags uint32) (rBandwidth uint64, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateGetMaxSpeedArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(242, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigrateGetMaxSpeedRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rBandwidth = result.Bandwidth
+
+	return
+}
+
+func (l *Libvirt) DomainBlockStatsFlags(Dom NonnullDomain, Path string, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainBlockStatsFlagsArgs {
+		Dom: Dom,
+		Path: Path,
+		Nparams: Nparams,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(243, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainBlockStatsFlagsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+	rNparams = result.Nparams
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotGetParent(Snap NonnullDomainSnapshot, Flags uint32) (rSnap NonnullDomainSnapshot, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotGetParentArgs {
+		Snap: Snap,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(244, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSnapshotGetParentRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSnap = result.Snap
+
+	return
+}
+
+func (l *Libvirt) DomainReset(Dom NonnullDomain, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainResetArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(245, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotNumChildren(Snap NonnullDomainSnapshot, Flags uint32) (rNum int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotNumChildrenArgs {
+		Snap: Snap,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(246, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSnapshotNumChildrenRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNum = result.Num
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotListChildrenNames(Snap NonnullDomainSnapshot, Maxnames int32, Flags uint32) (rNames []string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotListChildrenNamesArgs {
+		Snap: Snap,
+		Maxnames: Maxnames,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(247, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSnapshotListChildrenNamesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNames = result.Names
+
+	return
+}
+
+func (l *Libvirt) DomainEventDiskChange() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(248, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainOpenGraphics(Dom NonnullDomain, Idx uint32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainOpenGraphicsArgs {
+		Dom: Dom,
+		Idx: Idx,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(249, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NodeSuspendForDuration(Target uint32, Duration uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := NodeSuspendForDurationArgs {
+		Target: Target,
+		Duration: Duration,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(250, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainBlockResize(Dom NonnullDomain, Disk string, Size uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainBlockResizeArgs {
+		Dom: Dom,
+		Disk: Disk,
+		Size: Size,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(251, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSetBlockIOTune(Dom NonnullDomain, Disk string, Params []TypedParam, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetBlockIOTuneArgs {
+		Dom: Dom,
+		Disk: Disk,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(252, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetBlockIOTune(Dom NonnullDomain, Disk string, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetBlockIOTuneArgs {
+		Dom: Dom,
+		Disk: Disk,
+		Nparams: Nparams,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(253, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetBlockIOTuneRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+	rNparams = result.Nparams
+
+	return
+}
+
+func (l *Libvirt) DomainSetNumaParameters(Dom NonnullDomain, Params []TypedParam, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetNumaParametersArgs {
+		Dom: Dom,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(254, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetNumaParameters(Dom NonnullDomain, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetNumaParametersArgs {
+		Dom: Dom,
+		Nparams: Nparams,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(255, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetNumaParametersRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+	rNparams = result.Nparams
+
+	return
+}
+
+func (l *Libvirt) DomainSetInterfaceParameters(Dom NonnullDomain, Device string, Params []TypedParam, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetInterfaceParametersArgs {
+		Dom: Dom,
+		Device: Device,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(256, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetInterfaceParameters(Dom NonnullDomain, Device string, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetInterfaceParametersArgs {
+		Dom: Dom,
+		Device: Device,
+		Nparams: Nparams,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(257, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetInterfaceParametersRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+	rNparams = result.Nparams
+
+	return
+}
+
+func (l *Libvirt) DomainShutdownFlags(Dom NonnullDomain, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainShutdownFlagsArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(258, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StorageVolWipePattern(Vol NonnullStorageVol, Algorithm uint32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolWipePatternArgs {
+		Vol: Vol,
+		Algorithm: Algorithm,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(259, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StorageVolResize(Vol NonnullStorageVol, Capacity uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolResizeArgs {
+		Vol: Vol,
+		Capacity: Capacity,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(260, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainPmSuspendForDuration(Dom NonnullDomain, Target uint32, Duration uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainPmSuspendForDurationArgs {
+		Dom: Dom,
+		Target: Target,
+		Duration: Duration,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(261, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetCPUStats(Dom NonnullDomain, Nparams uint32, StartCPU int32, Ncpus uint32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetCPUStatsArgs {
+		Dom: Dom,
+		Nparams: Nparams,
+		StartCPU: StartCPU,
+		Ncpus: Ncpus,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(262, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetCPUStatsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+	rNparams = result.Nparams
+
+	return
+}
+
+func (l *Libvirt) DomainGetDiskErrors(Dom NonnullDomain, Maxerrors uint32, Flags uint32) (rErrors []DomainDiskError, rNerrors int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetDiskErrorsArgs {
+		Dom: Dom,
+		Maxerrors: Maxerrors,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(263, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetDiskErrorsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rErrors = result.Errors
+	rNerrors = result.Nerrors
+
+	return
+}
+
+func (l *Libvirt) DomainSetMetadata(Dom NonnullDomain, Type int32, Metadata string, Key string, Uri string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetMetadataArgs {
+		Dom: Dom,
+		Type: Type,
+		Metadata: Metadata,
+		Key: Key,
+		Uri: Uri,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(264, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetMetadata(Dom NonnullDomain, Type int32, Uri string, Flags uint32) (rMetadata string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetMetadataArgs {
+		Dom: Dom,
+		Type: Type,
+		Uri: Uri,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(265, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetMetadataRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rMetadata = result.Metadata
+
+	return
+}
+
+func (l *Libvirt) DomainBlockRebase(Dom NonnullDomain, Path string, Base string, Bandwidth uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainBlockRebaseArgs {
+		Dom: Dom,
+		Path: Path,
+		Base: Base,
+		Bandwidth: Bandwidth,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(266, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainPmWakeup(Dom NonnullDomain, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainPmWakeupArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(267, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventTrayChange() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(268, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventPmwakeup() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(269, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventPmsuspend() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(270, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotIsCurrent(Snap NonnullDomainSnapshot, Flags uint32) (rCurrent int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotIsCurrentArgs {
+		Snap: Snap,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(271, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSnapshotIsCurrentRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCurrent = result.Current
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotHasMetadata(Snap NonnullDomainSnapshot, Flags uint32) (rMetadata int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotHasMetadataArgs {
+		Snap: Snap,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(272, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSnapshotHasMetadataRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rMetadata = result.Metadata
+
+	return
+}
+
+func (l *Libvirt) ConnectListAllDomains(NeedResults int32, Flags uint32) (rDomains []NonnullDomain, rRet uint32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListAllDomainsArgs {
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(273, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListAllDomainsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDomains = result.Domains
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) DomainListAllSnapshots(Dom NonnullDomain, NeedResults int32, Flags uint32) (rSnapshots []NonnullDomainSnapshot, rRet int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainListAllSnapshotsArgs {
+		Dom: Dom,
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(274, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainListAllSnapshotsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSnapshots = result.Snapshots
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) DomainSnapshotListAllChildren(Snapshot NonnullDomainSnapshot, NeedResults int32, Flags uint32) (rSnapshots []NonnullDomainSnapshot, rRet int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainSnapshotListAllChildrenArgs {
+		Snapshot: Snapshot,
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(275, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainSnapshotListAllChildrenRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSnapshots = result.Snapshots
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) DomainEventBalloonChange() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(276, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetHostname(Dom NonnullDomain, Flags uint32) (rHostname string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetHostnameArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(277, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetHostnameRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rHostname = result.Hostname
+
+	return
+}
+
+func (l *Libvirt) DomainGetSecurityLabelList(Dom NonnullDomain) (rLabels []DomainGetSecurityLabelRet, rRet int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetSecurityLabelListArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(278, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetSecurityLabelListRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rLabels = result.Labels
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) DomainPinEmulator(Dom NonnullDomain, Cpumap []byte, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainPinEmulatorArgs {
+		Dom: Dom,
+		Cpumap: Cpumap,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(279, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetEmulatorPinInfo(Dom NonnullDomain, Maplen int32, Flags uint32) (rCpumaps []byte, rRet int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetEmulatorPinInfoArgs {
+		Dom: Dom,
+		Maplen: Maplen,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(280, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetEmulatorPinInfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCpumaps = result.Cpumaps
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) ConnectListAllStoragePools(NeedResults int32, Flags uint32) (rPools []NonnullStoragePool, rRet uint32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListAllStoragePoolsArgs {
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(281, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListAllStoragePoolsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rPools = result.Pools
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) StoragePoolListAllVolumes(Pool NonnullStoragePool, NeedResults int32, Flags uint32) (rVols []NonnullStorageVol, rRet uint32, err error) {
+	var buf bytes.Buffer
+
+	args := StoragePoolListAllVolumesArgs {
+		Pool: Pool,
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(282, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StoragePoolListAllVolumesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rVols = result.Vols
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) ConnectListAllNetworks(NeedResults int32, Flags uint32) (rNets []NonnullNetwork, rRet uint32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListAllNetworksArgs {
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(283, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListAllNetworksRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rNets = result.Nets
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) ConnectListAllInterfaces(NeedResults int32, Flags uint32) (rIfaces []NonnullInterface, rRet uint32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListAllInterfacesArgs {
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(284, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListAllInterfacesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rIfaces = result.Ifaces
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) ConnectListAllNodeDevices(NeedResults int32, Flags uint32) (rDevices []NonnullNodeDevice, rRet uint32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListAllNodeDevicesArgs {
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(285, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListAllNodeDevicesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDevices = result.Devices
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) ConnectListAllNwfilters(NeedResults int32, Flags uint32) (rFilters []NonnullNwfilter, rRet uint32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListAllNwfiltersArgs {
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(286, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListAllNwfiltersRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rFilters = result.Filters
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) ConnectListAllSecrets(NeedResults int32, Flags uint32) (rSecrets []NonnullSecret, rRet uint32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectListAllSecretsArgs {
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(287, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectListAllSecretsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSecrets = result.Secrets
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) NodeSetMemoryParameters(Params []TypedParam, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := NodeSetMemoryParametersArgs {
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(288, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NodeGetMemoryParameters(Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+	var buf bytes.Buffer
+
+	args := NodeGetMemoryParametersArgs {
+		Nparams: Nparams,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(289, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeGetMemoryParametersRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+	rNparams = result.Nparams
+
+	return
+}
+
+func (l *Libvirt) DomainBlockCommit(Dom NonnullDomain, Disk string, Base string, Top string, Bandwidth uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainBlockCommitArgs {
+		Dom: Dom,
+		Disk: Disk,
+		Base: Base,
+		Top: Top,
+		Bandwidth: Bandwidth,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(290, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NetworkUpdate(Net NonnullNetwork, Command uint32, Section uint32, ParentIndex int32, XML string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := NetworkUpdateArgs {
+		Net: Net,
+		Command: Command,
+		Section: Section,
+		ParentIndex: ParentIndex,
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(291, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventPmsuspendDisk() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(292, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NodeGetCPUMap(NeedMap int32, NeedOnline int32, Flags uint32) (rCpumap []byte, rOnline uint32, rRet int32, err error) {
+	var buf bytes.Buffer
+
+	args := NodeGetCPUMapArgs {
+		NeedMap: NeedMap,
+		NeedOnline: NeedOnline,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(293, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeGetCPUMapRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCpumap = result.Cpumap
+	rOnline = result.Online
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) DomainFstrim(Dom NonnullDomain, MountPoint string, Minimum uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainFstrimArgs {
+		Dom: Dom,
+		MountPoint: MountPoint,
+		Minimum: Minimum,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(294, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSendProcessSignal(Dom NonnullDomain, PidValue int64, Signum uint32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSendProcessSignalArgs {
+		Dom: Dom,
+		PidValue: PidValue,
+		Signum: Signum,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(295, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainOpenChannel(Dom NonnullDomain, Name string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainOpenChannelArgs {
+		Dom: Dom,
+		Name: Name,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(296, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceLookupScsiHostByWwn(Wwnn string, Wwpn string, Flags uint32) (rDev NonnullNodeDevice, err error) {
+	var buf bytes.Buffer
+
+	args := NodeDeviceLookupScsiHostByWwnArgs {
+		Wwnn: Wwnn,
+		Wwpn: Wwpn,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(297, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeDeviceLookupScsiHostByWwnRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDev = result.Dev
+
+	return
+}
+
+func (l *Libvirt) DomainGetJobStats(Dom NonnullDomain, Flags uint32) (rType int32, rParams []TypedParam, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetJobStatsArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(298, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetJobStatsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rType = result.Type
+	rParams = result.Params
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateGetCompressionCache(Dom NonnullDomain, Flags uint32) (rCacheSize uint64, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateGetCompressionCacheArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(299, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigrateGetCompressionCacheRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCacheSize = result.CacheSize
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateSetCompressionCache(Dom NonnullDomain, CacheSize uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateSetCompressionCacheArgs {
+		Dom: Dom,
+		CacheSize: CacheSize,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(300, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceDetachFlags(Name string, DriverName string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := NodeDeviceDetachFlagsArgs {
+		Name: Name,
+		DriverName: DriverName,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(301, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateBegin3Params(Dom NonnullDomain, Params []TypedParam, Flags uint32) (rCookieOut []byte, rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateBegin3ParamsArgs {
+		Dom: Dom,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(302, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigrateBegin3ParamsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCookieOut = result.CookieOut
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) DomainMigratePrepare3Params(Params []TypedParam, CookieIn []byte, Flags uint32) (rCookieOut []byte, rUriOut string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigratePrepare3ParamsArgs {
+		Params: Params,
+		CookieIn: CookieIn,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(303, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigratePrepare3ParamsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCookieOut = result.CookieOut
+	rUriOut = result.UriOut
+
+	return
+}
+
+func (l *Libvirt) DomainMigratePrepareTunnel3Params(Params []TypedParam, CookieIn []byte, Flags uint32) (rCookieOut []byte, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigratePrepareTunnel3ParamsArgs {
+		Params: Params,
+		CookieIn: CookieIn,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(304, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigratePrepareTunnel3ParamsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCookieOut = result.CookieOut
+
+	return
+}
+
+func (l *Libvirt) DomainMigratePerform3Params(Dom NonnullDomain, Dconnuri string, Params []TypedParam, CookieIn []byte, Flags uint32) (rCookieOut []byte, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigratePerform3ParamsArgs {
+		Dom: Dom,
+		Dconnuri: Dconnuri,
+		Params: Params,
+		CookieIn: CookieIn,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(305, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigratePerform3ParamsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCookieOut = result.CookieOut
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateFinish3Params(Params []TypedParam, CookieIn []byte, Flags uint32, Cancelled int32) (rDom NonnullDomain, rCookieOut []byte, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateFinish3ParamsArgs {
+		Params: Params,
+		CookieIn: CookieIn,
+		Flags: Flags,
+		Cancelled: Cancelled,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(306, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigrateFinish3ParamsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDom = result.Dom
+	rCookieOut = result.CookieOut
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateConfirm3Params(Dom NonnullDomain, Params []TypedParam, CookieIn []byte, Flags uint32, Cancelled int32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateConfirm3ParamsArgs {
+		Dom: Dom,
+		Params: Params,
+		CookieIn: CookieIn,
+		Flags: Flags,
+		Cancelled: Cancelled,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(307, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSetMemoryStatsPeriod(Dom NonnullDomain, Period int32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetMemoryStatsPeriodArgs {
+		Dom: Dom,
+		Period: Period,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(308, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainCreateXMLWithFiles(XMLDesc string, Flags uint32) (rDom NonnullDomain, err error) {
+	var buf bytes.Buffer
+
+	args := DomainCreateXMLWithFilesArgs {
+		XMLDesc: XMLDesc,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(309, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainCreateXMLWithFilesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDom = result.Dom
+
+	return
+}
+
+func (l *Libvirt) DomainCreateWithFiles(Dom NonnullDomain, Flags uint32) (rDom NonnullDomain, err error) {
+	var buf bytes.Buffer
+
+	args := DomainCreateWithFilesArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(310, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainCreateWithFilesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDom = result.Dom
+
+	return
+}
+
+func (l *Libvirt) DomainEventDeviceRemoved() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(311, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectGetCPUModelNames(Arch string, NeedResults int32, Flags uint32) (rModels []string, rRet int32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectGetCPUModelNamesArgs {
+		Arch: Arch,
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(312, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectGetCPUModelNamesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rModels = result.Models
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) ConnectNetworkEventRegisterAny(EventID int32, Net Network) (rCallbackID int32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectNetworkEventRegisterAnyArgs {
+		EventID: EventID,
+		Net: Net,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(313, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectNetworkEventRegisterAnyRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCallbackID = result.CallbackID
+
+	return
+}
+
+func (l *Libvirt) ConnectNetworkEventDeregisterAny(CallbackID int32) (err error) {
+	var buf bytes.Buffer
+
+	args := ConnectNetworkEventDeregisterAnyArgs {
+		CallbackID: CallbackID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(314, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NetworkEventLifecycle() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(315, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectDomainEventCallbackRegisterAny(EventID int32, Dom Domain) (rCallbackID int32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectDomainEventCallbackRegisterAnyArgs {
+		EventID: EventID,
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(316, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectDomainEventCallbackRegisterAnyRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCallbackID = result.CallbackID
+
+	return
+}
+
+func (l *Libvirt) ConnectDomainEventCallbackDeregisterAny(CallbackID int32) (err error) {
+	var buf bytes.Buffer
+
+	args := ConnectDomainEventCallbackDeregisterAnyArgs {
+		CallbackID: CallbackID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(317, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackLifecycle() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(318, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackReboot() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(319, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackRtcChange() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(320, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackWatchdog() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(321, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackIOError() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(322, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackGraphics() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(323, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackIOErrorReason() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(324, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackControlError() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(325, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackBlockJob() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(326, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackDiskChange() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(327, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackTrayChange() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(328, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackPmwakeup() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(329, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackPmsuspend() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(330, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackBalloonChange() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(331, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackPmsuspendDisk() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(332, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackDeviceRemoved() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(333, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainCoreDumpWithFormat(Dom NonnullDomain, To string, Dumpformat uint32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainCoreDumpWithFormatArgs {
+		Dom: Dom,
+		To: To,
+		Dumpformat: Dumpformat,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(334, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainFsfreeze(Dom NonnullDomain, Mountpoints []string, Flags uint32) (rFilesystems int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainFsfreezeArgs {
+		Dom: Dom,
+		Mountpoints: Mountpoints,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(335, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainFsfreezeRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rFilesystems = result.Filesystems
+
+	return
+}
+
+func (l *Libvirt) DomainFsthaw(Dom NonnullDomain, Mountpoints []string, Flags uint32) (rFilesystems int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainFsthawArgs {
+		Dom: Dom,
+		Mountpoints: Mountpoints,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(336, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainFsthawRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rFilesystems = result.Filesystems
+
+	return
+}
+
+func (l *Libvirt) DomainGetTime(Dom NonnullDomain, Flags uint32) (rSeconds int64, rNseconds uint32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetTimeArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(337, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetTimeRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rSeconds = result.Seconds
+	rNseconds = result.Nseconds
+
+	return
+}
+
+func (l *Libvirt) DomainSetTime(Dom NonnullDomain, Seconds int64, Nseconds uint32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetTimeArgs {
+		Dom: Dom,
+		Seconds: Seconds,
+		Nseconds: Nseconds,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(338, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventBlockJob2() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(339, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NodeGetFreePages(Pages []uint32, StartCell int32, CellCount uint32, Flags uint32) (rCounts []uint64, err error) {
+	var buf bytes.Buffer
+
+	args := NodeGetFreePagesArgs {
+		Pages: Pages,
+		StartCell: StartCell,
+		CellCount: CellCount,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(340, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeGetFreePagesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCounts = result.Counts
+
+	return
+}
+
+func (l *Libvirt) NetworkGetDhcpLeases(Net NonnullNetwork, Mac string, NeedResults int32, Flags uint32) (rLeases []NetworkDhcpLease, rRet uint32, err error) {
+	var buf bytes.Buffer
+
+	args := NetworkGetDhcpLeasesArgs {
+		Net: Net,
+		Mac: Mac,
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(341, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NetworkGetDhcpLeasesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rLeases = result.Leases
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) ConnectGetDomainCapabilities(Emulatorbin string, Arch string, Machine string, Virttype string, Flags uint32) (rCapabilities string, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectGetDomainCapabilitiesArgs {
+		Emulatorbin: Emulatorbin,
+		Arch: Arch,
+		Machine: Machine,
+		Virttype: Virttype,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(342, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectGetDomainCapabilitiesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCapabilities = result.Capabilities
+
+	return
+}
+
+func (l *Libvirt) DomainOpenGraphicsFd(Dom NonnullDomain, Idx uint32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainOpenGraphicsFdArgs {
+		Dom: Dom,
+		Idx: Idx,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(343, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectGetAllDomainStats(Doms []NonnullDomain, Stats uint32, Flags uint32) (rRetStats []DomainStatsRecord, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectGetAllDomainStatsArgs {
+		Doms: Doms,
+		Stats: Stats,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(344, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectGetAllDomainStatsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rRetStats = result.RetStats
+
+	return
+}
+
+func (l *Libvirt) DomainBlockCopy(Dom NonnullDomain, Path string, Destxml string, Params []TypedParam, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainBlockCopyArgs {
+		Dom: Dom,
+		Path: Path,
+		Destxml: Destxml,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(345, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackTunable() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(346, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NodeAllocPages(PageSizes []uint32, PageCounts []uint64, StartCell int32, CellCount uint32, Flags uint32) (rRet int32, err error) {
+	var buf bytes.Buffer
+
+	args := NodeAllocPagesArgs {
+		PageSizes: PageSizes,
+		PageCounts: PageCounts,
+		StartCell: StartCell,
+		CellCount: CellCount,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(347, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := NodeAllocPagesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackAgentLifecycle() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(348, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetFsinfo(Dom NonnullDomain, Flags uint32) (rInfo []DomainFsinfo, rRet uint32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetFsinfoArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(349, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetFsinfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rInfo = result.Info
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) DomainDefineXMLFlags(XML string, Flags uint32) (rDom NonnullDomain, err error) {
+	var buf bytes.Buffer
+
+	args := DomainDefineXMLFlagsArgs {
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(350, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainDefineXMLFlagsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDom = result.Dom
+
+	return
+}
+
+func (l *Libvirt) DomainGetIothreadInfo(Dom NonnullDomain, Flags uint32) (rInfo []DomainIothreadInfo, rRet uint32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetIothreadInfoArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(351, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetIothreadInfoRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rInfo = result.Info
+	rRet = result.Ret
+
+	return
+}
+
+func (l *Libvirt) DomainPinIothread(Dom NonnullDomain, IothreadsID uint32, Cpumap []byte, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainPinIothreadArgs {
+		Dom: Dom,
+		IothreadsID: IothreadsID,
+		Cpumap: Cpumap,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(352, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainInterfaceAddresses(Dom NonnullDomain, Source uint32, Flags uint32) (rIfaces []DomainInterface, err error) {
+	var buf bytes.Buffer
+
+	args := DomainInterfaceAddressesArgs {
+		Dom: Dom,
+		Source: Source,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(353, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainInterfaceAddressesRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rIfaces = result.Ifaces
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackDeviceAdded() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(354, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainAddIothread(Dom NonnullDomain, IothreadID uint32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainAddIothreadArgs {
+		Dom: Dom,
+		IothreadID: IothreadID,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(355, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainDelIothread(Dom NonnullDomain, IothreadID uint32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainDelIothreadArgs {
+		Dom: Dom,
+		IothreadID: IothreadID,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(356, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSetUserPassword(Dom NonnullDomain, User string, Password string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetUserPasswordArgs {
+		Dom: Dom,
+		User: User,
+		Password: Password,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(357, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainRename(Dom NonnullDomain, NewName string, Flags uint32) (rRetcode int32, err error) {
+	var buf bytes.Buffer
+
+	args := DomainRenameArgs {
+		Dom: Dom,
+		NewName: NewName,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(358, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainRenameRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rRetcode = result.Retcode
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackMigrationIteration() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(359, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectRegisterCloseCallback() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(360, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectUnregisterCloseCallback() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(361, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectEventConnectionClosed() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(362, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackJobCompleted() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(363, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateStartPostCopy(Dom NonnullDomain, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateStartPostCopyArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(364, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetPerfEvents(Dom NonnullDomain, Flags uint32) (rParams []TypedParam, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetPerfEventsArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(365, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetPerfEventsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+
+	return
+}
+
+func (l *Libvirt) DomainSetPerfEvents(Dom NonnullDomain, Params []TypedParam, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetPerfEventsArgs {
+		Dom: Dom,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(366, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackDeviceRemovalFailed() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(367, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectStoragePoolEventRegisterAny(EventID int32, Pool StoragePool) (rCallbackID int32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectStoragePoolEventRegisterAnyArgs {
+		EventID: EventID,
+		Pool: Pool,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(368, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectStoragePoolEventRegisterAnyRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCallbackID = result.CallbackID
+
+	return
+}
+
+func (l *Libvirt) ConnectStoragePoolEventDeregisterAny(CallbackID int32) (err error) {
+	var buf bytes.Buffer
+
+	args := ConnectStoragePoolEventDeregisterAnyArgs {
+		CallbackID: CallbackID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(369, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StoragePoolEventLifecycle() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(370, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainGetGuestVcpus(Dom NonnullDomain, Flags uint32) (rParams []TypedParam, err error) {
+	var buf bytes.Buffer
+
+	args := DomainGetGuestVcpusArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(371, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainGetGuestVcpusRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rParams = result.Params
+
+	return
+}
+
+func (l *Libvirt) DomainSetGuestVcpus(Dom NonnullDomain, Cpumap string, State int32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetGuestVcpusArgs {
+		Dom: Dom,
+		Cpumap: Cpumap,
+		State: State,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(372, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StoragePoolEventRefresh() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(373, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectNodeDeviceEventRegisterAny(EventID int32, Dev NodeDevice) (rCallbackID int32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectNodeDeviceEventRegisterAnyArgs {
+		EventID: EventID,
+		Dev: Dev,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(374, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectNodeDeviceEventRegisterAnyRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCallbackID = result.CallbackID
+
+	return
+}
+
+func (l *Libvirt) ConnectNodeDeviceEventDeregisterAny(CallbackID int32) (err error) {
+	var buf bytes.Buffer
+
+	args := ConnectNodeDeviceEventDeregisterAnyArgs {
+		CallbackID: CallbackID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(375, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceEventLifecycle() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(376, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) NodeDeviceEventUpdate() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(377, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) StorageVolGetInfoFlags(Vol NonnullStorageVol, Flags uint32) (rType int8, rCapacity uint64, rAllocation uint64, err error) {
+	var buf bytes.Buffer
+
+	args := StorageVolGetInfoFlagsArgs {
+		Vol: Vol,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(378, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := StorageVolGetInfoFlagsRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rType = result.Type
+	rCapacity = result.Capacity
+	rAllocation = result.Allocation
+
+	return
+}
+
+func (l *Libvirt) DomainEventCallbackMetadataChange() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(379, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) ConnectSecretEventRegisterAny(EventID int32, Secret Secret) (rCallbackID int32, err error) {
+	var buf bytes.Buffer
+
+	args := ConnectSecretEventRegisterAnyArgs {
+		EventID: EventID,
+		Secret: Secret,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(380, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := ConnectSecretEventRegisterAnyRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rCallbackID = result.CallbackID
+
+	return
+}
+
+func (l *Libvirt) ConnectSecretEventDeregisterAny(CallbackID int32) (err error) {
+	var buf bytes.Buffer
+
+	args := ConnectSecretEventDeregisterAnyArgs {
+		CallbackID: CallbackID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(381, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) SecretEventLifecycle() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(382, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) SecretEventValueChanged() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(383, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSetVcpu(Dom NonnullDomain, Cpumap string, State int32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetVcpuArgs {
+		Dom: Dom,
+		Cpumap: Cpumap,
+		State: State,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(384, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainEventBlockThreshold() (err error) {
+	var buf bytes.Buffer
+
+	var resp <-chan response
+	resp, err = l.request(385, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSetBlockThreshold(Dom NonnullDomain, Dev string, Threshold uint64, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetBlockThresholdArgs {
+		Dom: Dom,
+		Dev: Dev,
+		Threshold: Threshold,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(386, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainMigrateGetMaxDowntime(Dom NonnullDomain, Flags uint32) (rDowntime uint64, err error) {
+	var buf bytes.Buffer
+
+	args := DomainMigrateGetMaxDowntimeArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(387, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainMigrateGetMaxDowntimeRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rDowntime = result.Downtime
+
+	return
+}
+
+func (l *Libvirt) DomainManagedSaveGetXMLDesc(Dom NonnullDomain, Flags uint32) (rXML string, err error) {
+	var buf bytes.Buffer
+
+	args := DomainManagedSaveGetXMLDescArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(388, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	result := DomainManagedSaveGetXMLDescRet{}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoder(rdr)
+	_, err = dec.Decode(&result)
+	if err != nil {
+		return
+	}
+
+	rXML = result.XML
+
+	return
+}
+
+func (l *Libvirt) DomainManagedSaveDefineXML(Dom NonnullDomain, Dxml string, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainManagedSaveDefineXMLArgs {
+		Dom: Dom,
+		Dxml: Dxml,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(389, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+
+func (l *Libvirt) DomainSetLifecycleAction(Dom NonnullDomain, Type uint32, Action uint32, Flags uint32) (err error) {
+	var buf bytes.Buffer
+
+	args := DomainSetLifecycleActionArgs {
+		Dom: Dom,
+		Type: Type,
+		Action: Action,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var resp <-chan response
+	resp, err = l.request(390, constants.Program, &buf)
+	if err != nil {
+		return
+	}
+
+	r := <-resp
+	if r.Status != StatusOK {
+		err = decodeError(r.Payload)
+		return
+	}
+
+	return
+}
+

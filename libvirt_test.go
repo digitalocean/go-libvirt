@@ -107,7 +107,7 @@ func TestDomains(t *testing.T) {
 
 	for i, d := range domains {
 		wantID := i + 1
-		if d.ID != wantID {
+		if d.ID != int32(wantID) {
 			t.Errorf("expected domain ID %q, got %q", wantID, d.ID)
 		}
 
@@ -148,9 +148,20 @@ func TestDomainMemoryStats(t *testing.T) {
 		},
 	}
 
-	gotDomainMemoryStats, err := l.DomainMemoryStats("test")
+	d, err := l.lookup("test")
 	if err != nil {
 		t.Error(err)
+	}
+
+	gotDomainMemoryStats, err := l.DomainMemoryStats(*d, 8, 0)
+	if err != nil {
+		t.Error(err)
+	}
+
+	t.Log(gotDomainMemoryStats)
+
+	if len(gotDomainMemoryStats) == 0 {
+		t.Error("No memory stats returned!")
 	}
 
 	for i := range wantDomainMemoryStats {
@@ -158,7 +169,6 @@ func TestDomainMemoryStats(t *testing.T) {
 			t.Errorf("expected domain memory stat %v, got %v", wantDomainMemoryStats[i], gotDomainMemoryStats[i])
 		}
 	}
-
 }
 
 func TestEvents(t *testing.T) {
@@ -265,7 +275,7 @@ func TestSecrets(t *testing.T) {
 	}
 
 	s := secrets[0]
-	wantType := SecretUsageTypeVolume
+	wantType := int32(SecretUsageTypeVolume)
 	if s.UsageType != wantType {
 		t.Errorf("expected usage type %d, got %d", wantType, s.UsageType)
 	}
@@ -347,7 +357,11 @@ func TestStoragePoolRefresh(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	err := l.StoragePoolRefresh("default")
+	pool, err := l.StoragePool("default")
+	if err != nil {
+		t.Error(err)
+	}
+	err = l.StoragePoolRefresh(*pool, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -403,8 +417,12 @@ func TestDomainCreateWithFlags(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	var flags DomainCreateFlags
-	if err := l.DomainCreateWithFlags("test", flags); err != nil {
+	d, err := l.lookup("test")
+	if err != nil {
+		t.Fatalf("failed to lookup domain: %v", err)
+	}
+	var flags uint32
+	if _, err := l.DomainCreateWithFlags(*d, flags); err != nil {
 		t.Fatalf("unexpected create error: %v", err)
 	}
 }

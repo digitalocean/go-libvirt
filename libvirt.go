@@ -53,11 +53,11 @@ type Libvirt struct {
 }
 
 // Domain represents a domain as seen by libvirt.
-type Domain struct {
-	Name string
-	UUID [constants.UUIDSize]byte
-	ID   int
-}
+// type Domain struct {
+// 	Name string
+// 	UUID [constants.UUIDSize]byte
+// 	ID   int
+// }
 
 // DomainEvent represents a libvirt domain event.
 type DomainEvent struct {
@@ -71,17 +71,17 @@ type DomainEvent struct {
 }
 
 // Secret represents a secret managed by the libvirt daemon.
-type Secret struct {
-	UUID      [constants.UUIDSize]byte
-	UsageType SecretUsageType
-	UsageID   string
-}
+// type Secret struct {
+// 	UUID      [constants.UUIDSize]byte
+// 	UsageType SecretUsageType
+// 	UsageID   string
+// }
 
 // StoragePool represents a storage pool as seen by libvirt.
-type StoragePool struct {
-	Name string
-	UUID [constants.UUIDSize]byte
-}
+// type StoragePool struct {
+// 	Name string
+// 	UUID [constants.UUIDSize]byte
+// }
 
 // qemuError represents a QEMU process error.
 type qemuError struct {
@@ -140,42 +140,42 @@ const (
 // TypedParam represents libvirt's virTypedParameter, which is used to pass
 // typed parameters to libvirt functions. This is defined as an interface, and
 // implemented by TypedParam... concrete types.
-type TypedParam interface {
-	Field() string
-	Value() interface{}
-}
+// type TypedParam interface {
+// 	Field() string
+// 	Value() interface{}
+// }
 
 // TypedParamInt contains a 32-bit signed integer.
-type TypedParamInt struct {
-	Fld     string
-	PType   int32
-	Padding [4]byte
-	Val     int32
-}
+// type TypedParamInt struct {
+// 	Fld     string
+// 	PType   int32
+// 	Padding [4]byte
+// 	Val     int32
+// }
 
 // Field returns the field name, a string name for the parameter.
-func (tp *TypedParamInt) Field() string {
-	return tp.Fld
-}
+// func (tp *TypedParamInt) Field() string {
+// 	return tp.Fld
+// }
 
 // Value returns the value for the typed parameter, as an empty interface.
-func (tp *TypedParamInt) Value() interface{} {
-	return tp.Val
-}
+// func (tp *TypedParamInt) Value() interface{} {
+// 	return tp.Val
+// }
 
 // NewTypedParamInt returns a TypedParam encoding for an int.
-func NewTypedParamInt(name string, v int32) *TypedParamInt {
-	// Truncate the field name if it's longer than the limit.
-	if len(name) > constants.TypedParamFieldLength {
-		name = name[:constants.TypedParamFieldLength]
-	}
-	tp := TypedParamInt{
-		Fld:   name,
-		PType: TypeParamInt,
-		Val:   v,
-	}
-	return &tp
-}
+// func NewTypedParamInt(name string, v int32) *TypedParamInt {
+// 	// Truncate the field name if it's longer than the limit.
+// 	if len(name) > constants.TypedParamFieldLength {
+// 		name = name[:constants.TypedParamFieldLength]
+// 	}
+// 	tp := TypedParamInt{
+// 		Fld:   name,
+// 		PType: TypeParamInt,
+// 		Val:   v,
+// 	}
+// 	return &tp
+// }
 
 // TypedParamULongLong contains a 64-bit unsigned integer.
 type TypedParamULongLong struct {
@@ -226,17 +226,17 @@ func (tp *TypedParamString) Value() interface{} {
 }
 
 // NewTypedParamString returns a typed parameter containing the passed string.
-func NewTypedParamString(name string, v string) TypedParam {
-	if len(name) > constants.TypedParamFieldLength {
-		name = name[:constants.TypedParamFieldLength]
-	}
-	tp := TypedParamString{
-		Fld:   name,
-		PType: TypeParamString,
-		Val:   v,
-	}
-	return &tp
-}
+// func NewTypedParamString(name string, v string) TypedParam {
+// 	if len(name) > constants.TypedParamFieldLength {
+// 		name = name[:constants.TypedParamFieldLength]
+// 	}
+// 	tp := TypedParamString{
+// 		Fld:   name,
+// 		PType: TypeParamString,
+// 		Val:   v,
+// 	}
+// 	return &tp
+// }
 
 const (
 	// DomainXMLFlagSecure dumps XML with sensitive information included.
@@ -507,10 +507,10 @@ const (
 )
 
 // DomainMemoryStat specifies memory stats of the domain
-type DomainMemoryStat struct {
-	Tag DomainMemoryStatTag
-	Val uint64
-}
+// type DomainMemoryStat struct {
+// 	Tag DomainMemoryStatTag
+// 	Val uint64
+// }
 
 // Capabilities returns an XML document describing the host's capabilties.
 func (l *Libvirt) Capabilities() ([]byte, error) {
@@ -596,76 +596,76 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 }
 
 // DomainCreateWithFlags starts specified domain with flags
-func (l *Libvirt) DomainCreateWithFlags(dom string, flags DomainCreateFlags) error {
-	d, err := l.lookup(dom)
-	if err != nil {
-		return err
-	}
-	req := struct {
-		Domain Domain
-		Flags  DomainCreateFlags
-	}{
-		Domain: *d,
-		Flags:  flags,
-	}
-
-	buf, err := encode(&req)
-	if err != nil {
-		return err
-	}
-	resp, err := l.request(constants.ProcDomainCreateWithFlags, constants.Program, &buf)
-	if err != nil {
-		return err
-	}
-	r := <-resp
-	if r.Status != StatusOK {
-		return decodeError(r.Payload)
-	}
-	return nil
-}
+// func (l *Libvirt) DomainCreateWithFlags(dom string, flags DomainCreateFlags) error {
+// 	d, err := l.lookup(dom)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	req := struct {
+// 		Domain Domain
+// 		Flags  DomainCreateFlags
+// 	}{
+// 		Domain: *d,
+// 		Flags:  flags,
+// 	}
+//
+// 	buf, err := encode(&req)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	resp, err := l.request(constants.ProcDomainCreateWithFlags, constants.Program, &buf)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	r := <-resp
+// 	if r.Status != StatusOK {
+// 		return decodeError(r.Payload)
+// 	}
+// 	return nil
+// }
 
 // DomainMemoryStats returns memory stats of the domain managed by libvirt.
-func (l *Libvirt) DomainMemoryStats(dom string) ([]DomainMemoryStat, error) {
-
-	d, err := l.lookup(dom)
-	if err != nil {
-		return nil, err
-	}
-
-	req := struct {
-		Domain   Domain
-		MaxStats uint32
-		Flags    uint32
-	}{
-		Domain:   *d,
-		MaxStats: 8,
-		Flags:    0,
-	}
-
-	buf, err := encode(&req)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := l.request(constants.ProcDomainMemoryStats, constants.Program, &buf)
-	if err != nil {
-		return nil, err
-	}
-
-	r := <-resp
-
-	result := struct {
-		DomainMemoryStats []DomainMemoryStat
-	}{}
-
-	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
-	_, err = dec.Decode(&result)
-	if err != nil {
-		return nil, err
-	}
-
-	return result.DomainMemoryStats, nil
-}
+// func (l *Libvirt) DomainMemoryStats(dom string) ([]DomainMemoryStat, error) {
+//
+// 	d, err := l.lookup(dom)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	req := struct {
+// 		Domain   Domain
+// 		MaxStats uint32
+// 		Flags    uint32
+// 	}{
+// 		Domain:   *d,
+// 		MaxStats: 8,
+// 		Flags:    0,
+// 	}
+//
+// 	buf, err := encode(&req)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	resp, err := l.request(constants.ProcDomainMemoryStats, constants.Program, &buf)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	r := <-resp
+//
+// 	result := struct {
+// 		DomainMemoryStats []DomainMemoryStat
+// 	}{}
+//
+// 	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
+// 	_, err = dec.Decode(&result)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+//
+// 	return result.DomainMemoryStats, nil
+// }
 
 // DomainState returns state of the domain managed by libvirt.
 func (l *Libvirt) DomainState(dom string) (DomainState, error) {
@@ -678,7 +678,7 @@ func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 		Domain Domain
 		Flags  uint32
 	}{
-		Domain: *d,
+		Domain: d,
 		Flags:  0,
 	}
 
@@ -728,7 +728,7 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 		Flags   [2]byte
 	}{
 		Padding: [4]byte{0x0, 0x0, 0x1, 0x0},
-		Domain:  *d,
+		Domain:  d,
 		Event:   [2]byte{0x0, 0x0},
 		Flags:   [2]byte{0x0, 0x0},
 	}
@@ -801,7 +801,7 @@ func (l *Libvirt) Migrate(dom string, dest string, flags MigrateFlags) error {
 		CookieIn         uint32
 		Flags            MigrateFlags
 	}{
-		Domain:           *d,
+		Domain:           d,
 		Padding:          [4]byte{0x0, 0x0, 0x0, 0x1},
 		DestinationURI:   dest,
 		RemoteParameters: 0,
@@ -844,7 +844,7 @@ func (l *Libvirt) MigrateSetMaxSpeed(dom string, speed int64) error {
 		Flags     uint32
 	}{
 		Padding:   [4]byte{0x0, 0x0, 0x1, 0x0},
-		Domain:    *d,
+		Domain:    d,
 		Bandwidth: speed,
 	}
 
@@ -880,7 +880,7 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 		Command []byte
 		Flags   uint32
 	}{
-		Domain:  *d,
+		Domain:  d,
 		Command: cmd,
 		Flags:   0,
 	}
@@ -959,7 +959,7 @@ func (l *Libvirt) Secrets() ([]Secret, error) {
 
 // StoragePool returns the storage pool associated with the provided name.
 // An error is returned if the requested storage pool is not found.
-func (l *Libvirt) StoragePool(name string) (*StoragePool, error) {
+func (l *Libvirt) StoragePool(name string) (StoragePool, error) {
 	req := struct {
 		Name string
 	}{
@@ -991,41 +991,41 @@ func (l *Libvirt) StoragePool(name string) (*StoragePool, error) {
 		return nil, err
 	}
 
-	return &result.Pool, nil
+	return result.Pool, nil
 }
 
 // StoragePoolRefresh refreshes the storage pool specified by name.
-func (l *Libvirt) StoragePoolRefresh(name string) error {
-	pool, err := l.StoragePool(name)
-	if err != nil {
-		return err
-	}
-
-	req := struct {
-		Pool  StoragePool
-		Flags uint32
-	}{
-		Pool:  *pool,
-		Flags: 0, // unused per libvirt source, callers should pass 0
-	}
-
-	buf, err := encode(&req)
-	if err != nil {
-		return err
-	}
-
-	resp, err := l.request(constants.ProcStoragePoolRefresh, constants.Program, &buf)
-	if err != nil {
-		return err
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		return decodeError(r.Payload)
-	}
-
-	return nil
-}
+// func (l *Libvirt) StoragePoolRefresh(name string) error {
+// 	pool, err := l.StoragePool(name)
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	req := struct {
+// 		Pool  StoragePool
+// 		Flags uint32
+// 	}{
+// 		Pool:  *pool,
+// 		Flags: 0, // unused per libvirt source, callers should pass 0
+// 	}
+//
+// 	buf, err := encode(&req)
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	resp, err := l.request(constants.ProcStoragePoolRefresh, constants.Program, &buf)
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// 	r := <-resp
+// 	if r.Status != StatusOK {
+// 		return decodeError(r.Payload)
+// 	}
+//
+// 	return nil
+// }
 
 // StoragePools returns a list of defined storage pools. Pools are filtered by
 // the provided flags. See StoragePools*.
@@ -1081,7 +1081,7 @@ func (l *Libvirt) Undefine(dom string, flags UndefineFlags) error {
 		Domain Domain
 		Flags  UndefineFlags
 	}{
-		Domain: *d,
+		Domain: d,
 		Flags:  flags,
 	}
 
@@ -1117,7 +1117,7 @@ func (l *Libvirt) Destroy(dom string, flags DestroyFlags) error {
 		Domain Domain
 		Flags  DestroyFlags
 	}{
-		Domain: *d,
+		Domain: d,
 		Flags:  flags,
 	}
 
@@ -1151,7 +1151,7 @@ func (l *Libvirt) XML(dom string, flags DomainXMLFlags) ([]byte, error) {
 		Domain Domain
 		Flags  DomainXMLFlags
 	}{
-		Domain: *d,
+		Domain: d,
 		Flags:  flags,
 	}
 
@@ -1255,7 +1255,7 @@ func (l *Libvirt) Shutdown(dom string, flags ShutdownFlags) error {
 		Domain Domain
 		Flags  ShutdownFlags
 	}{
-		Domain: *d,
+		Domain: d,
 		Flags:  flags,
 	}
 
@@ -1289,7 +1289,7 @@ func (l *Libvirt) Reboot(dom string, flags RebootFlags) error {
 		Domain Domain
 		Flags  RebootFlags
 	}{
-		Domain: *d,
+		Domain: d,
 		Flags:  flags,
 	}
 
@@ -1322,7 +1322,7 @@ func (l *Libvirt) Reset(dom string) error {
 		Domain Domain
 		Flags  uint32
 	}{
-		Domain: *d,
+		Domain: d,
 		Flags:  0,
 	}
 
@@ -1405,14 +1405,15 @@ func (l *Libvirt) SetBlockIOTune(dom string, disk string, limits ...BlockLimit) 
 		Params []TypedParam
 		Flags  DomainAffectFlags
 	}{
-		Domain: *d,
+		Domain: d,
 		Disk:   disk,
 		Flags:  FlagDomainAffectLive,
 	}
 
 	for _, limit := range limits {
-		tp := NewTypedParamULongLong(limit.Name, limit.Value)
-		payload.Params = append(payload.Params, tp)
+		tpval := NewTypedParamValueUllong(limit.Value)
+		tp := &TypedParam{Field: limit.Name, Value: tpval}
+		payload.Params = append(payload.Params, *tp)
 	}
 
 	buf, err := encode(&payload)
@@ -1446,7 +1447,7 @@ func (l *Libvirt) GetBlockIOTune(dom string, disk string) ([]BlockLimit, error) 
 		ParamCount uint32
 		Flags      DomainAffectFlags
 	}{
-		Domain:     *d,
+		Domain:     d,
 		Disk:       []string{disk},
 		ParamCount: 32,
 		Flags:      FlagTypedParamStringOkay,
@@ -1516,7 +1517,7 @@ func (l *Libvirt) GetBlockIOTune(dom string, disk string) ([]BlockLimit, error) 
 }
 
 // lookup returns a domain as seen by libvirt.
-func (l *Libvirt) lookup(name string) (*Domain, error) {
+func (l *Libvirt) lookup(name string) (Domain, error) {
 	payload := struct {
 		Name string
 	}{name}
@@ -1538,7 +1539,8 @@ func (l *Libvirt) lookup(name string) (*Domain, error) {
 
 	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
 
-	var d Domain
+	// var d Domain
+	var d NonnullDomain
 	_, err = dec.Decode(&d)
 	if err != nil {
 		return nil, err
