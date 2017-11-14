@@ -14,10 +14,6 @@
 
 package lvgen
 
-// The libvirt API is divided into several categories. (Gallia est omnis divisa
-// in partes tres.) The generator will output code for each category in a
-// package underneath the go-libvirt directory.
-
 import (
 	"fmt"
 	"io"
@@ -28,30 +24,6 @@ import (
 	"unicode"
 	"unicode/utf8"
 )
-
-var keywords = map[string]int{
-	"hyper":    HYPER,
-	"int":      INT,
-	"short":    SHORT,
-	"char":     CHAR,
-	"bool":     BOOL,
-	"case":     CASE,
-	"const":    CONST,
-	"default":  DEFAULT,
-	"double":   DOUBLE,
-	"enum":     ENUM,
-	"float":    FLOAT,
-	"opaque":   OPAQUE,
-	"string":   STRING,
-	"struct":   STRUCT,
-	"switch":   SWITCH,
-	"typedef":  TYPEDEF,
-	"union":    UNION,
-	"unsigned": UNSIGNED,
-	"void":     VOID,
-	"program":  PROGRAM,
-	"version":  VERSION,
-}
 
 // ConstItem stores an const's symbol and value from the parser. This struct is
 // also used for enums.
@@ -77,6 +49,8 @@ type Generator struct {
 	Typedefs []Typedef
 	// Unions holds all the discriminated unions.
 	Unions []Union
+	// UnionMap is a map of the unions we find for quick searching.
+	UnionMap map[string]int
 	// Procs holds all the discovered libvirt procedures.
 	Procs []Proc
 }
@@ -104,6 +78,9 @@ var goEquivTypes = map[string]string{
 	// requires us to ditch the typedef that would otherwise be generated.
 	"NonnullString": "string",
 
+	// TODO: Get rid of these. They're only needed because we lose information
+	// that the parser has (the parser knows it has emitted a go type), and then
+	// we capitalize types to make them public.
 	"String":  "string",
 	"Int":     "int",
 	"Uint":    "uint",
@@ -122,7 +99,8 @@ var goEquivTypes = map[string]string{
 }
 
 // These defines are from libvirt-common.h. They should be fetched from there,
-// but for now they're hardcoded here.
+// but for now they're hardcoded here. (These are the discriminant values for
+// TypedParams.)
 var lvTypedParams = map[string]uint32{
 	"VIR_TYPED_PARAM_INT":     1,
 	"VIR_TYPED_PARAM_UINT":    2,
@@ -222,6 +200,7 @@ var CurrentCase *Case
 // generation.
 func Generate(proto io.Reader) error {
 	Gen.StructMap = make(map[string]int)
+	Gen.UnionMap = make(map[string]int)
 	lexer, err := NewLexer(proto)
 	if err != nil {
 		return err
@@ -257,6 +236,8 @@ func Generate(proto io.Reader) error {
 	return err
 }
 
+// genGo is called when the parsing is done; it generates the golang output
+// files using templates.
 func genGo(constFile, procFile io.Writer) error {
 	t, err := template.ParseFiles("constants.tmpl")
 	if err != nil {
@@ -273,18 +254,6 @@ func genGo(constFile, procFile io.Writer) error {
 	if err := t.Execute(procFile, Gen); err != nil {
 		return err
 	}
-	// Now generate the wrappers for libvirt's various public API functions.
-	// for _, c := range Gen.Enums {
-	// This appears to be the name of a libvirt procedure, so sort it into
-	// the right list based on the next part of its name.
-	// segs := camelcase.Split(c.Name)
-	// if len(segs) < 3 || segs[0] != "Proc" {
-	// 	continue
-	// }
-	//category := segs[1]
-
-	//fmt.Println(segs)
-	// }
 
 	return nil
 }
@@ -297,7 +266,7 @@ func constNameTransform(name string) string {
 	decamelize := strings.ContainsRune(name, '_')
 	nn := strings.TrimPrefix(name, "REMOTE_")
 	if decamelize {
-		nn = fromSnakeToCamel(nn, true)
+		nn = fromSnakeToCamel(nn)
 	}
 	nn = fixAbbrevs(nn)
 	return nn
@@ -307,7 +276,7 @@ func identifierTransform(name string) string {
 	decamelize := strings.ContainsRune(name, '_')
 	nn := strings.TrimPrefix(name, "remote_")
 	if decamelize {
-		nn = fromSnakeToCamel(nn, true)
+		nn = fromSnakeToCamel(nn)
 	} else {
 		nn = publicize(nn)
 	}
@@ -337,10 +306,10 @@ func publicize(name string) string {
 // are omitted.
 //
 // ex: "PROC_DOMAIN_GET_METADATA" -> "ProcDomainGetMetadata"
-func fromSnakeToCamel(s string, public bool) string {
+func fromSnakeToCamel(s string) string {
 	buf := make([]rune, 0, len(s))
-	// Start rune may be either upper or lower case.
-	hump := public
+	// Start rune will be upper case - we generate all public symbols.
+	hump := true
 
 	for _, r := range s {
 		if r == '_' {
@@ -496,8 +465,8 @@ func StartStruct(name string) {
 // the now-complete struct definition to the generator's list.
 func AddStruct() {
 	st := *CurrentStruct.pop()
+	Gen.StructMap[st.Name] = len(Gen.Structs)
 	Gen.Structs = append(Gen.Structs, st)
-	Gen.StructMap[st.Name] = len(Gen.Structs) - 1
 }
 
 // StartTypedef is called when the parser finds a typedef.
@@ -516,6 +485,7 @@ func StartUnion(name string) {
 // pointer. We handle unions by declaring an interface for the union type, and
 // adding methods to each of the cases so that they satisfy the interface.
 func AddUnion() {
+	Gen.UnionMap[CurrentUnion.Name] = len(Gen.Unions)
 	Gen.Unions = append(Gen.Unions, *CurrentUnion)
 	CurrentUnion = nil
 }
@@ -532,7 +502,7 @@ func StartCase(dvalue string) {
 	if ix := strings.LastIndexByte(caseName, '_'); ix != -1 {
 		caseName = caseName[ix+1:]
 	}
-	caseName = fromSnakeToCamel(caseName, true)
+	caseName = fromSnakeToCamel(caseName)
 	dv, ok := lvTypedParams[dvalue]
 	if ok {
 		dvalue = strconv.FormatUint(uint64(dv), 10)
@@ -587,11 +557,11 @@ func AddFixedArray(identifier, itype, len string) {
 // Variable-length arrays are prefixed with a 32-bit unsigned length, and may
 // also have a maximum length specified.
 func AddVariableArray(identifier, itype, len string) {
-	// FIXME: This ignores the length restriction, so as of now we can't check
-	// to make sure that we're not exceeding that restriction when we fill in
-	// message buffers. That may not matter, if libvirt's checking is careful
-	// enough. This could be handled with a map, however.
-	atype := fmt.Sprintf("[]%v", itype)
+	// This code ignores the length restriction (array<MAXLEN>), so as of now we
+	// can't check to make sure that we're not exceeding that restriction when
+	// we fill in message buffers. That may not matter, if libvirt's checking is
+	// careful enough.
+	atype := "[]" + itype
 	// Handle strings specially. In the rpcgen definition a string is specified
 	// as a variable-length array, either with or without a max length. We want
 	// these to be go strings, so we'll just remove the array specifier.
@@ -607,4 +577,14 @@ func checkIdentifier(i string) string {
 		return nn
 	}
 	return i
+}
+
+// GetUnion returns the type information for a union. If the provided type name
+// isn't a union, the second return value will be false.
+func (decl *Decl) GetUnion() Union {
+	ix, ok := Gen.UnionMap[decl.Type]
+	if ok {
+		return Gen.Unions[ix]
+	}
+	return Union{}
 }

@@ -1398,39 +1398,13 @@ func (l *Libvirt) SetBlockIOTune(dom string, disk string, limits ...BlockLimit) 
 		return err
 	}
 
-	// https://libvirt.org/html/libvirt-libvirt-domain.html#virDomainSetBlockIoTune
-	payload := struct {
-		Domain Domain
-		Disk   string
-		Params []TypedParam
-		Flags  DomainAffectFlags
-	}{
-		Domain: d,
-		Disk:   disk,
-		Flags:  FlagDomainAffectLive,
-	}
-
-	for _, limit := range limits {
+	params := make([]TypedParam, len(limits))
+	for ix, limit := range limits {
 		tpval := NewTypedParamValueUllong(limit.Value)
-		tp := &TypedParam{Field: limit.Name, Value: tpval}
-		payload.Params = append(payload.Params, *tp)
+		params[ix] = TypedParam{Field: limit.Name, Value: tpval}
 	}
 
-	buf, err := encode(&payload)
-	if err != nil {
-		return err
-	}
-	resp, err := l.request(constants.ProcDomainSetBlockIOTune, constants.Program, &buf)
-	if err != nil {
-		return err
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		return decodeError(r.Payload)
-	}
-
-	return nil
+	return l.DomainSetBlockIOTune(*d, disk, params, FlagDomainAffectLive)
 }
 
 // GetBlockIOTune returns a slice containing the current block I/O tunables for
@@ -1441,77 +1415,91 @@ func (l *Libvirt) GetBlockIOTune(dom string, disk string) ([]BlockLimit, error) 
 		return nil, err
 	}
 
-	payload := struct {
-		Domain     Domain
-		Disk       []string
-		ParamCount uint32
-		Flags      DomainAffectFlags
-	}{
-		Domain:     d,
-		Disk:       []string{disk},
-		ParamCount: 32,
-		Flags:      FlagTypedParamStringOkay,
-	}
-
-	buf, err := encode(&payload)
+	lims, _, err := l.DomainGetBlockIOTune(*d, disk, 32, FlagTypedParamStringOkay)
 	if err != nil {
 		return nil, err
 	}
-
-	resp, err := l.request(constants.ProcDomainGetBlockIOTune, constants.Program, &buf)
-	if err != nil {
-		return nil, err
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		return nil, decodeError(r.Payload)
-	}
+	// payload := struct {
+	// 	Domain     Domain
+	// 	Disk       []string
+	// 	ParamCount uint32
+	// 	Flags      DomainAffectFlags
+	// }{
+	// 	Domain:     d,
+	// 	Disk:       []string{disk},
+	// 	ParamCount: 32,
+	// 	Flags:      FlagTypedParamStringOkay,
+	// }
+	//
+	// buf, err := encode(&payload)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	//
+	// resp, err := l.request(constants.ProcDomainGetBlockIOTune, constants.Program, &buf)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	//
+	// r := <-resp
+	// if r.Status != StatusOK {
+	// 	return nil, decodeError(r.Payload)
+	// }
 
 	var limits []BlockLimit
-	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	// rdr := bytes.NewReader(r.Payload)
+	// dec := xdr.NewDecoder(rdr)
 
 	// find out how many params were returned
-	paramCount, _, err := dec.DecodeInt()
-	if err != nil {
-		return nil, err
-	}
+	// paramCount, _, err := dec.DecodeInt()
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	// now decode each of the returned TypedParams. To do this we read the field
 	// name and type, then use the type information to decode the value.
-	for param := int32(0); param < paramCount; param++ {
-		// Get the field name
-		name, _, err := dec.DecodeString()
-		if err != nil {
-			return nil, err
+	for _, lim := range lims {
+		var l BlockLimit
+		name := lim.Field
+		switch lim.Value.Get().(type) {
+		case uint64:
+			l = BlockLimit{Name: name, Value: lim.Value.Get().(uint64)}
 		}
-		// ...and the type
-		ptype, _, err := dec.DecodeInt()
-		if err != nil {
-			return nil, err
-		}
-
-		// Now we can read the actual value.
-		switch ptype {
-		case TypeParamULLong:
-			var val uint64
-			_, err = dec.Decode(&val)
-			if err != nil {
-				return nil, err
-			}
-			lim := BlockLimit{name, val}
-			limits = append(limits, lim)
-		case TypeParamString:
-			var val string
-			_, err = dec.Decode(&val)
-			if err != nil {
-				return nil, err
-			}
-			// This routine doesn't currently return strings. As of libvirt 3+,
-			// there's one string here, `group_name`.
-		}
+		limits = append(limits, l)
 	}
+
+	// for param := int32(0); param < paramCount; param++ {
+	// 	// Get the field name
+	// 	name, _, err := dec.DecodeString()
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	// ...and the type
+	// 	ptype, _, err := dec.DecodeInt()
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	//
+	// 	// Now we can read the actual value.
+	// 	switch ptype {
+	// 	case TypeParamULLong:
+	// 		var val uint64
+	// 		_, err = dec.Decode(&val)
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 		lim := BlockLimit{name, val}
+	// 		limits = append(limits, lim)
+	// 	case TypeParamString:
+	// 		var val string
+	// 		_, err = dec.Decode(&val)
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 		// This routine doesn't currently return strings. As of libvirt 3+,
+	// 		// there's one string here, `group_name`.
+	// 	}
+	// }
 
 	return limits, nil
 }

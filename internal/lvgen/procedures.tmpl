@@ -8,6 +8,7 @@ package libvirt
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/davecgh/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/internal/constants"
@@ -42,9 +43,63 @@ type {{$casetype}} struct {
 	{{.Name}} {{.Type}}
 }
 func New{{$casetype}}(v {{.Type}}) *{{$casetype}} { return &{{$casetype}}{DVal: {{.DiscriminantVal}}, {{.Name}}: v} }
+func Decode{{$casetype}}(dec *xdr.Decoder) (*{{$casetype}}, error) {
+	var v {{.Type}}
+	_, err := dec.Decode(&v)
+	if err != nil {
+		return nil, err
+	}
+	return New{{$casetype}}(v), nil
+}
 func (c *{{$casetype}}) Get() interface{} { return c.{{.Name}} }
 {{end}}
 {{- end}}
+
+// TODO: Generate this.
+func decodeTypedParams(dec *xdr.Decoder) ([]TypedParam, error) {
+	count, _, err := dec.DecodeInt()
+	params := make([]TypedParam, count)
+	if err != nil {
+		return nil, err
+	}
+	for ix := int32(0); ix < count; ix++ {
+		name, _, err := dec.DecodeString()
+		if err != nil {
+			return nil, err
+		}
+		ptype, _, err := dec.DecodeInt()
+		if err != nil {
+			return nil, err
+		}
+		var tpv TypedParamValue
+		switch ptype {
+		case 1:	// TypedParamValueInt
+			tpv, err = DecodeTypedParamValueInt(dec)
+		case 2: // TypedParamValueUint
+			tpv, err = DecodeTypedParamValueUint(dec)
+		case 3: // TypedParamValueLlong
+			tpv, err = DecodeTypedParamValueLlong(dec)
+		case 4: // TypedParamValueUllong
+			tpv, err = DecodeTypedParamValueUllong(dec)
+		case 5: // TypedParamValueDouble
+			tpv, err = DecodeTypedParamValueDouble(dec)
+		case 6: // TypedParamValueBoolean
+			tpv, err = DecodeTypedParamValueBoolean(dec)
+		case 7: // TypedParamValueString
+			tpv, err = DecodeTypedParamValueString(dec)
+		default:
+			err = fmt.Errorf("invalid parameter type %v", ptype)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		params[ix] = TypedParam{name, tpv}
+	}
+
+	return params, nil
+}
 
 // Procedures:
 {{range .Procs}}
@@ -72,16 +127,21 @@ func (l *Libvirt) {{.Name}}({{range $ix, $arg := .Args}}{{if $ix}}, {{end}}{{.Na
 		return
 	}
 {{if .RetStruct}}
-	result := {{.RetStruct}}{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+{{range .Ret}}	// {{.Name}}: {{.Type}}
+{{if eq .Type "[]TypedParam"}}	// {{.Name}}
+	r{{.Name}}, err = decodeTypedParams(dec)
 	if err != nil {
 		return
 	}
-
-{{range .Ret}}	r{{.Name}} = result.{{.Name}}
+{{else}}	_, err = dec.Decode(&r{{.Name}})
+	if err != nil {
+		return
+	}
 {{end}}{{end}}
+{{end}}
 	return
 }
 {{end}}

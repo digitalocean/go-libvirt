@@ -8,6 +8,7 @@ package libvirt
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/davecgh/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/internal/constants"
@@ -3106,6 +3107,14 @@ type TypedParamValueInt struct {
 	I int32
 }
 func NewTypedParamValueInt(v int32) *TypedParamValueInt { return &TypedParamValueInt{DVal: 1, I: v} }
+func DecodeTypedParamValueInt(dec *xdr.Decoder) (*TypedParamValueInt, error) {
+	var v int32
+	_, err := dec.Decode(&v)
+	if err != nil {
+		return nil, err
+	}
+	return NewTypedParamValueInt(v), nil
+}
 func (c *TypedParamValueInt) Get() interface{} { return c.I }
 
 type TypedParamValueUint struct {
@@ -3113,6 +3122,14 @@ type TypedParamValueUint struct {
 	Ui uint32
 }
 func NewTypedParamValueUint(v uint32) *TypedParamValueUint { return &TypedParamValueUint{DVal: 2, Ui: v} }
+func DecodeTypedParamValueUint(dec *xdr.Decoder) (*TypedParamValueUint, error) {
+	var v uint32
+	_, err := dec.Decode(&v)
+	if err != nil {
+		return nil, err
+	}
+	return NewTypedParamValueUint(v), nil
+}
 func (c *TypedParamValueUint) Get() interface{} { return c.Ui }
 
 type TypedParamValueLlong struct {
@@ -3120,6 +3137,14 @@ type TypedParamValueLlong struct {
 	L int64
 }
 func NewTypedParamValueLlong(v int64) *TypedParamValueLlong { return &TypedParamValueLlong{DVal: 3, L: v} }
+func DecodeTypedParamValueLlong(dec *xdr.Decoder) (*TypedParamValueLlong, error) {
+	var v int64
+	_, err := dec.Decode(&v)
+	if err != nil {
+		return nil, err
+	}
+	return NewTypedParamValueLlong(v), nil
+}
 func (c *TypedParamValueLlong) Get() interface{} { return c.L }
 
 type TypedParamValueUllong struct {
@@ -3127,6 +3152,14 @@ type TypedParamValueUllong struct {
 	Ul uint64
 }
 func NewTypedParamValueUllong(v uint64) *TypedParamValueUllong { return &TypedParamValueUllong{DVal: 4, Ul: v} }
+func DecodeTypedParamValueUllong(dec *xdr.Decoder) (*TypedParamValueUllong, error) {
+	var v uint64
+	_, err := dec.Decode(&v)
+	if err != nil {
+		return nil, err
+	}
+	return NewTypedParamValueUllong(v), nil
+}
 func (c *TypedParamValueUllong) Get() interface{} { return c.Ul }
 
 type TypedParamValueDouble struct {
@@ -3134,6 +3167,14 @@ type TypedParamValueDouble struct {
 	D float64
 }
 func NewTypedParamValueDouble(v float64) *TypedParamValueDouble { return &TypedParamValueDouble{DVal: 5, D: v} }
+func DecodeTypedParamValueDouble(dec *xdr.Decoder) (*TypedParamValueDouble, error) {
+	var v float64
+	_, err := dec.Decode(&v)
+	if err != nil {
+		return nil, err
+	}
+	return NewTypedParamValueDouble(v), nil
+}
 func (c *TypedParamValueDouble) Get() interface{} { return c.D }
 
 type TypedParamValueBoolean struct {
@@ -3141,6 +3182,14 @@ type TypedParamValueBoolean struct {
 	B int32
 }
 func NewTypedParamValueBoolean(v int32) *TypedParamValueBoolean { return &TypedParamValueBoolean{DVal: 6, B: v} }
+func DecodeTypedParamValueBoolean(dec *xdr.Decoder) (*TypedParamValueBoolean, error) {
+	var v int32
+	_, err := dec.Decode(&v)
+	if err != nil {
+		return nil, err
+	}
+	return NewTypedParamValueBoolean(v), nil
+}
 func (c *TypedParamValueBoolean) Get() interface{} { return c.B }
 
 type TypedParamValueString struct {
@@ -3148,8 +3197,62 @@ type TypedParamValueString struct {
 	S string
 }
 func NewTypedParamValueString(v string) *TypedParamValueString { return &TypedParamValueString{DVal: 7, S: v} }
+func DecodeTypedParamValueString(dec *xdr.Decoder) (*TypedParamValueString, error) {
+	var v string
+	_, err := dec.Decode(&v)
+	if err != nil {
+		return nil, err
+	}
+	return NewTypedParamValueString(v), nil
+}
 func (c *TypedParamValueString) Get() interface{} { return c.S }
 
+
+// TODO: Generate this.
+func decodeTypedParams(dec *xdr.Decoder) ([]TypedParam, error) {
+	count, _, err := dec.DecodeInt()
+	params := make([]TypedParam, count)
+	if err != nil {
+		return nil, err
+	}
+	for ix := int32(0); ix < count; ix++ {
+		name, _, err := dec.DecodeString()
+		if err != nil {
+			return nil, err
+		}
+		ptype, _, err := dec.DecodeInt()
+		if err != nil {
+			return nil, err
+		}
+		var tpv TypedParamValue
+		switch ptype {
+		case 1:	// TypedParamValueInt
+			tpv, err = DecodeTypedParamValueInt(dec)
+		case 2: // TypedParamValueUint
+			tpv, err = DecodeTypedParamValueUint(dec)
+		case 3: // TypedParamValueLlong
+			tpv, err = DecodeTypedParamValueLlong(dec)
+		case 4: // TypedParamValueUllong
+			tpv, err = DecodeTypedParamValueUllong(dec)
+		case 5: // TypedParamValueDouble
+			tpv, err = DecodeTypedParamValueDouble(dec)
+		case 6: // TypedParamValueBoolean
+			tpv, err = DecodeTypedParamValueBoolean(dec)
+		case 7: // TypedParamValueString
+			tpv, err = DecodeTypedParamValueString(dec)
+		default:
+			err = fmt.Errorf("invalid parameter type %v", ptype)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+
+		params[ix] = TypedParam{name, tpv}
+	}
+
+	return params, nil
+}
 
 // Procedures:
 
@@ -3214,15 +3317,15 @@ func (l *Libvirt) ConnectGetType() (rType string, err error) {
 		return
 	}
 
-	result := ConnectGetTypeRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Type: string
+	_, err = dec.Decode(&rType)
 	if err != nil {
 		return
 	}
 
-	rType = result.Type
 
 	return
 }
@@ -3242,15 +3345,15 @@ func (l *Libvirt) ConnectGetVersion() (rHvVer uint64, err error) {
 		return
 	}
 
-	result := ConnectGetVersionRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// HvVer: uint64
+	_, err = dec.Decode(&rHvVer)
 	if err != nil {
 		return
 	}
 
-	rHvVer = result.HvVer
 
 	return
 }
@@ -3279,15 +3382,15 @@ func (l *Libvirt) ConnectGetMaxVcpus(Type string) (rMaxVcpus int32, err error) {
 		return
 	}
 
-	result := ConnectGetMaxVcpusRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// MaxVcpus: int32
+	_, err = dec.Decode(&rMaxVcpus)
 	if err != nil {
 		return
 	}
 
-	rMaxVcpus = result.MaxVcpus
 
 	return
 }
@@ -3307,22 +3410,50 @@ func (l *Libvirt) NodeGetInfo() (rModel [32]int8, rMemory uint64, rCpus int32, r
 		return
 	}
 
-	result := NodeGetInfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Model: [32]int8
+	_, err = dec.Decode(&rModel)
+	if err != nil {
+		return
+	}
+	// Memory: uint64
+	_, err = dec.Decode(&rMemory)
+	if err != nil {
+		return
+	}
+	// Cpus: int32
+	_, err = dec.Decode(&rCpus)
+	if err != nil {
+		return
+	}
+	// Mhz: int32
+	_, err = dec.Decode(&rMhz)
+	if err != nil {
+		return
+	}
+	// Nodes: int32
+	_, err = dec.Decode(&rNodes)
+	if err != nil {
+		return
+	}
+	// Sockets: int32
+	_, err = dec.Decode(&rSockets)
+	if err != nil {
+		return
+	}
+	// Cores: int32
+	_, err = dec.Decode(&rCores)
+	if err != nil {
+		return
+	}
+	// Threads: int32
+	_, err = dec.Decode(&rThreads)
 	if err != nil {
 		return
 	}
 
-	rModel = result.Model
-	rMemory = result.Memory
-	rCpus = result.Cpus
-	rMhz = result.Mhz
-	rNodes = result.Nodes
-	rSockets = result.Sockets
-	rCores = result.Cores
-	rThreads = result.Threads
 
 	return
 }
@@ -3342,15 +3473,15 @@ func (l *Libvirt) ConnectGetCapabilities() (rCapabilities string, err error) {
 		return
 	}
 
-	result := ConnectGetCapabilitiesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Capabilities: string
+	_, err = dec.Decode(&rCapabilities)
 	if err != nil {
 		return
 	}
 
-	rCapabilities = result.Capabilities
 
 	return
 }
@@ -3435,15 +3566,15 @@ func (l *Libvirt) DomainCreateXML(XMLDesc string, Flags uint32) (rDom NonnullDom
 		return
 	}
 
-	result := DomainCreateXMLRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dom: NonnullDomain
+	_, err = dec.Decode(&rDom)
 	if err != nil {
 		return
 	}
 
-	rDom = result.Dom
 
 	return
 }
@@ -3472,15 +3603,15 @@ func (l *Libvirt) DomainDefineXML(XML string) (rDom NonnullDomain, err error) {
 		return
 	}
 
-	result := DomainDefineXMLRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dom: NonnullDomain
+	_, err = dec.Decode(&rDom)
 	if err != nil {
 		return
 	}
 
-	rDom = result.Dom
 
 	return
 }
@@ -3565,15 +3696,15 @@ func (l *Libvirt) DomainGetXMLDesc(Dom NonnullDomain, Flags uint32) (rXML string
 		return
 	}
 
-	result := DomainGetXMLDescRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rXML = result.XML
 
 	return
 }
@@ -3602,15 +3733,15 @@ func (l *Libvirt) DomainGetAutostart(Dom NonnullDomain) (rAutostart int32, err e
 		return
 	}
 
-	result := DomainGetAutostartRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Autostart: int32
+	_, err = dec.Decode(&rAutostart)
 	if err != nil {
 		return
 	}
 
-	rAutostart = result.Autostart
 
 	return
 }
@@ -3639,19 +3770,35 @@ func (l *Libvirt) DomainGetInfo(Dom NonnullDomain) (rState uint8, rMaxMem uint64
 		return
 	}
 
-	result := DomainGetInfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// State: uint8
+	_, err = dec.Decode(&rState)
+	if err != nil {
+		return
+	}
+	// MaxMem: uint64
+	_, err = dec.Decode(&rMaxMem)
+	if err != nil {
+		return
+	}
+	// Memory: uint64
+	_, err = dec.Decode(&rMemory)
+	if err != nil {
+		return
+	}
+	// NrVirtCPU: uint16
+	_, err = dec.Decode(&rNrVirtCPU)
+	if err != nil {
+		return
+	}
+	// CPUTime: uint64
+	_, err = dec.Decode(&rCPUTime)
 	if err != nil {
 		return
 	}
 
-	rState = result.State
-	rMaxMem = result.MaxMem
-	rMemory = result.Memory
-	rNrVirtCPU = result.NrVirtCPU
-	rCPUTime = result.CPUTime
 
 	return
 }
@@ -3680,15 +3827,15 @@ func (l *Libvirt) DomainGetMaxMemory(Dom NonnullDomain) (rMemory uint64, err err
 		return
 	}
 
-	result := DomainGetMaxMemoryRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Memory: uint64
+	_, err = dec.Decode(&rMemory)
 	if err != nil {
 		return
 	}
 
-	rMemory = result.Memory
 
 	return
 }
@@ -3717,15 +3864,15 @@ func (l *Libvirt) DomainGetMaxVcpus(Dom NonnullDomain) (rNum int32, err error) {
 		return
 	}
 
-	result := DomainGetMaxVcpusRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -3754,15 +3901,15 @@ func (l *Libvirt) DomainGetOsType(Dom NonnullDomain) (rType string, err error) {
 		return
 	}
 
-	result := DomainGetOsTypeRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Type: string
+	_, err = dec.Decode(&rType)
 	if err != nil {
 		return
 	}
 
-	rType = result.Type
 
 	return
 }
@@ -3793,16 +3940,20 @@ func (l *Libvirt) DomainGetVcpus(Dom NonnullDomain, Maxinfo int32, Maplen int32)
 		return
 	}
 
-	result := DomainGetVcpusRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Info: []VcpuInfo
+	_, err = dec.Decode(&rInfo)
+	if err != nil {
+		return
+	}
+	// Cpumaps: []byte
+	_, err = dec.Decode(&rCpumaps)
 	if err != nil {
 		return
 	}
 
-	rInfo = result.Info
-	rCpumaps = result.Cpumaps
 
 	return
 }
@@ -3831,15 +3982,15 @@ func (l *Libvirt) ConnectListDefinedDomains(Maxnames int32) (rNames []string, er
 		return
 	}
 
-	result := ConnectListDefinedDomainsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -3868,15 +4019,15 @@ func (l *Libvirt) DomainLookupByID(ID int32) (rDom NonnullDomain, err error) {
 		return
 	}
 
-	result := DomainLookupByIDRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dom: NonnullDomain
+	_, err = dec.Decode(&rDom)
 	if err != nil {
 		return
 	}
 
-	rDom = result.Dom
 
 	return
 }
@@ -3905,15 +4056,15 @@ func (l *Libvirt) DomainLookupByName(Name string) (rDom NonnullDomain, err error
 		return
 	}
 
-	result := DomainLookupByNameRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dom: NonnullDomain
+	_, err = dec.Decode(&rDom)
 	if err != nil {
 		return
 	}
 
-	rDom = result.Dom
 
 	return
 }
@@ -3942,15 +4093,15 @@ func (l *Libvirt) DomainLookupByUUID(UUID UUID) (rDom NonnullDomain, err error) 
 		return
 	}
 
-	result := DomainLookupByUUIDRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dom: NonnullDomain
+	_, err = dec.Decode(&rDom)
 	if err != nil {
 		return
 	}
 
-	rDom = result.Dom
 
 	return
 }
@@ -3970,15 +4121,15 @@ func (l *Libvirt) ConnectNumOfDefinedDomains() (rNum int32, err error) {
 		return
 	}
 
-	result := ConnectNumOfDefinedDomainsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -4284,15 +4435,15 @@ func (l *Libvirt) ConnectListDefinedNetworks(Maxnames int32) (rNames []string, e
 		return
 	}
 
-	result := ConnectListDefinedNetworksRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -4321,15 +4472,15 @@ func (l *Libvirt) ConnectListDomains(Maxids int32) (rIds []int32, err error) {
 		return
 	}
 
-	result := ConnectListDomainsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Ids: []int32
+	_, err = dec.Decode(&rIds)
 	if err != nil {
 		return
 	}
 
-	rIds = result.Ids
 
 	return
 }
@@ -4358,15 +4509,15 @@ func (l *Libvirt) ConnectListNetworks(Maxnames int32) (rNames []string, err erro
 		return
 	}
 
-	result := ConnectListNetworksRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -4422,15 +4573,15 @@ func (l *Libvirt) NetworkCreateXML(XML string) (rNet NonnullNetwork, err error) 
 		return
 	}
 
-	result := NetworkCreateXMLRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Net: NonnullNetwork
+	_, err = dec.Decode(&rNet)
 	if err != nil {
 		return
 	}
 
-	rNet = result.Net
 
 	return
 }
@@ -4459,15 +4610,15 @@ func (l *Libvirt) NetworkDefineXML(XML string) (rNet NonnullNetwork, err error) 
 		return
 	}
 
-	result := NetworkDefineXMLRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Net: NonnullNetwork
+	_, err = dec.Decode(&rNet)
 	if err != nil {
 		return
 	}
 
-	rNet = result.Net
 
 	return
 }
@@ -4524,15 +4675,15 @@ func (l *Libvirt) NetworkGetXMLDesc(Net NonnullNetwork, Flags uint32) (rXML stri
 		return
 	}
 
-	result := NetworkGetXMLDescRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rXML = result.XML
 
 	return
 }
@@ -4561,15 +4712,15 @@ func (l *Libvirt) NetworkGetAutostart(Net NonnullNetwork) (rAutostart int32, err
 		return
 	}
 
-	result := NetworkGetAutostartRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Autostart: int32
+	_, err = dec.Decode(&rAutostart)
 	if err != nil {
 		return
 	}
 
-	rAutostart = result.Autostart
 
 	return
 }
@@ -4598,15 +4749,15 @@ func (l *Libvirt) NetworkGetBridgeName(Net NonnullNetwork) (rName string, err er
 		return
 	}
 
-	result := NetworkGetBridgeNameRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Name: string
+	_, err = dec.Decode(&rName)
 	if err != nil {
 		return
 	}
 
-	rName = result.Name
 
 	return
 }
@@ -4635,15 +4786,15 @@ func (l *Libvirt) NetworkLookupByName(Name string) (rNet NonnullNetwork, err err
 		return
 	}
 
-	result := NetworkLookupByNameRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Net: NonnullNetwork
+	_, err = dec.Decode(&rNet)
 	if err != nil {
 		return
 	}
 
-	rNet = result.Net
 
 	return
 }
@@ -4672,15 +4823,15 @@ func (l *Libvirt) NetworkLookupByUUID(UUID UUID) (rNet NonnullNetwork, err error
 		return
 	}
 
-	result := NetworkLookupByUUIDRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Net: NonnullNetwork
+	_, err = dec.Decode(&rNet)
 	if err != nil {
 		return
 	}
 
-	rNet = result.Net
 
 	return
 }
@@ -4755,15 +4906,15 @@ func (l *Libvirt) ConnectNumOfDefinedNetworks() (rNum int32, err error) {
 		return
 	}
 
-	result := ConnectNumOfDefinedNetworksRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -4783,15 +4934,15 @@ func (l *Libvirt) ConnectNumOfDomains() (rNum int32, err error) {
 		return
 	}
 
-	result := ConnectNumOfDomainsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -4811,15 +4962,15 @@ func (l *Libvirt) ConnectNumOfNetworks() (rNum int32, err error) {
 		return
 	}
 
-	result := ConnectNumOfNetworksRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -4932,16 +5083,20 @@ func (l *Libvirt) DomainGetSchedulerType(Dom NonnullDomain) (rType string, rNpar
 		return
 	}
 
-	result := DomainGetSchedulerTypeRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Type: string
+	_, err = dec.Decode(&rType)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
 	if err != nil {
 		return
 	}
 
-	rType = result.Type
-	rNparams = result.Nparams
 
 	return
 }
@@ -4971,15 +5126,16 @@ func (l *Libvirt) DomainGetSchedulerParameters(Dom NonnullDomain, Nparams int32)
 		return
 	}
 
-	result := DomainGetSchedulerParametersRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
 
 	return
 }
@@ -5027,15 +5183,15 @@ func (l *Libvirt) ConnectGetHostname() (rHostname string, err error) {
 		return
 	}
 
-	result := ConnectGetHostnameRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Hostname: string
+	_, err = dec.Decode(&rHostname)
 	if err != nil {
 		return
 	}
 
-	rHostname = result.Hostname
 
 	return
 }
@@ -5064,15 +5220,15 @@ func (l *Libvirt) ConnectSupportsFeature(Feature int32) (rSupported int32, err e
 		return
 	}
 
-	result := ConnectSupportsFeatureRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Supported: int32
+	_, err = dec.Decode(&rSupported)
 	if err != nil {
 		return
 	}
 
-	rSupported = result.Supported
 
 	return
 }
@@ -5104,16 +5260,20 @@ func (l *Libvirt) DomainMigratePrepare(UriIn string, Flags uint64, Dname string,
 		return
 	}
 
-	result := DomainMigratePrepareRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Cookie: []byte
+	_, err = dec.Decode(&rCookie)
+	if err != nil {
+		return
+	}
+	// UriOut: string
+	_, err = dec.Decode(&rUriOut)
 	if err != nil {
 		return
 	}
 
-	rCookie = result.Cookie
-	rUriOut = result.UriOut
 
 	return
 }
@@ -5177,15 +5337,15 @@ func (l *Libvirt) DomainMigrateFinish(Dname string, Cookie []byte, Uri string, F
 		return
 	}
 
-	result := DomainMigrateFinishRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Ddom: NonnullDomain
+	_, err = dec.Decode(&rDdom)
 	if err != nil {
 		return
 	}
 
-	rDdom = result.Ddom
 
 	return
 }
@@ -5215,19 +5375,35 @@ func (l *Libvirt) DomainBlockStats(Dom NonnullDomain, Path string) (rRdReq int64
 		return
 	}
 
-	result := DomainBlockStatsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// RdReq: int64
+	_, err = dec.Decode(&rRdReq)
+	if err != nil {
+		return
+	}
+	// RdBytes: int64
+	_, err = dec.Decode(&rRdBytes)
+	if err != nil {
+		return
+	}
+	// WrReq: int64
+	_, err = dec.Decode(&rWrReq)
+	if err != nil {
+		return
+	}
+	// WrBytes: int64
+	_, err = dec.Decode(&rWrBytes)
+	if err != nil {
+		return
+	}
+	// Errs: int64
+	_, err = dec.Decode(&rErrs)
 	if err != nil {
 		return
 	}
 
-	rRdReq = result.RdReq
-	rRdBytes = result.RdBytes
-	rWrReq = result.WrReq
-	rWrBytes = result.WrBytes
-	rErrs = result.Errs
 
 	return
 }
@@ -5257,22 +5433,50 @@ func (l *Libvirt) DomainInterfaceStats(Dom NonnullDomain, Device string) (rRxByt
 		return
 	}
 
-	result := DomainInterfaceStatsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// RxBytes: int64
+	_, err = dec.Decode(&rRxBytes)
+	if err != nil {
+		return
+	}
+	// RxPackets: int64
+	_, err = dec.Decode(&rRxPackets)
+	if err != nil {
+		return
+	}
+	// RxErrs: int64
+	_, err = dec.Decode(&rRxErrs)
+	if err != nil {
+		return
+	}
+	// RxDrop: int64
+	_, err = dec.Decode(&rRxDrop)
+	if err != nil {
+		return
+	}
+	// TxBytes: int64
+	_, err = dec.Decode(&rTxBytes)
+	if err != nil {
+		return
+	}
+	// TxPackets: int64
+	_, err = dec.Decode(&rTxPackets)
+	if err != nil {
+		return
+	}
+	// TxErrs: int64
+	_, err = dec.Decode(&rTxErrs)
+	if err != nil {
+		return
+	}
+	// TxDrop: int64
+	_, err = dec.Decode(&rTxDrop)
 	if err != nil {
 		return
 	}
 
-	rRxBytes = result.RxBytes
-	rRxPackets = result.RxPackets
-	rRxErrs = result.RxErrs
-	rRxDrop = result.RxDrop
-	rTxBytes = result.TxBytes
-	rTxPackets = result.TxPackets
-	rTxErrs = result.TxErrs
-	rTxDrop = result.TxDrop
 
 	return
 }
@@ -5292,15 +5496,15 @@ func (l *Libvirt) AuthList() (rTypes []AuthType, err error) {
 		return
 	}
 
-	result := AuthListRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Types: []AuthType
+	_, err = dec.Decode(&rTypes)
 	if err != nil {
 		return
 	}
 
-	rTypes = result.Types
 
 	return
 }
@@ -5320,15 +5524,15 @@ func (l *Libvirt) AuthSaslInit() (rMechlist string, err error) {
 		return
 	}
 
-	result := AuthSaslInitRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Mechlist: string
+	_, err = dec.Decode(&rMechlist)
 	if err != nil {
 		return
 	}
 
-	rMechlist = result.Mechlist
 
 	return
 }
@@ -5359,17 +5563,25 @@ func (l *Libvirt) AuthSaslStart(Mech string, Nil int32, Data []int8) (rComplete 
 		return
 	}
 
-	result := AuthSaslStartRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Complete: int32
+	_, err = dec.Decode(&rComplete)
+	if err != nil {
+		return
+	}
+	// Nil: int32
+	_, err = dec.Decode(&rNil)
+	if err != nil {
+		return
+	}
+	// Data: []int8
+	_, err = dec.Decode(&rData)
 	if err != nil {
 		return
 	}
 
-	rComplete = result.Complete
-	rNil = result.Nil
-	rData = result.Data
 
 	return
 }
@@ -5399,17 +5611,25 @@ func (l *Libvirt) AuthSaslStep(Nil int32, Data []int8) (rComplete int32, rNil in
 		return
 	}
 
-	result := AuthSaslStepRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Complete: int32
+	_, err = dec.Decode(&rComplete)
+	if err != nil {
+		return
+	}
+	// Nil: int32
+	_, err = dec.Decode(&rNil)
+	if err != nil {
+		return
+	}
+	// Data: []int8
+	_, err = dec.Decode(&rData)
 	if err != nil {
 		return
 	}
 
-	rComplete = result.Complete
-	rNil = result.Nil
-	rData = result.Data
 
 	return
 }
@@ -5429,15 +5649,15 @@ func (l *Libvirt) AuthPolkit() (rComplete int32, err error) {
 		return
 	}
 
-	result := AuthPolkitRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Complete: int32
+	_, err = dec.Decode(&rComplete)
 	if err != nil {
 		return
 	}
 
-	rComplete = result.Complete
 
 	return
 }
@@ -5457,15 +5677,15 @@ func (l *Libvirt) ConnectNumOfStoragePools() (rNum int32, err error) {
 		return
 	}
 
-	result := ConnectNumOfStoragePoolsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -5494,15 +5714,15 @@ func (l *Libvirt) ConnectListStoragePools(Maxnames int32) (rNames []string, err 
 		return
 	}
 
-	result := ConnectListStoragePoolsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -5522,15 +5742,15 @@ func (l *Libvirt) ConnectNumOfDefinedStoragePools() (rNum int32, err error) {
 		return
 	}
 
-	result := ConnectNumOfDefinedStoragePoolsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -5559,15 +5779,15 @@ func (l *Libvirt) ConnectListDefinedStoragePools(Maxnames int32) (rNames []strin
 		return
 	}
 
-	result := ConnectListDefinedStoragePoolsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -5598,15 +5818,15 @@ func (l *Libvirt) ConnectFindStoragePoolSources(Type string, SrcSpec string, Fla
 		return
 	}
 
-	result := ConnectFindStoragePoolSourcesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rXML = result.XML
 
 	return
 }
@@ -5636,15 +5856,15 @@ func (l *Libvirt) StoragePoolCreateXML(XML string, Flags uint32) (rPool NonnullS
 		return
 	}
 
-	result := StoragePoolCreateXMLRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Pool: NonnullStoragePool
+	_, err = dec.Decode(&rPool)
 	if err != nil {
 		return
 	}
 
-	rPool = result.Pool
 
 	return
 }
@@ -5674,15 +5894,15 @@ func (l *Libvirt) StoragePoolDefineXML(XML string, Flags uint32) (rPool NonnullS
 		return
 	}
 
-	result := StoragePoolDefineXMLRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Pool: NonnullStoragePool
+	_, err = dec.Decode(&rPool)
 	if err != nil {
 		return
 	}
 
-	rPool = result.Pool
 
 	return
 }
@@ -5877,15 +6097,15 @@ func (l *Libvirt) StoragePoolLookupByName(Name string) (rPool NonnullStoragePool
 		return
 	}
 
-	result := StoragePoolLookupByNameRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Pool: NonnullStoragePool
+	_, err = dec.Decode(&rPool)
 	if err != nil {
 		return
 	}
 
-	rPool = result.Pool
 
 	return
 }
@@ -5914,15 +6134,15 @@ func (l *Libvirt) StoragePoolLookupByUUID(UUID UUID) (rPool NonnullStoragePool, 
 		return
 	}
 
-	result := StoragePoolLookupByUUIDRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Pool: NonnullStoragePool
+	_, err = dec.Decode(&rPool)
 	if err != nil {
 		return
 	}
 
-	rPool = result.Pool
 
 	return
 }
@@ -5951,15 +6171,15 @@ func (l *Libvirt) StoragePoolLookupByVolume(Vol NonnullStorageVol) (rPool Nonnul
 		return
 	}
 
-	result := StoragePoolLookupByVolumeRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Pool: NonnullStoragePool
+	_, err = dec.Decode(&rPool)
 	if err != nil {
 		return
 	}
 
-	rPool = result.Pool
 
 	return
 }
@@ -5988,18 +6208,30 @@ func (l *Libvirt) StoragePoolGetInfo(Pool NonnullStoragePool) (rState uint8, rCa
 		return
 	}
 
-	result := StoragePoolGetInfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// State: uint8
+	_, err = dec.Decode(&rState)
+	if err != nil {
+		return
+	}
+	// Capacity: uint64
+	_, err = dec.Decode(&rCapacity)
+	if err != nil {
+		return
+	}
+	// Allocation: uint64
+	_, err = dec.Decode(&rAllocation)
+	if err != nil {
+		return
+	}
+	// Available: uint64
+	_, err = dec.Decode(&rAvailable)
 	if err != nil {
 		return
 	}
 
-	rState = result.State
-	rCapacity = result.Capacity
-	rAllocation = result.Allocation
-	rAvailable = result.Available
 
 	return
 }
@@ -6029,15 +6261,15 @@ func (l *Libvirt) StoragePoolGetXMLDesc(Pool NonnullStoragePool, Flags uint32) (
 		return
 	}
 
-	result := StoragePoolGetXMLDescRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rXML = result.XML
 
 	return
 }
@@ -6066,15 +6298,15 @@ func (l *Libvirt) StoragePoolGetAutostart(Pool NonnullStoragePool) (rAutostart i
 		return
 	}
 
-	result := StoragePoolGetAutostartRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Autostart: int32
+	_, err = dec.Decode(&rAutostart)
 	if err != nil {
 		return
 	}
 
-	rAutostart = result.Autostart
 
 	return
 }
@@ -6131,15 +6363,15 @@ func (l *Libvirt) StoragePoolNumOfVolumes(Pool NonnullStoragePool) (rNum int32, 
 		return
 	}
 
-	result := StoragePoolNumOfVolumesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -6169,15 +6401,15 @@ func (l *Libvirt) StoragePoolListVolumes(Pool NonnullStoragePool, Maxnames int32
 		return
 	}
 
-	result := StoragePoolListVolumesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -6208,15 +6440,15 @@ func (l *Libvirt) StorageVolCreateXML(Pool NonnullStoragePool, XML string, Flags
 		return
 	}
 
-	result := StorageVolCreateXMLRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Vol: NonnullStorageVol
+	_, err = dec.Decode(&rVol)
 	if err != nil {
 		return
 	}
 
-	rVol = result.Vol
 
 	return
 }
@@ -6274,15 +6506,15 @@ func (l *Libvirt) StorageVolLookupByName(Pool NonnullStoragePool, Name string) (
 		return
 	}
 
-	result := StorageVolLookupByNameRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Vol: NonnullStorageVol
+	_, err = dec.Decode(&rVol)
 	if err != nil {
 		return
 	}
 
-	rVol = result.Vol
 
 	return
 }
@@ -6311,15 +6543,15 @@ func (l *Libvirt) StorageVolLookupByKey(Key string) (rVol NonnullStorageVol, err
 		return
 	}
 
-	result := StorageVolLookupByKeyRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Vol: NonnullStorageVol
+	_, err = dec.Decode(&rVol)
 	if err != nil {
 		return
 	}
 
-	rVol = result.Vol
 
 	return
 }
@@ -6348,15 +6580,15 @@ func (l *Libvirt) StorageVolLookupByPath(Path string) (rVol NonnullStorageVol, e
 		return
 	}
 
-	result := StorageVolLookupByPathRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Vol: NonnullStorageVol
+	_, err = dec.Decode(&rVol)
 	if err != nil {
 		return
 	}
 
-	rVol = result.Vol
 
 	return
 }
@@ -6385,17 +6617,25 @@ func (l *Libvirt) StorageVolGetInfo(Vol NonnullStorageVol) (rType int8, rCapacit
 		return
 	}
 
-	result := StorageVolGetInfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Type: int8
+	_, err = dec.Decode(&rType)
+	if err != nil {
+		return
+	}
+	// Capacity: uint64
+	_, err = dec.Decode(&rCapacity)
+	if err != nil {
+		return
+	}
+	// Allocation: uint64
+	_, err = dec.Decode(&rAllocation)
 	if err != nil {
 		return
 	}
 
-	rType = result.Type
-	rCapacity = result.Capacity
-	rAllocation = result.Allocation
 
 	return
 }
@@ -6425,15 +6665,15 @@ func (l *Libvirt) StorageVolGetXMLDesc(Vol NonnullStorageVol, Flags uint32) (rXM
 		return
 	}
 
-	result := StorageVolGetXMLDescRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rXML = result.XML
 
 	return
 }
@@ -6462,15 +6702,15 @@ func (l *Libvirt) StorageVolGetPath(Vol NonnullStorageVol) (rName string, err er
 		return
 	}
 
-	result := StorageVolGetPathRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Name: string
+	_, err = dec.Decode(&rName)
 	if err != nil {
 		return
 	}
 
-	rName = result.Name
 
 	return
 }
@@ -6500,15 +6740,15 @@ func (l *Libvirt) NodeGetCellsFreeMemory(StartCell int32, Maxcells int32) (rCell
 		return
 	}
 
-	result := NodeGetCellsFreeMemoryRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Cells: []uint64
+	_, err = dec.Decode(&rCells)
 	if err != nil {
 		return
 	}
 
-	rCells = result.Cells
 
 	return
 }
@@ -6528,15 +6768,15 @@ func (l *Libvirt) NodeGetFreeMemory() (rFreeMem uint64, err error) {
 		return
 	}
 
-	result := NodeGetFreeMemoryRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// FreeMem: uint64
+	_, err = dec.Decode(&rFreeMem)
 	if err != nil {
 		return
 	}
 
-	rFreeMem = result.FreeMem
 
 	return
 }
@@ -6569,15 +6809,15 @@ func (l *Libvirt) DomainBlockPeek(Dom NonnullDomain, Path string, Offset uint64,
 		return
 	}
 
-	result := DomainBlockPeekRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Buffer: []byte
+	_, err = dec.Decode(&rBuffer)
 	if err != nil {
 		return
 	}
 
-	rBuffer = result.Buffer
 
 	return
 }
@@ -6609,15 +6849,15 @@ func (l *Libvirt) DomainMemoryPeek(Dom NonnullDomain, Offset uint64, Size uint32
 		return
 	}
 
-	result := DomainMemoryPeekRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Buffer: []byte
+	_, err = dec.Decode(&rBuffer)
 	if err != nil {
 		return
 	}
 
-	rBuffer = result.Buffer
 
 	return
 }
@@ -6637,15 +6877,15 @@ func (l *Libvirt) ConnectDomainEventRegister() (rCbRegistered int32, err error) 
 		return
 	}
 
-	result := ConnectDomainEventRegisterRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CbRegistered: int32
+	_, err = dec.Decode(&rCbRegistered)
 	if err != nil {
 		return
 	}
 
-	rCbRegistered = result.CbRegistered
 
 	return
 }
@@ -6665,15 +6905,15 @@ func (l *Libvirt) ConnectDomainEventDeregister() (rCbRegistered int32, err error
 		return
 	}
 
-	result := ConnectDomainEventDeregisterRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CbRegistered: int32
+	_, err = dec.Decode(&rCbRegistered)
 	if err != nil {
 		return
 	}
 
-	rCbRegistered = result.CbRegistered
 
 	return
 }
@@ -6724,16 +6964,20 @@ func (l *Libvirt) DomainMigratePrepare2(UriIn string, Flags uint64, Dname string
 		return
 	}
 
-	result := DomainMigratePrepare2Ret{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Cookie: []byte
+	_, err = dec.Decode(&rCookie)
+	if err != nil {
+		return
+	}
+	// UriOut: string
+	_, err = dec.Decode(&rUriOut)
 	if err != nil {
 		return
 	}
 
-	rCookie = result.Cookie
-	rUriOut = result.UriOut
 
 	return
 }
@@ -6766,15 +7010,15 @@ func (l *Libvirt) DomainMigrateFinish2(Dname string, Cookie []byte, Uri string, 
 		return
 	}
 
-	result := DomainMigrateFinish2Ret{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Ddom: NonnullDomain
+	_, err = dec.Decode(&rDdom)
 	if err != nil {
 		return
 	}
 
-	rDdom = result.Ddom
 
 	return
 }
@@ -6794,15 +7038,15 @@ func (l *Libvirt) ConnectGetUri() (rUri string, err error) {
 		return
 	}
 
-	result := ConnectGetUriRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Uri: string
+	_, err = dec.Decode(&rUri)
 	if err != nil {
 		return
 	}
 
-	rUri = result.Uri
 
 	return
 }
@@ -6832,15 +7076,15 @@ func (l *Libvirt) NodeNumOfDevices(Cap string, Flags uint32) (rNum int32, err er
 		return
 	}
 
-	result := NodeNumOfDevicesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -6871,15 +7115,15 @@ func (l *Libvirt) NodeListDevices(Cap string, Maxnames int32, Flags uint32) (rNa
 		return
 	}
 
-	result := NodeListDevicesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -6908,15 +7152,15 @@ func (l *Libvirt) NodeDeviceLookupByName(Name string) (rDev NonnullNodeDevice, e
 		return
 	}
 
-	result := NodeDeviceLookupByNameRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dev: NonnullNodeDevice
+	_, err = dec.Decode(&rDev)
 	if err != nil {
 		return
 	}
 
-	rDev = result.Dev
 
 	return
 }
@@ -6946,15 +7190,15 @@ func (l *Libvirt) NodeDeviceGetXMLDesc(Name string, Flags uint32) (rXML string, 
 		return
 	}
 
-	result := NodeDeviceGetXMLDescRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rXML = result.XML
 
 	return
 }
@@ -6983,15 +7227,15 @@ func (l *Libvirt) NodeDeviceGetParent(Name string) (rParent string, err error) {
 		return
 	}
 
-	result := NodeDeviceGetParentRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Parent: string
+	_, err = dec.Decode(&rParent)
 	if err != nil {
 		return
 	}
 
-	rParent = result.Parent
 
 	return
 }
@@ -7020,15 +7264,15 @@ func (l *Libvirt) NodeDeviceNumOfCaps(Name string) (rNum int32, err error) {
 		return
 	}
 
-	result := NodeDeviceNumOfCapsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -7058,15 +7302,15 @@ func (l *Libvirt) NodeDeviceListCaps(Name string, Maxnames int32) (rNames []stri
 		return
 	}
 
-	result := NodeDeviceListCapsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -7176,16 +7420,20 @@ func (l *Libvirt) DomainGetSecurityLabel(Dom NonnullDomain) (rLabel []int8, rEnf
 		return
 	}
 
-	result := DomainGetSecurityLabelRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Label: []int8
+	_, err = dec.Decode(&rLabel)
+	if err != nil {
+		return
+	}
+	// Enforcing: int32
+	_, err = dec.Decode(&rEnforcing)
 	if err != nil {
 		return
 	}
 
-	rLabel = result.Label
-	rEnforcing = result.Enforcing
 
 	return
 }
@@ -7205,16 +7453,20 @@ func (l *Libvirt) NodeGetSecurityModel() (rModel []int8, rDoi []int8, err error)
 		return
 	}
 
-	result := NodeGetSecurityModelRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Model: []int8
+	_, err = dec.Decode(&rModel)
+	if err != nil {
+		return
+	}
+	// Doi: []int8
+	_, err = dec.Decode(&rDoi)
 	if err != nil {
 		return
 	}
 
-	rModel = result.Model
-	rDoi = result.Doi
 
 	return
 }
@@ -7244,15 +7496,15 @@ func (l *Libvirt) NodeDeviceCreateXML(XMLDesc string, Flags uint32) (rDev Nonnul
 		return
 	}
 
-	result := NodeDeviceCreateXMLRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dev: NonnullNodeDevice
+	_, err = dec.Decode(&rDev)
 	if err != nil {
 		return
 	}
 
-	rDev = result.Dev
 
 	return
 }
@@ -7311,15 +7563,15 @@ func (l *Libvirt) StorageVolCreateXMLFrom(Pool NonnullStoragePool, XML string, C
 		return
 	}
 
-	result := StorageVolCreateXMLFromRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Vol: NonnullStorageVol
+	_, err = dec.Decode(&rVol)
 	if err != nil {
 		return
 	}
 
-	rVol = result.Vol
 
 	return
 }
@@ -7339,15 +7591,15 @@ func (l *Libvirt) ConnectNumOfInterfaces() (rNum int32, err error) {
 		return
 	}
 
-	result := ConnectNumOfInterfacesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -7376,15 +7628,15 @@ func (l *Libvirt) ConnectListInterfaces(Maxnames int32) (rNames []string, err er
 		return
 	}
 
-	result := ConnectListInterfacesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -7413,15 +7665,15 @@ func (l *Libvirt) InterfaceLookupByName(Name string) (rIface NonnullInterface, e
 		return
 	}
 
-	result := InterfaceLookupByNameRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Iface: NonnullInterface
+	_, err = dec.Decode(&rIface)
 	if err != nil {
 		return
 	}
 
-	rIface = result.Iface
 
 	return
 }
@@ -7450,15 +7702,15 @@ func (l *Libvirt) InterfaceLookupByMacString(Mac string) (rIface NonnullInterfac
 		return
 	}
 
-	result := InterfaceLookupByMacStringRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Iface: NonnullInterface
+	_, err = dec.Decode(&rIface)
 	if err != nil {
 		return
 	}
 
-	rIface = result.Iface
 
 	return
 }
@@ -7488,15 +7740,15 @@ func (l *Libvirt) InterfaceGetXMLDesc(Iface NonnullInterface, Flags uint32) (rXM
 		return
 	}
 
-	result := InterfaceGetXMLDescRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rXML = result.XML
 
 	return
 }
@@ -7526,15 +7778,15 @@ func (l *Libvirt) InterfaceDefineXML(XML string, Flags uint32) (rIface NonnullIn
 		return
 	}
 
-	result := InterfaceDefineXMLRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Iface: NonnullInterface
+	_, err = dec.Decode(&rIface)
 	if err != nil {
 		return
 	}
 
-	rIface = result.Iface
 
 	return
 }
@@ -7648,15 +7900,15 @@ func (l *Libvirt) ConnectDomainXMLFromNative(NativeFormat string, NativeConfig s
 		return
 	}
 
-	result := ConnectDomainXMLFromNativeRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// DomainXML: string
+	_, err = dec.Decode(&rDomainXML)
 	if err != nil {
 		return
 	}
 
-	rDomainXML = result.DomainXML
 
 	return
 }
@@ -7687,15 +7939,15 @@ func (l *Libvirt) ConnectDomainXMLToNative(NativeFormat string, DomainXML string
 		return
 	}
 
-	result := ConnectDomainXMLToNativeRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// NativeConfig: string
+	_, err = dec.Decode(&rNativeConfig)
 	if err != nil {
 		return
 	}
 
-	rNativeConfig = result.NativeConfig
 
 	return
 }
@@ -7715,15 +7967,15 @@ func (l *Libvirt) ConnectNumOfDefinedInterfaces() (rNum int32, err error) {
 		return
 	}
 
-	result := ConnectNumOfDefinedInterfacesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -7752,15 +8004,15 @@ func (l *Libvirt) ConnectListDefinedInterfaces(Maxnames int32) (rNames []string,
 		return
 	}
 
-	result := ConnectListDefinedInterfacesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -7780,15 +8032,15 @@ func (l *Libvirt) ConnectNumOfSecrets() (rNum int32, err error) {
 		return
 	}
 
-	result := ConnectNumOfSecretsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -7817,15 +8069,15 @@ func (l *Libvirt) ConnectListSecrets(Maxuuids int32) (rUuids []string, err error
 		return
 	}
 
-	result := ConnectListSecretsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Uuids: []string
+	_, err = dec.Decode(&rUuids)
 	if err != nil {
 		return
 	}
 
-	rUuids = result.Uuids
 
 	return
 }
@@ -7854,15 +8106,15 @@ func (l *Libvirt) SecretLookupByUUID(UUID UUID) (rSecret NonnullSecret, err erro
 		return
 	}
 
-	result := SecretLookupByUUIDRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Secret: NonnullSecret
+	_, err = dec.Decode(&rSecret)
 	if err != nil {
 		return
 	}
 
-	rSecret = result.Secret
 
 	return
 }
@@ -7892,15 +8144,15 @@ func (l *Libvirt) SecretDefineXML(XML string, Flags uint32) (rSecret NonnullSecr
 		return
 	}
 
-	result := SecretDefineXMLRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Secret: NonnullSecret
+	_, err = dec.Decode(&rSecret)
 	if err != nil {
 		return
 	}
 
-	rSecret = result.Secret
 
 	return
 }
@@ -7930,15 +8182,15 @@ func (l *Libvirt) SecretGetXMLDesc(Secret NonnullSecret, Flags uint32) (rXML str
 		return
 	}
 
-	result := SecretGetXMLDescRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rXML = result.XML
 
 	return
 }
@@ -7997,15 +8249,15 @@ func (l *Libvirt) SecretGetValue(Secret NonnullSecret, Flags uint32) (rValue []b
 		return
 	}
 
-	result := SecretGetValueRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Value: []byte
+	_, err = dec.Decode(&rValue)
 	if err != nil {
 		return
 	}
 
-	rValue = result.Value
 
 	return
 }
@@ -8062,15 +8314,15 @@ func (l *Libvirt) SecretLookupByUsage(UsageType int32, UsageID string) (rSecret 
 		return
 	}
 
-	result := SecretLookupByUsageRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Secret: NonnullSecret
+	_, err = dec.Decode(&rSecret)
 	if err != nil {
 		return
 	}
 
-	rSecret = result.Secret
 
 	return
 }
@@ -8120,15 +8372,15 @@ func (l *Libvirt) ConnectIsSecure() (rSecure int32, err error) {
 		return
 	}
 
-	result := ConnectIsSecureRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Secure: int32
+	_, err = dec.Decode(&rSecure)
 	if err != nil {
 		return
 	}
 
-	rSecure = result.Secure
 
 	return
 }
@@ -8157,15 +8409,15 @@ func (l *Libvirt) DomainIsActive(Dom NonnullDomain) (rActive int32, err error) {
 		return
 	}
 
-	result := DomainIsActiveRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Active: int32
+	_, err = dec.Decode(&rActive)
 	if err != nil {
 		return
 	}
 
-	rActive = result.Active
 
 	return
 }
@@ -8194,15 +8446,15 @@ func (l *Libvirt) DomainIsPersistent(Dom NonnullDomain) (rPersistent int32, err 
 		return
 	}
 
-	result := DomainIsPersistentRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Persistent: int32
+	_, err = dec.Decode(&rPersistent)
 	if err != nil {
 		return
 	}
 
-	rPersistent = result.Persistent
 
 	return
 }
@@ -8231,15 +8483,15 @@ func (l *Libvirt) NetworkIsActive(Net NonnullNetwork) (rActive int32, err error)
 		return
 	}
 
-	result := NetworkIsActiveRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Active: int32
+	_, err = dec.Decode(&rActive)
 	if err != nil {
 		return
 	}
 
-	rActive = result.Active
 
 	return
 }
@@ -8268,15 +8520,15 @@ func (l *Libvirt) NetworkIsPersistent(Net NonnullNetwork) (rPersistent int32, er
 		return
 	}
 
-	result := NetworkIsPersistentRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Persistent: int32
+	_, err = dec.Decode(&rPersistent)
 	if err != nil {
 		return
 	}
 
-	rPersistent = result.Persistent
 
 	return
 }
@@ -8305,15 +8557,15 @@ func (l *Libvirt) StoragePoolIsActive(Pool NonnullStoragePool) (rActive int32, e
 		return
 	}
 
-	result := StoragePoolIsActiveRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Active: int32
+	_, err = dec.Decode(&rActive)
 	if err != nil {
 		return
 	}
 
-	rActive = result.Active
 
 	return
 }
@@ -8342,15 +8594,15 @@ func (l *Libvirt) StoragePoolIsPersistent(Pool NonnullStoragePool) (rPersistent 
 		return
 	}
 
-	result := StoragePoolIsPersistentRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Persistent: int32
+	_, err = dec.Decode(&rPersistent)
 	if err != nil {
 		return
 	}
 
-	rPersistent = result.Persistent
 
 	return
 }
@@ -8379,15 +8631,15 @@ func (l *Libvirt) InterfaceIsActive(Iface NonnullInterface) (rActive int32, err 
 		return
 	}
 
-	result := InterfaceIsActiveRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Active: int32
+	_, err = dec.Decode(&rActive)
 	if err != nil {
 		return
 	}
 
-	rActive = result.Active
 
 	return
 }
@@ -8407,15 +8659,15 @@ func (l *Libvirt) ConnectGetLibVersion() (rLibVer uint64, err error) {
 		return
 	}
 
-	result := ConnectGetLibVersionRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// LibVer: uint64
+	_, err = dec.Decode(&rLibVer)
 	if err != nil {
 		return
 	}
 
-	rLibVer = result.LibVer
 
 	return
 }
@@ -8445,15 +8697,15 @@ func (l *Libvirt) ConnectCompareCPU(XML string, Flags uint32) (rResult int32, er
 		return
 	}
 
-	result := ConnectCompareCPURet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Result: int32
+	_, err = dec.Decode(&rResult)
 	if err != nil {
 		return
 	}
 
-	rResult = result.Result
 
 	return
 }
@@ -8484,15 +8736,15 @@ func (l *Libvirt) DomainMemoryStats(Dom NonnullDomain, MaxStats uint32, Flags ui
 		return
 	}
 
-	result := DomainMemoryStatsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Stats: []DomainMemoryStat
+	_, err = dec.Decode(&rStats)
 	if err != nil {
 		return
 	}
 
-	rStats = result.Stats
 
 	return
 }
@@ -8580,15 +8832,15 @@ func (l *Libvirt) ConnectBaselineCPU(XMLCPUs []string, Flags uint32) (rCPU strin
 		return
 	}
 
-	result := ConnectBaselineCPURet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CPU: string
+	_, err = dec.Decode(&rCPU)
 	if err != nil {
 		return
 	}
 
-	rCPU = result.CPU
 
 	return
 }
@@ -8617,26 +8869,70 @@ func (l *Libvirt) DomainGetJobInfo(Dom NonnullDomain) (rType int32, rTimeElapsed
 		return
 	}
 
-	result := DomainGetJobInfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Type: int32
+	_, err = dec.Decode(&rType)
+	if err != nil {
+		return
+	}
+	// TimeElapsed: uint64
+	_, err = dec.Decode(&rTimeElapsed)
+	if err != nil {
+		return
+	}
+	// TimeRemaining: uint64
+	_, err = dec.Decode(&rTimeRemaining)
+	if err != nil {
+		return
+	}
+	// DataTotal: uint64
+	_, err = dec.Decode(&rDataTotal)
+	if err != nil {
+		return
+	}
+	// DataProcessed: uint64
+	_, err = dec.Decode(&rDataProcessed)
+	if err != nil {
+		return
+	}
+	// DataRemaining: uint64
+	_, err = dec.Decode(&rDataRemaining)
+	if err != nil {
+		return
+	}
+	// MemTotal: uint64
+	_, err = dec.Decode(&rMemTotal)
+	if err != nil {
+		return
+	}
+	// MemProcessed: uint64
+	_, err = dec.Decode(&rMemProcessed)
+	if err != nil {
+		return
+	}
+	// MemRemaining: uint64
+	_, err = dec.Decode(&rMemRemaining)
+	if err != nil {
+		return
+	}
+	// FileTotal: uint64
+	_, err = dec.Decode(&rFileTotal)
+	if err != nil {
+		return
+	}
+	// FileProcessed: uint64
+	_, err = dec.Decode(&rFileProcessed)
+	if err != nil {
+		return
+	}
+	// FileRemaining: uint64
+	_, err = dec.Decode(&rFileRemaining)
 	if err != nil {
 		return
 	}
 
-	rType = result.Type
-	rTimeElapsed = result.TimeElapsed
-	rTimeRemaining = result.TimeRemaining
-	rDataTotal = result.DataTotal
-	rDataProcessed = result.DataProcessed
-	rDataRemaining = result.DataRemaining
-	rMemTotal = result.MemTotal
-	rMemProcessed = result.MemProcessed
-	rMemRemaining = result.MemRemaining
-	rFileTotal = result.FileTotal
-	rFileProcessed = result.FileProcessed
-	rFileRemaining = result.FileRemaining
 
 	return
 }
@@ -8922,15 +9218,15 @@ func (l *Libvirt) NwfilterLookupByName(Name string) (rNwfilter NonnullNwfilter, 
 		return
 	}
 
-	result := NwfilterLookupByNameRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Nwfilter: NonnullNwfilter
+	_, err = dec.Decode(&rNwfilter)
 	if err != nil {
 		return
 	}
 
-	rNwfilter = result.Nwfilter
 
 	return
 }
@@ -8959,15 +9255,15 @@ func (l *Libvirt) NwfilterLookupByUUID(UUID UUID) (rNwfilter NonnullNwfilter, er
 		return
 	}
 
-	result := NwfilterLookupByUUIDRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Nwfilter: NonnullNwfilter
+	_, err = dec.Decode(&rNwfilter)
 	if err != nil {
 		return
 	}
 
-	rNwfilter = result.Nwfilter
 
 	return
 }
@@ -8997,15 +9293,15 @@ func (l *Libvirt) NwfilterGetXMLDesc(Nwfilter NonnullNwfilter, Flags uint32) (rX
 		return
 	}
 
-	result := NwfilterGetXMLDescRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rXML = result.XML
 
 	return
 }
@@ -9025,15 +9321,15 @@ func (l *Libvirt) ConnectNumOfNwfilters() (rNum int32, err error) {
 		return
 	}
 
-	result := ConnectNumOfNwfiltersRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -9062,15 +9358,15 @@ func (l *Libvirt) ConnectListNwfilters(Maxnames int32) (rNames []string, err err
 		return
 	}
 
-	result := ConnectListNwfiltersRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -9099,15 +9395,15 @@ func (l *Libvirt) NwfilterDefineXML(XML string) (rNwfilter NonnullNwfilter, err 
 		return
 	}
 
-	result := NwfilterDefineXMLRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Nwfilter: NonnullNwfilter
+	_, err = dec.Decode(&rNwfilter)
 	if err != nil {
 		return
 	}
 
-	rNwfilter = result.Nwfilter
 
 	return
 }
@@ -9192,15 +9488,15 @@ func (l *Libvirt) DomainHasManagedSaveImage(Dom NonnullDomain, Flags uint32) (rR
 		return
 	}
 
-	result := DomainHasManagedSaveImageRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Result: int32
+	_, err = dec.Decode(&rResult)
 	if err != nil {
 		return
 	}
 
-	rResult = result.Result
 
 	return
 }
@@ -9259,15 +9555,15 @@ func (l *Libvirt) DomainSnapshotCreateXML(Dom NonnullDomain, XMLDesc string, Fla
 		return
 	}
 
-	result := DomainSnapshotCreateXMLRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Snap: NonnullDomainSnapshot
+	_, err = dec.Decode(&rSnap)
 	if err != nil {
 		return
 	}
 
-	rSnap = result.Snap
 
 	return
 }
@@ -9297,15 +9593,15 @@ func (l *Libvirt) DomainSnapshotGetXMLDesc(Snap NonnullDomainSnapshot, Flags uin
 		return
 	}
 
-	result := DomainSnapshotGetXMLDescRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rXML = result.XML
 
 	return
 }
@@ -9335,15 +9631,15 @@ func (l *Libvirt) DomainSnapshotNum(Dom NonnullDomain, Flags uint32) (rNum int32
 		return
 	}
 
-	result := DomainSnapshotNumRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -9374,15 +9670,15 @@ func (l *Libvirt) DomainSnapshotListNames(Dom NonnullDomain, Maxnames int32, Fla
 		return
 	}
 
-	result := DomainSnapshotListNamesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -9413,15 +9709,15 @@ func (l *Libvirt) DomainSnapshotLookupByName(Dom NonnullDomain, Name string, Fla
 		return
 	}
 
-	result := DomainSnapshotLookupByNameRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Snap: NonnullDomainSnapshot
+	_, err = dec.Decode(&rSnap)
 	if err != nil {
 		return
 	}
 
-	rSnap = result.Snap
 
 	return
 }
@@ -9451,15 +9747,15 @@ func (l *Libvirt) DomainHasCurrentSnapshot(Dom NonnullDomain, Flags uint32) (rRe
 		return
 	}
 
-	result := DomainHasCurrentSnapshotRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Result: int32
+	_, err = dec.Decode(&rResult)
 	if err != nil {
 		return
 	}
 
-	rResult = result.Result
 
 	return
 }
@@ -9489,15 +9785,15 @@ func (l *Libvirt) DomainSnapshotCurrent(Dom NonnullDomain, Flags uint32) (rSnap 
 		return
 	}
 
-	result := DomainSnapshotCurrentRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Snap: NonnullDomainSnapshot
+	_, err = dec.Decode(&rSnap)
 	if err != nil {
 		return
 	}
 
-	rSnap = result.Snap
 
 	return
 }
@@ -9584,17 +9880,25 @@ func (l *Libvirt) DomainGetBlockInfo(Dom NonnullDomain, Path string, Flags uint3
 		return
 	}
 
-	result := DomainGetBlockInfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Allocation: uint64
+	_, err = dec.Decode(&rAllocation)
+	if err != nil {
+		return
+	}
+	// Capacity: uint64
+	_, err = dec.Decode(&rCapacity)
+	if err != nil {
+		return
+	}
+	// Physical: uint64
+	_, err = dec.Decode(&rPhysical)
 	if err != nil {
 		return
 	}
 
-	rAllocation = result.Allocation
-	rCapacity = result.Capacity
-	rPhysical = result.Physical
 
 	return
 }
@@ -9642,15 +9946,15 @@ func (l *Libvirt) DomainCreateWithFlags(Dom NonnullDomain, Flags uint32) (rDom N
 		return
 	}
 
-	result := DomainCreateWithFlagsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dom: NonnullDomain
+	_, err = dec.Decode(&rDom)
 	if err != nil {
 		return
 	}
 
-	rDom = result.Dom
 
 	return
 }
@@ -9710,16 +10014,21 @@ func (l *Libvirt) DomainGetMemoryParameters(Dom NonnullDomain, Nparams int32, Fl
 		return
 	}
 
-	result := DomainGetMemoryParametersRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
-	rNparams = result.Nparams
 
 	return
 }
@@ -9778,15 +10087,15 @@ func (l *Libvirt) DomainGetVcpusFlags(Dom NonnullDomain, Flags uint32) (rNum int
 		return
 	}
 
-	result := DomainGetVcpusFlagsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -9844,15 +10153,15 @@ func (l *Libvirt) DomainIsUpdated(Dom NonnullDomain) (rUpdated int32, err error)
 		return
 	}
 
-	result := DomainIsUpdatedRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Updated: int32
+	_, err = dec.Decode(&rUpdated)
 	if err != nil {
 		return
 	}
 
-	rUpdated = result.Updated
 
 	return
 }
@@ -9881,15 +10190,15 @@ func (l *Libvirt) ConnectGetSysinfo(Flags uint32) (rSysinfo string, err error) {
 		return
 	}
 
-	result := ConnectGetSysinfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Sysinfo: string
+	_, err = dec.Decode(&rSysinfo)
 	if err != nil {
 		return
 	}
 
-	rSysinfo = result.Sysinfo
 
 	return
 }
@@ -9978,16 +10287,21 @@ func (l *Libvirt) DomainGetBlkioParameters(Dom NonnullDomain, Nparams int32, Fla
 		return
 	}
 
-	result := DomainGetBlkioParametersRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
-	rNparams = result.Nparams
 
 	return
 }
@@ -10135,15 +10449,15 @@ func (l *Libvirt) DomainScreenshot(Dom NonnullDomain, Screen uint32, Flags uint3
 		return
 	}
 
-	result := DomainScreenshotRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Mime: string
+	_, err = dec.Decode(&rMime)
 	if err != nil {
 		return
 	}
 
-	rMime = result.Mime
 
 	return
 }
@@ -10173,16 +10487,20 @@ func (l *Libvirt) DomainGetState(Dom NonnullDomain, Flags uint32) (rState int32,
 		return
 	}
 
-	result := DomainGetStateRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// State: int32
+	_, err = dec.Decode(&rState)
+	if err != nil {
+		return
+	}
+	// Reason: int32
+	_, err = dec.Decode(&rReason)
 	if err != nil {
 		return
 	}
 
-	rState = result.State
-	rReason = result.Reason
 
 	return
 }
@@ -10215,16 +10533,20 @@ func (l *Libvirt) DomainMigrateBegin3(Dom NonnullDomain, Xmlin string, Flags uin
 		return
 	}
 
-	result := DomainMigrateBegin3Ret{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CookieOut: []byte
+	_, err = dec.Decode(&rCookieOut)
+	if err != nil {
+		return
+	}
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rCookieOut = result.CookieOut
-	rXML = result.XML
 
 	return
 }
@@ -10258,16 +10580,20 @@ func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn string, Flags uin
 		return
 	}
 
-	result := DomainMigratePrepare3Ret{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CookieOut: []byte
+	_, err = dec.Decode(&rCookieOut)
+	if err != nil {
+		return
+	}
+	// UriOut: string
+	_, err = dec.Decode(&rUriOut)
 	if err != nil {
 		return
 	}
 
-	rCookieOut = result.CookieOut
-	rUriOut = result.UriOut
 
 	return
 }
@@ -10300,15 +10626,15 @@ func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, Flags uint64, Dna
 		return
 	}
 
-	result := DomainMigratePrepareTunnel3Ret{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CookieOut: []byte
+	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
 		return
 	}
 
-	rCookieOut = result.CookieOut
 
 	return
 }
@@ -10344,15 +10670,15 @@ func (l *Libvirt) DomainMigratePerform3(Dom NonnullDomain, Xmlin string, CookieI
 		return
 	}
 
-	result := DomainMigratePerform3Ret{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CookieOut: []byte
+	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
 		return
 	}
 
-	rCookieOut = result.CookieOut
 
 	return
 }
@@ -10386,16 +10712,20 @@ func (l *Libvirt) DomainMigrateFinish3(Dname string, CookieIn []byte, Dconnuri s
 		return
 	}
 
-	result := DomainMigrateFinish3Ret{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dom: NonnullDomain
+	_, err = dec.Decode(&rDom)
+	if err != nil {
+		return
+	}
+	// CookieOut: []byte
+	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
 		return
 	}
 
-	rDom = result.Dom
-	rCookieOut = result.CookieOut
 
 	return
 }
@@ -10566,15 +10896,16 @@ func (l *Libvirt) DomainGetSchedulerParametersFlags(Dom NonnullDomain, Nparams i
 		return
 	}
 
-	result := DomainGetSchedulerParametersFlagsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
 
 	return
 }
@@ -10684,16 +11015,20 @@ func (l *Libvirt) NodeGetCPUStats(CPUNum int32, Nparams int32, Flags uint32) (rP
 		return
 	}
 
-	result := NodeGetCPUStatsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []NodeGetCPUStats
+	_, err = dec.Decode(&rParams)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
-	rNparams = result.Nparams
 
 	return
 }
@@ -10724,16 +11059,20 @@ func (l *Libvirt) NodeGetMemoryStats(Nparams int32, CellNum int32, Flags uint32)
 		return
 	}
 
-	result := NodeGetMemoryStatsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []NodeGetMemoryStats
+	_, err = dec.Decode(&rParams)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
-	rNparams = result.Nparams
 
 	return
 }
@@ -10763,17 +11102,25 @@ func (l *Libvirt) DomainGetControlInfo(Dom NonnullDomain, Flags uint32) (rState 
 		return
 	}
 
-	result := DomainGetControlInfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// State: uint32
+	_, err = dec.Decode(&rState)
+	if err != nil {
+		return
+	}
+	// Details: uint32
+	_, err = dec.Decode(&rDetails)
+	if err != nil {
+		return
+	}
+	// StateTime: uint64
+	_, err = dec.Decode(&rStateTime)
 	if err != nil {
 		return
 	}
 
-	rState = result.State
-	rDetails = result.Details
-	rStateTime = result.StateTime
 
 	return
 }
@@ -10805,16 +11152,20 @@ func (l *Libvirt) DomainGetVcpuPinInfo(Dom NonnullDomain, Ncpumaps int32, Maplen
 		return
 	}
 
-	result := DomainGetVcpuPinInfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Cpumaps: []byte
+	_, err = dec.Decode(&rCpumaps)
+	if err != nil {
+		return
+	}
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rCpumaps = result.Cpumaps
-	rNum = result.Num
 
 	return
 }
@@ -10959,15 +11310,15 @@ func (l *Libvirt) DomainSaveImageGetXMLDesc(File string, Flags uint32) (rXML str
 		return
 	}
 
-	result := DomainSaveImageGetXMLDescRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rXML = result.XML
 
 	return
 }
@@ -11056,19 +11407,35 @@ func (l *Libvirt) DomainGetBlockJobInfo(Dom NonnullDomain, Path string, Flags ui
 		return
 	}
 
-	result := DomainGetBlockJobInfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Found: int32
+	_, err = dec.Decode(&rFound)
+	if err != nil {
+		return
+	}
+	// Type: int32
+	_, err = dec.Decode(&rType)
+	if err != nil {
+		return
+	}
+	// Bandwidth: uint64
+	_, err = dec.Decode(&rBandwidth)
+	if err != nil {
+		return
+	}
+	// Cur: uint64
+	_, err = dec.Decode(&rCur)
+	if err != nil {
+		return
+	}
+	// End: uint64
+	_, err = dec.Decode(&rEnd)
 	if err != nil {
 		return
 	}
 
-	rFound = result.Found
-	rType = result.Type
-	rBandwidth = result.Bandwidth
-	rCur = result.Cur
-	rEnd = result.End
 
 	return
 }
@@ -11176,15 +11543,15 @@ func (l *Libvirt) DomainMigrateGetMaxSpeed(Dom NonnullDomain, Flags uint32) (rBa
 		return
 	}
 
-	result := DomainMigrateGetMaxSpeedRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Bandwidth: uint64
+	_, err = dec.Decode(&rBandwidth)
 	if err != nil {
 		return
 	}
 
-	rBandwidth = result.Bandwidth
 
 	return
 }
@@ -11216,16 +11583,21 @@ func (l *Libvirt) DomainBlockStatsFlags(Dom NonnullDomain, Path string, Nparams 
 		return
 	}
 
-	result := DomainBlockStatsFlagsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
-	rNparams = result.Nparams
 
 	return
 }
@@ -11255,15 +11627,15 @@ func (l *Libvirt) DomainSnapshotGetParent(Snap NonnullDomainSnapshot, Flags uint
 		return
 	}
 
-	result := DomainSnapshotGetParentRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Snap: NonnullDomainSnapshot
+	_, err = dec.Decode(&rSnap)
 	if err != nil {
 		return
 	}
 
-	rSnap = result.Snap
 
 	return
 }
@@ -11321,15 +11693,15 @@ func (l *Libvirt) DomainSnapshotNumChildren(Snap NonnullDomainSnapshot, Flags ui
 		return
 	}
 
-	result := DomainSnapshotNumChildrenRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Num: int32
+	_, err = dec.Decode(&rNum)
 	if err != nil {
 		return
 	}
 
-	rNum = result.Num
 
 	return
 }
@@ -11360,15 +11732,15 @@ func (l *Libvirt) DomainSnapshotListChildrenNames(Snap NonnullDomainSnapshot, Ma
 		return
 	}
 
-	result := DomainSnapshotListChildrenNamesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Names: []string
+	_, err = dec.Decode(&rNames)
 	if err != nil {
 		return
 	}
 
-	rNames = result.Names
 
 	return
 }
@@ -11536,16 +11908,21 @@ func (l *Libvirt) DomainGetBlockIOTune(Dom NonnullDomain, Disk string, Nparams i
 		return
 	}
 
-	result := DomainGetBlockIOTuneRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
-	rNparams = result.Nparams
 
 	return
 }
@@ -11605,16 +11982,21 @@ func (l *Libvirt) DomainGetNumaParameters(Dom NonnullDomain, Nparams int32, Flag
 		return
 	}
 
-	result := DomainGetNumaParametersRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
-	rNparams = result.Nparams
 
 	return
 }
@@ -11676,16 +12058,21 @@ func (l *Libvirt) DomainGetInterfaceParameters(Dom NonnullDomain, Device string,
 		return
 	}
 
-	result := DomainGetInterfaceParametersRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
-	rNparams = result.Nparams
 
 	return
 }
@@ -11834,16 +12221,21 @@ func (l *Libvirt) DomainGetCPUStats(Dom NonnullDomain, Nparams uint32, StartCPU 
 		return
 	}
 
-	result := DomainGetCPUStatsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
-	rNparams = result.Nparams
 
 	return
 }
@@ -11874,16 +12266,20 @@ func (l *Libvirt) DomainGetDiskErrors(Dom NonnullDomain, Maxerrors uint32, Flags
 		return
 	}
 
-	result := DomainGetDiskErrorsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Errors: []DomainDiskError
+	_, err = dec.Decode(&rErrors)
+	if err != nil {
+		return
+	}
+	// Nerrors: int32
+	_, err = dec.Decode(&rNerrors)
 	if err != nil {
 		return
 	}
 
-	rErrors = result.Errors
-	rNerrors = result.Nerrors
 
 	return
 }
@@ -11947,15 +12343,15 @@ func (l *Libvirt) DomainGetMetadata(Dom NonnullDomain, Type int32, Uri string, F
 		return
 	}
 
-	result := DomainGetMetadataRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Metadata: string
+	_, err = dec.Decode(&rMetadata)
 	if err != nil {
 		return
 	}
 
-	rMetadata = result.Metadata
 
 	return
 }
@@ -12098,15 +12494,15 @@ func (l *Libvirt) DomainSnapshotIsCurrent(Snap NonnullDomainSnapshot, Flags uint
 		return
 	}
 
-	result := DomainSnapshotIsCurrentRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Current: int32
+	_, err = dec.Decode(&rCurrent)
 	if err != nil {
 		return
 	}
 
-	rCurrent = result.Current
 
 	return
 }
@@ -12136,15 +12532,15 @@ func (l *Libvirt) DomainSnapshotHasMetadata(Snap NonnullDomainSnapshot, Flags ui
 		return
 	}
 
-	result := DomainSnapshotHasMetadataRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Metadata: int32
+	_, err = dec.Decode(&rMetadata)
 	if err != nil {
 		return
 	}
 
-	rMetadata = result.Metadata
 
 	return
 }
@@ -12174,16 +12570,20 @@ func (l *Libvirt) ConnectListAllDomains(NeedResults int32, Flags uint32) (rDomai
 		return
 	}
 
-	result := ConnectListAllDomainsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Domains: []NonnullDomain
+	_, err = dec.Decode(&rDomains)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rDomains = result.Domains
-	rRet = result.Ret
 
 	return
 }
@@ -12214,16 +12614,20 @@ func (l *Libvirt) DomainListAllSnapshots(Dom NonnullDomain, NeedResults int32, F
 		return
 	}
 
-	result := DomainListAllSnapshotsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Snapshots: []NonnullDomainSnapshot
+	_, err = dec.Decode(&rSnapshots)
+	if err != nil {
+		return
+	}
+	// Ret: int32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rSnapshots = result.Snapshots
-	rRet = result.Ret
 
 	return
 }
@@ -12254,16 +12658,20 @@ func (l *Libvirt) DomainSnapshotListAllChildren(Snapshot NonnullDomainSnapshot, 
 		return
 	}
 
-	result := DomainSnapshotListAllChildrenRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Snapshots: []NonnullDomainSnapshot
+	_, err = dec.Decode(&rSnapshots)
+	if err != nil {
+		return
+	}
+	// Ret: int32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rSnapshots = result.Snapshots
-	rRet = result.Ret
 
 	return
 }
@@ -12311,15 +12719,15 @@ func (l *Libvirt) DomainGetHostname(Dom NonnullDomain, Flags uint32) (rHostname 
 		return
 	}
 
-	result := DomainGetHostnameRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Hostname: string
+	_, err = dec.Decode(&rHostname)
 	if err != nil {
 		return
 	}
 
-	rHostname = result.Hostname
 
 	return
 }
@@ -12348,16 +12756,20 @@ func (l *Libvirt) DomainGetSecurityLabelList(Dom NonnullDomain) (rLabels []Domai
 		return
 	}
 
-	result := DomainGetSecurityLabelListRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Labels: []DomainGetSecurityLabelRet
+	_, err = dec.Decode(&rLabels)
+	if err != nil {
+		return
+	}
+	// Ret: int32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rLabels = result.Labels
-	rRet = result.Ret
 
 	return
 }
@@ -12417,16 +12829,20 @@ func (l *Libvirt) DomainGetEmulatorPinInfo(Dom NonnullDomain, Maplen int32, Flag
 		return
 	}
 
-	result := DomainGetEmulatorPinInfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Cpumaps: []byte
+	_, err = dec.Decode(&rCpumaps)
+	if err != nil {
+		return
+	}
+	// Ret: int32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rCpumaps = result.Cpumaps
-	rRet = result.Ret
 
 	return
 }
@@ -12456,16 +12872,20 @@ func (l *Libvirt) ConnectListAllStoragePools(NeedResults int32, Flags uint32) (r
 		return
 	}
 
-	result := ConnectListAllStoragePoolsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Pools: []NonnullStoragePool
+	_, err = dec.Decode(&rPools)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rPools = result.Pools
-	rRet = result.Ret
 
 	return
 }
@@ -12496,16 +12916,20 @@ func (l *Libvirt) StoragePoolListAllVolumes(Pool NonnullStoragePool, NeedResults
 		return
 	}
 
-	result := StoragePoolListAllVolumesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Vols: []NonnullStorageVol
+	_, err = dec.Decode(&rVols)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rVols = result.Vols
-	rRet = result.Ret
 
 	return
 }
@@ -12535,16 +12959,20 @@ func (l *Libvirt) ConnectListAllNetworks(NeedResults int32, Flags uint32) (rNets
 		return
 	}
 
-	result := ConnectListAllNetworksRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Nets: []NonnullNetwork
+	_, err = dec.Decode(&rNets)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rNets = result.Nets
-	rRet = result.Ret
 
 	return
 }
@@ -12574,16 +13002,20 @@ func (l *Libvirt) ConnectListAllInterfaces(NeedResults int32, Flags uint32) (rIf
 		return
 	}
 
-	result := ConnectListAllInterfacesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Ifaces: []NonnullInterface
+	_, err = dec.Decode(&rIfaces)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rIfaces = result.Ifaces
-	rRet = result.Ret
 
 	return
 }
@@ -12613,16 +13045,20 @@ func (l *Libvirt) ConnectListAllNodeDevices(NeedResults int32, Flags uint32) (rD
 		return
 	}
 
-	result := ConnectListAllNodeDevicesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Devices: []NonnullNodeDevice
+	_, err = dec.Decode(&rDevices)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rDevices = result.Devices
-	rRet = result.Ret
 
 	return
 }
@@ -12652,16 +13088,20 @@ func (l *Libvirt) ConnectListAllNwfilters(NeedResults int32, Flags uint32) (rFil
 		return
 	}
 
-	result := ConnectListAllNwfiltersRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Filters: []NonnullNwfilter
+	_, err = dec.Decode(&rFilters)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rFilters = result.Filters
-	rRet = result.Ret
 
 	return
 }
@@ -12691,16 +13131,20 @@ func (l *Libvirt) ConnectListAllSecrets(NeedResults int32, Flags uint32) (rSecre
 		return
 	}
 
-	result := ConnectListAllSecretsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Secrets: []NonnullSecret
+	_, err = dec.Decode(&rSecrets)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rSecrets = result.Secrets
-	rRet = result.Ret
 
 	return
 }
@@ -12758,16 +13202,21 @@ func (l *Libvirt) NodeGetMemoryParameters(Nparams int32, Flags uint32) (rParams 
 		return
 	}
 
-	result := NodeGetMemoryParametersRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
-	rNparams = result.Nparams
 
 	return
 }
@@ -12880,17 +13329,25 @@ func (l *Libvirt) NodeGetCPUMap(NeedMap int32, NeedOnline int32, Flags uint32) (
 		return
 	}
 
-	result := NodeGetCPUMapRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Cpumap: []byte
+	_, err = dec.Decode(&rCpumap)
+	if err != nil {
+		return
+	}
+	// Online: uint32
+	_, err = dec.Decode(&rOnline)
+	if err != nil {
+		return
+	}
+	// Ret: int32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rCpumap = result.Cpumap
-	rOnline = result.Online
-	rRet = result.Ret
 
 	return
 }
@@ -13010,15 +13467,15 @@ func (l *Libvirt) NodeDeviceLookupScsiHostByWwn(Wwnn string, Wwpn string, Flags 
 		return
 	}
 
-	result := NodeDeviceLookupScsiHostByWwnRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dev: NonnullNodeDevice
+	_, err = dec.Decode(&rDev)
 	if err != nil {
 		return
 	}
 
-	rDev = result.Dev
 
 	return
 }
@@ -13048,16 +13505,21 @@ func (l *Libvirt) DomainGetJobStats(Dom NonnullDomain, Flags uint32) (rType int3
 		return
 	}
 
-	result := DomainGetJobStatsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Type: int32
+	_, err = dec.Decode(&rType)
+	if err != nil {
+		return
+	}
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
 	if err != nil {
 		return
 	}
 
-	rType = result.Type
-	rParams = result.Params
 
 	return
 }
@@ -13087,15 +13549,15 @@ func (l *Libvirt) DomainMigrateGetCompressionCache(Dom NonnullDomain, Flags uint
 		return
 	}
 
-	result := DomainMigrateGetCompressionCacheRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CacheSize: uint64
+	_, err = dec.Decode(&rCacheSize)
 	if err != nil {
 		return
 	}
 
-	rCacheSize = result.CacheSize
 
 	return
 }
@@ -13184,16 +13646,20 @@ func (l *Libvirt) DomainMigrateBegin3Params(Dom NonnullDomain, Params []TypedPar
 		return
 	}
 
-	result := DomainMigrateBegin3ParamsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CookieOut: []byte
+	_, err = dec.Decode(&rCookieOut)
+	if err != nil {
+		return
+	}
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rCookieOut = result.CookieOut
-	rXML = result.XML
 
 	return
 }
@@ -13224,16 +13690,20 @@ func (l *Libvirt) DomainMigratePrepare3Params(Params []TypedParam, CookieIn []by
 		return
 	}
 
-	result := DomainMigratePrepare3ParamsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CookieOut: []byte
+	_, err = dec.Decode(&rCookieOut)
+	if err != nil {
+		return
+	}
+	// UriOut: string
+	_, err = dec.Decode(&rUriOut)
 	if err != nil {
 		return
 	}
 
-	rCookieOut = result.CookieOut
-	rUriOut = result.UriOut
 
 	return
 }
@@ -13264,15 +13734,15 @@ func (l *Libvirt) DomainMigratePrepareTunnel3Params(Params []TypedParam, CookieI
 		return
 	}
 
-	result := DomainMigratePrepareTunnel3ParamsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CookieOut: []byte
+	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
 		return
 	}
 
-	rCookieOut = result.CookieOut
 
 	return
 }
@@ -13305,15 +13775,15 @@ func (l *Libvirt) DomainMigratePerform3Params(Dom NonnullDomain, Dconnuri string
 		return
 	}
 
-	result := DomainMigratePerform3ParamsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CookieOut: []byte
+	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
 		return
 	}
 
-	rCookieOut = result.CookieOut
 
 	return
 }
@@ -13345,16 +13815,20 @@ func (l *Libvirt) DomainMigrateFinish3Params(Params []TypedParam, CookieIn []byt
 		return
 	}
 
-	result := DomainMigrateFinish3ParamsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dom: NonnullDomain
+	_, err = dec.Decode(&rDom)
+	if err != nil {
+		return
+	}
+	// CookieOut: []byte
+	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
 		return
 	}
 
-	rDom = result.Dom
-	rCookieOut = result.CookieOut
 
 	return
 }
@@ -13444,15 +13918,15 @@ func (l *Libvirt) DomainCreateXMLWithFiles(XMLDesc string, Flags uint32) (rDom N
 		return
 	}
 
-	result := DomainCreateXMLWithFilesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dom: NonnullDomain
+	_, err = dec.Decode(&rDom)
 	if err != nil {
 		return
 	}
 
-	rDom = result.Dom
 
 	return
 }
@@ -13482,15 +13956,15 @@ func (l *Libvirt) DomainCreateWithFiles(Dom NonnullDomain, Flags uint32) (rDom N
 		return
 	}
 
-	result := DomainCreateWithFilesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dom: NonnullDomain
+	_, err = dec.Decode(&rDom)
 	if err != nil {
 		return
 	}
 
-	rDom = result.Dom
 
 	return
 }
@@ -13539,16 +14013,20 @@ func (l *Libvirt) ConnectGetCPUModelNames(Arch string, NeedResults int32, Flags 
 		return
 	}
 
-	result := ConnectGetCPUModelNamesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Models: []string
+	_, err = dec.Decode(&rModels)
+	if err != nil {
+		return
+	}
+	// Ret: int32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rModels = result.Models
-	rRet = result.Ret
 
 	return
 }
@@ -13578,15 +14056,15 @@ func (l *Libvirt) ConnectNetworkEventRegisterAny(EventID int32, Net Network) (rC
 		return
 	}
 
-	result := ConnectNetworkEventRegisterAnyRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CallbackID: int32
+	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
 		return
 	}
 
-	rCallbackID = result.CallbackID
 
 	return
 }
@@ -13661,15 +14139,15 @@ func (l *Libvirt) ConnectDomainEventCallbackRegisterAny(EventID int32, Dom Domai
 		return
 	}
 
-	result := ConnectDomainEventCallbackRegisterAnyRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CallbackID: int32
+	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
 		return
 	}
 
-	rCallbackID = result.CallbackID
 
 	return
 }
@@ -14045,15 +14523,15 @@ func (l *Libvirt) DomainFsfreeze(Dom NonnullDomain, Mountpoints []string, Flags 
 		return
 	}
 
-	result := DomainFsfreezeRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Filesystems: int32
+	_, err = dec.Decode(&rFilesystems)
 	if err != nil {
 		return
 	}
 
-	rFilesystems = result.Filesystems
 
 	return
 }
@@ -14084,15 +14562,15 @@ func (l *Libvirt) DomainFsthaw(Dom NonnullDomain, Mountpoints []string, Flags ui
 		return
 	}
 
-	result := DomainFsthawRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Filesystems: int32
+	_, err = dec.Decode(&rFilesystems)
 	if err != nil {
 		return
 	}
 
-	rFilesystems = result.Filesystems
 
 	return
 }
@@ -14122,16 +14600,20 @@ func (l *Libvirt) DomainGetTime(Dom NonnullDomain, Flags uint32) (rSeconds int64
 		return
 	}
 
-	result := DomainGetTimeRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Seconds: int64
+	_, err = dec.Decode(&rSeconds)
+	if err != nil {
+		return
+	}
+	// Nseconds: uint32
+	_, err = dec.Decode(&rNseconds)
 	if err != nil {
 		return
 	}
 
-	rSeconds = result.Seconds
-	rNseconds = result.Nseconds
 
 	return
 }
@@ -14211,15 +14693,15 @@ func (l *Libvirt) NodeGetFreePages(Pages []uint32, StartCell int32, CellCount ui
 		return
 	}
 
-	result := NodeGetFreePagesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Counts: []uint64
+	_, err = dec.Decode(&rCounts)
 	if err != nil {
 		return
 	}
 
-	rCounts = result.Counts
 
 	return
 }
@@ -14251,16 +14733,20 @@ func (l *Libvirt) NetworkGetDhcpLeases(Net NonnullNetwork, Mac string, NeedResul
 		return
 	}
 
-	result := NetworkGetDhcpLeasesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Leases: []NetworkDhcpLease
+	_, err = dec.Decode(&rLeases)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rLeases = result.Leases
-	rRet = result.Ret
 
 	return
 }
@@ -14293,15 +14779,15 @@ func (l *Libvirt) ConnectGetDomainCapabilities(Emulatorbin string, Arch string, 
 		return
 	}
 
-	result := ConnectGetDomainCapabilitiesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Capabilities: string
+	_, err = dec.Decode(&rCapabilities)
 	if err != nil {
 		return
 	}
 
-	rCapabilities = result.Capabilities
 
 	return
 }
@@ -14361,15 +14847,15 @@ func (l *Libvirt) ConnectGetAllDomainStats(Doms []NonnullDomain, Stats uint32, F
 		return
 	}
 
-	result := ConnectGetAllDomainStatsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// RetStats: []DomainStatsRecord
+	_, err = dec.Decode(&rRetStats)
 	if err != nil {
 		return
 	}
 
-	rRetStats = result.RetStats
 
 	return
 }
@@ -14451,15 +14937,15 @@ func (l *Libvirt) NodeAllocPages(PageSizes []uint32, PageCounts []uint64, StartC
 		return
 	}
 
-	result := NodeAllocPagesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Ret: int32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rRet = result.Ret
 
 	return
 }
@@ -14507,16 +14993,20 @@ func (l *Libvirt) DomainGetFsinfo(Dom NonnullDomain, Flags uint32) (rInfo []Doma
 		return
 	}
 
-	result := DomainGetFsinfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Info: []DomainFsinfo
+	_, err = dec.Decode(&rInfo)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rInfo = result.Info
-	rRet = result.Ret
 
 	return
 }
@@ -14546,15 +15036,15 @@ func (l *Libvirt) DomainDefineXMLFlags(XML string, Flags uint32) (rDom NonnullDo
 		return
 	}
 
-	result := DomainDefineXMLFlagsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Dom: NonnullDomain
+	_, err = dec.Decode(&rDom)
 	if err != nil {
 		return
 	}
 
-	rDom = result.Dom
 
 	return
 }
@@ -14584,16 +15074,20 @@ func (l *Libvirt) DomainGetIothreadInfo(Dom NonnullDomain, Flags uint32) (rInfo 
 		return
 	}
 
-	result := DomainGetIothreadInfoRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Info: []DomainIothreadInfo
+	_, err = dec.Decode(&rInfo)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
 
-	rInfo = result.Info
-	rRet = result.Ret
 
 	return
 }
@@ -14654,15 +15148,15 @@ func (l *Libvirt) DomainInterfaceAddresses(Dom NonnullDomain, Source uint32, Fla
 		return
 	}
 
-	result := DomainInterfaceAddressesRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Ifaces: []DomainInterface
+	_, err = dec.Decode(&rIfaces)
 	if err != nil {
 		return
 	}
 
-	rIfaces = result.Ifaces
 
 	return
 }
@@ -14799,15 +15293,15 @@ func (l *Libvirt) DomainRename(Dom NonnullDomain, NewName string, Flags uint32) 
 		return
 	}
 
-	result := DomainRenameRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Retcode: int32
+	_, err = dec.Decode(&rRetcode)
 	if err != nil {
 		return
 	}
 
-	rRetcode = result.Retcode
 
 	return
 }
@@ -14955,15 +15449,16 @@ func (l *Libvirt) DomainGetPerfEvents(Dom NonnullDomain, Flags uint32) (rParams 
 		return
 	}
 
-	result := DomainGetPerfEventsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
 
 	return
 }
@@ -15040,15 +15535,15 @@ func (l *Libvirt) ConnectStoragePoolEventRegisterAny(EventID int32, Pool Storage
 		return
 	}
 
-	result := ConnectStoragePoolEventRegisterAnyRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CallbackID: int32
+	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
 		return
 	}
 
-	rCallbackID = result.CallbackID
 
 	return
 }
@@ -15123,15 +15618,16 @@ func (l *Libvirt) DomainGetGuestVcpus(Dom NonnullDomain, Flags uint32) (rParams 
 		return
 	}
 
-	result := DomainGetGuestVcpusRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Params: []TypedParam
+	// Params
+	rParams, err = decodeTypedParams(dec)
 	if err != nil {
 		return
 	}
 
-	rParams = result.Params
 
 	return
 }
@@ -15209,15 +15705,15 @@ func (l *Libvirt) ConnectNodeDeviceEventRegisterAny(EventID int32, Dev NodeDevic
 		return
 	}
 
-	result := ConnectNodeDeviceEventRegisterAnyRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CallbackID: int32
+	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
 		return
 	}
 
-	rCallbackID = result.CallbackID
 
 	return
 }
@@ -15310,17 +15806,25 @@ func (l *Libvirt) StorageVolGetInfoFlags(Vol NonnullStorageVol, Flags uint32) (r
 		return
 	}
 
-	result := StorageVolGetInfoFlagsRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Type: int8
+	_, err = dec.Decode(&rType)
+	if err != nil {
+		return
+	}
+	// Capacity: uint64
+	_, err = dec.Decode(&rCapacity)
+	if err != nil {
+		return
+	}
+	// Allocation: uint64
+	_, err = dec.Decode(&rAllocation)
 	if err != nil {
 		return
 	}
 
-	rType = result.Type
-	rCapacity = result.Capacity
-	rAllocation = result.Allocation
 
 	return
 }
@@ -15368,15 +15872,15 @@ func (l *Libvirt) ConnectSecretEventRegisterAny(EventID int32, Secret Secret) (r
 		return
 	}
 
-	result := ConnectSecretEventRegisterAnyRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// CallbackID: int32
+	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
 		return
 	}
 
-	rCallbackID = result.CallbackID
 
 	return
 }
@@ -15547,15 +16051,15 @@ func (l *Libvirt) DomainMigrateGetMaxDowntime(Dom NonnullDomain, Flags uint32) (
 		return
 	}
 
-	result := DomainMigrateGetMaxDowntimeRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// Downtime: uint64
+	_, err = dec.Decode(&rDowntime)
 	if err != nil {
 		return
 	}
 
-	rDowntime = result.Downtime
 
 	return
 }
@@ -15585,15 +16089,15 @@ func (l *Libvirt) DomainManagedSaveGetXMLDesc(Dom NonnullDomain, Flags uint32) (
 		return
 	}
 
-	result := DomainManagedSaveGetXMLDescRet{}
+	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	_, err = dec.Decode(&result)
+	// XML: string
+	_, err = dec.Decode(&rXML)
 	if err != nil {
 		return
 	}
 
-	rXML = result.XML
 
 	return
 }

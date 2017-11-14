@@ -31,6 +31,31 @@ const eof = -1
 // runes.
 var oneRuneTokens = `{}[]<>(),=;:*`
 
+var keywords = map[string]int{
+	"hyper":    HYPER,
+	"int":      INT,
+	"short":    SHORT,
+	"char":     CHAR,
+	"bool":     BOOL,
+	"case":     CASE,
+	"const":    CONST,
+	"default":  DEFAULT,
+	"double":   DOUBLE,
+	"enum":     ENUM,
+	"float":    FLOAT,
+	"opaque":   OPAQUE,
+	"string":   STRING,
+	"struct":   STRUCT,
+	"switch":   SWITCH,
+	"typedef":  TYPEDEF,
+	"union":    UNION,
+	"unsigned": UNSIGNED,
+	"void":     VOID,
+	"program":  PROGRAM,
+	"version":  VERSION,
+}
+
+// item is a lexeme, or what the lexer returns to the parser.
 type item struct {
 	typ          int
 	val          string

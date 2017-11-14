@@ -23,11 +23,14 @@ import (
 )
 
 // TODO: make these an argument
-const lvPath = "../../../libvirt"
 const protoPath = "src/remote/remote_protocol.x"
 
 func main() {
-	fmt.Println("Generating golang bindings for libvirt")
+	lvPath := os.Getenv("LIBVIRT_SOURCE")
+	if lvPath == "" {
+		fmt.Println("set $LIBVIRT_SOURCE to point to the root of the libvirt sources and retry")
+		os.Exit(1)
+	}
 	lvFile := path.Join(lvPath, protoPath)
 	rdr, err := os.Open(lvFile)
 	if err != nil {
