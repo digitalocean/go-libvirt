@@ -13,6 +13,7 @@ env:
 
 before_install:
   - go get github.com/golang/lint/golint
+  - go get github.com/golang/x/tools/cmd/goyacc
 
 install:
   # credit here goes to the go-libvirt authors,
@@ -41,7 +42,6 @@ before_script:
   - sudo virsh start test
   - sudo virsh pool-create .travis/test-pool.xml
   - sudo virsh secret-define .travis/test-secret.xml
-  - go get github.com/golang/x/tools/cmd/goyacc
 
 script:
   - ./scripts/licensecheck.sh
