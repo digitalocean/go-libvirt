@@ -225,7 +225,7 @@ func TestStoragePoolRefreshInvalidIntegration(t *testing.T) {
 		t.Error(err)
 	}
 
-	err := l.StoragePoolRefresh(pool, 0)
+	err = l.StoragePoolRefresh(pool, 0)
 	if err == nil {
 		t.Error("expected non-existent storage pool to fail refresh")
 	}
