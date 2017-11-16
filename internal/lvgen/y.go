@@ -1,14 +1,29 @@
 //line sunrpc.y:2
+
+// Copyright 2017 The go-libvirt Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package lvgen
 
 import __yyfmt__ "fmt"
 
-//line sunrpc.y:3
+//line sunrpc.y:16
 import (
 //"fmt"
 )
 
-//line sunrpc.y:12
+//line sunrpc.y:25
 type yySymType struct {
 	yys int
 	val string
@@ -87,7 +102,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyInitialStackSize = 16
 
-//line sunrpc.y:222
+//line sunrpc.y:235
 
 //line yacctab:1
 var yyExca = [...]int{
@@ -564,13 +579,13 @@ yydefault:
 
 	case 12:
 		yyDollar = yyS[yypt-5 : yypt+1]
-		//line sunrpc.y:49
+		//line sunrpc.y:62
 		{
 			StartEnum(yyDollar[2].val)
 		}
 	case 15:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line sunrpc.y:58
+		//line sunrpc.y:71
 		{
 			err := AddEnumAutoVal(yyDollar[1].val)
 			if err != nil {
@@ -580,7 +595,7 @@ yydefault:
 		}
 	case 16:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line sunrpc.y:65
+		//line sunrpc.y:78
 		{
 			err := AddEnumVal(yyDollar[1].val, yyDollar[3].val)
 			if err != nil {
@@ -590,7 +605,7 @@ yydefault:
 		}
 	case 20:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line sunrpc.y:87
+		//line sunrpc.y:100
 		{
 			err := AddConst(yyDollar[2].val, yyDollar[4].val)
 			if err != nil {
@@ -600,145 +615,145 @@ yydefault:
 		}
 	case 22:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line sunrpc.y:101
+		//line sunrpc.y:114
 		{
 			StartTypedef()
 		}
 	case 28:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line sunrpc.y:112
+		//line sunrpc.y:125
 		{
 			AddDeclaration(yyDollar[2].val, yyDollar[1].val)
 		}
 	case 30:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line sunrpc.y:117
+		//line sunrpc.y:130
 		{
 			yyVAL.val = "u" + yyDollar[2].val
 		}
 	case 31:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line sunrpc.y:118
+		//line sunrpc.y:131
 		{
 			yyVAL.val = "float32"
 		}
 	case 32:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line sunrpc.y:119
+		//line sunrpc.y:132
 		{
 			yyVAL.val = "float64"
 		}
 	case 33:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line sunrpc.y:120
+		//line sunrpc.y:133
 		{
 			yyVAL.val = "bool"
 		}
 	case 34:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line sunrpc.y:121
+		//line sunrpc.y:134
 		{
 			yyVAL.val = "string"
 		}
 	case 35:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line sunrpc.y:122
+		//line sunrpc.y:135
 		{
 			yyVAL.val = "byte"
 		}
 	case 40:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line sunrpc.y:130
+		//line sunrpc.y:143
 		{
 			yyVAL.val = "int64"
 		}
 	case 41:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line sunrpc.y:131
+		//line sunrpc.y:144
 		{
 			yyVAL.val = "int32"
 		}
 	case 42:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line sunrpc.y:132
+		//line sunrpc.y:145
 		{
 			yyVAL.val = "int16"
 		}
 	case 43:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line sunrpc.y:133
+		//line sunrpc.y:146
 		{
 			yyVAL.val = "int8"
 		}
 	case 45:
 		yyDollar = yyS[yypt-5 : yypt+1]
-		//line sunrpc.y:141
+		//line sunrpc.y:154
 		{
 			AddFixedArray(yyDollar[2].val, yyDollar[1].val, yyDollar[4].val)
 		}
 	case 46:
 		yyDollar = yyS[yypt-5 : yypt+1]
-		//line sunrpc.y:145
+		//line sunrpc.y:158
 		{
 			AddVariableArray(yyDollar[2].val, yyDollar[1].val, yyDollar[4].val)
 		}
 	case 47:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line sunrpc.y:146
+		//line sunrpc.y:159
 		{
 			AddVariableArray(yyDollar[2].val, yyDollar[1].val, "")
 		}
 	case 48:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line sunrpc.y:154
+		//line sunrpc.y:167
 		{
 			AddVariableArray(yyDollar[3].val, yyDollar[1].val, "1")
 		}
 	case 49:
 		yyDollar = yyS[yypt-3 : yypt+1]
-		//line sunrpc.y:158
+		//line sunrpc.y:171
 		{
 			StartStruct(yyDollar[2].val)
 		}
 	case 50:
 		yyDollar = yyS[yypt-6 : yypt+1]
-		//line sunrpc.y:158
+		//line sunrpc.y:171
 		{
 			AddStruct()
 		}
 	case 54:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line sunrpc.y:171
+		//line sunrpc.y:184
 		{
 			StartUnion(yyDollar[2].val)
 		}
 	case 55:
 		yyDollar = yyS[yypt-10 : yypt+1]
-		//line sunrpc.y:171
+		//line sunrpc.y:184
 		{
 			AddUnion()
 		}
 	case 59:
 		yyDollar = yyS[yypt-2 : yypt+1]
-		//line sunrpc.y:184
+		//line sunrpc.y:197
 		{
 			StartCase(yyDollar[2].val)
 		}
 	case 60:
 		yyDollar = yyS[yypt-5 : yypt+1]
-		//line sunrpc.y:184
+		//line sunrpc.y:197
 		{
 			AddCase()
 		}
 	case 61:
 		yyDollar = yyS[yypt-1 : yypt+1]
-		//line sunrpc.y:185
+		//line sunrpc.y:198
 		{
 			StartCase("default")
 		}
 	case 62:
 		yyDollar = yyS[yypt-4 : yypt+1]
-		//line sunrpc.y:185
+		//line sunrpc.y:198
 		{
 			AddCase()
 		}

@@ -3,9 +3,9 @@
 # Verify that the correct license block is present in all Go source
 # files.
 read -r -d '' EXPECTED <<EndOfLicense
-// Copyright 2016 The go-libvirt Authors.
+// Copyright 20[[:digit:]]{2} The go-libvirt Authors.
 //
-// Licensed under the Apache License, Version 2.0 (the "License");
+// Licensed under the Apache License, Version 2.0 \(the "License"\);
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
@@ -23,12 +23,11 @@ EXIT=0
 GOFILES=$(find . -name "*.go")
 
 for FILE in $GOFILES; do
-	BLOCK=$(head -n 14 $FILE)
+	BLOCK=$(head -n 20 $FILE)
 
-	if [ "$BLOCK" != "$EXPECTED" ]; then
-		echo "file missing license: $FILE"
-		EXIT=1
-	fi
+	[[ $BLOCK =~ $EXPECTED ]] && continue
+	echo "file missing license: $FILE"
+	EXIT=1
 done
 
 exit $EXIT
