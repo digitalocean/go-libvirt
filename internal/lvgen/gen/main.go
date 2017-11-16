@@ -22,7 +22,6 @@ import (
 	"github.com/digitalocean/go-libvirt/internal/lvgen"
 )
 
-// TODO: make these an argument
 const protoPath = "src/remote/remote_protocol.x"
 
 func main() {

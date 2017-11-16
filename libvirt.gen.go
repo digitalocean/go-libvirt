@@ -19,7 +19,7 @@ const (
 )
 
 // Typedefs:
-type String []string
+type OptString []string
 type UUID [VirUUIDBuflen]byte
 type Domain []NonnullDomain
 type Network []NonnullNetwork
@@ -84,12 +84,12 @@ type NonnullDomainSnapshot struct {
 type Error struct {
 	Code int32
 	Domain int32
-	Message String
+	Message OptString
 	Level int32
 	Dom Domain
-	Str1 String
-	Str2 String
-	Str3 String
+	Str1 OptString
+	Str2 OptString
+	Str3 OptString
 	Int1 int32
 	Int2 int32
 	Net Network
@@ -123,7 +123,7 @@ type DomainDiskError struct {
 }
 
 type ConnectOpenArgs struct {
-	Name String
+	Name OptString
 	Flags uint32
 }
 
@@ -164,7 +164,7 @@ type ConnectGetUriRet struct {
 }
 
 type ConnectGetMaxVcpusArgs struct {
-	Type String
+	Type OptString
 }
 
 type ConnectGetMaxVcpusRet struct {
@@ -187,10 +187,10 @@ type ConnectGetCapabilitiesRet struct {
 }
 
 type ConnectGetDomainCapabilitiesArgs struct {
-	Emulatorbin String
-	Arch String
-	Machine String
-	Virttype String
+	Emulatorbin OptString
+	Arch OptString
+	Machine OptString
+	Virttype OptString
 	Flags uint32
 }
 
@@ -610,7 +610,7 @@ type DomainSaveArgs struct {
 type DomainSaveFlagsArgs struct {
 	Dom NonnullDomain
 	To string
-	Dxml String
+	Dxml OptString
 	Flags uint32
 }
 
@@ -620,7 +620,7 @@ type DomainRestoreArgs struct {
 
 type DomainRestoreFlagsArgs struct {
 	From string
-	Dxml String
+	Dxml OptString
 	Flags uint32
 }
 
@@ -659,7 +659,7 @@ type DomainScreenshotArgs struct {
 }
 
 type DomainScreenshotRet struct {
-	Mime String
+	Mime OptString
 }
 
 type DomainGetXMLDescArgs struct {
@@ -672,15 +672,15 @@ type DomainGetXMLDescRet struct {
 }
 
 type DomainMigratePrepareArgs struct {
-	UriIn String
+	UriIn OptString
 	Flags uint64
-	Dname String
+	Dname OptString
 	Resource uint64
 }
 
 type DomainMigratePrepareRet struct {
 	Cookie []byte
-	UriOut String
+	UriOut OptString
 }
 
 type DomainMigratePerformArgs struct {
@@ -688,7 +688,7 @@ type DomainMigratePerformArgs struct {
 	Cookie []byte
 	Uri string
 	Flags uint64
-	Dname String
+	Dname OptString
 	Resource uint64
 }
 
@@ -704,16 +704,16 @@ type DomainMigrateFinishRet struct {
 }
 
 type DomainMigratePrepare2Args struct {
-	UriIn String
+	UriIn OptString
 	Flags uint64
-	Dname String
+	Dname OptString
 	Resource uint64
 	DomXML string
 }
 
 type DomainMigratePrepare2Ret struct {
 	Cookie []byte
-	UriOut String
+	UriOut OptString
 }
 
 type DomainMigrateFinish2Args struct {
@@ -990,16 +990,16 @@ type DomainSetAutostartArgs struct {
 type DomainSetMetadataArgs struct {
 	Dom NonnullDomain
 	Type int32
-	Metadata String
-	Key String
-	Uri String
+	Metadata OptString
+	Key OptString
+	Uri OptString
 	Flags uint32
 }
 
 type DomainGetMetadataArgs struct {
 	Dom NonnullDomain
 	Type int32
-	Uri String
+	Uri OptString
 	Flags uint32
 }
 
@@ -1044,7 +1044,7 @@ type DomainBlockPullArgs struct {
 type DomainBlockRebaseArgs struct {
 	Dom NonnullDomain
 	Path string
-	Base String
+	Base OptString
 	Bandwidth uint64
 	Flags uint32
 }
@@ -1060,8 +1060,8 @@ type DomainBlockCopyArgs struct {
 type DomainBlockCommitArgs struct {
 	Dom NonnullDomain
 	Disk string
-	Base String
-	Top String
+	Base OptString
+	Top OptString
 	Bandwidth uint64
 	Flags uint32
 }
@@ -1075,7 +1075,7 @@ type DomainSetBlockIOTuneArgs struct {
 
 type DomainGetBlockIOTuneArgs struct {
 	Dom NonnullDomain
-	Disk String
+	Disk OptString
 	Nparams int32
 	Flags uint32
 }
@@ -1408,7 +1408,7 @@ type ConnectListDefinedStoragePoolsRet struct {
 
 type ConnectFindStoragePoolSourcesArgs struct {
 	Type string
-	SrcSpec String
+	SrcSpec OptString
 	Flags uint32
 }
 
@@ -1643,7 +1643,7 @@ type StorageVolResizeArgs struct {
 }
 
 type NodeNumOfDevicesArgs struct {
-	Cap String
+	Cap OptString
 	Flags uint32
 }
 
@@ -1652,7 +1652,7 @@ type NodeNumOfDevicesRet struct {
 }
 
 type NodeListDevicesArgs struct {
-	Cap String
+	Cap OptString
 	Maxnames int32
 	Flags uint32
 }
@@ -1693,7 +1693,7 @@ type NodeDeviceGetParentArgs struct {
 }
 
 type NodeDeviceGetParentRet struct {
-	Parent String
+	Parent OptString
 }
 
 type NodeDeviceNumOfCapsArgs struct {
@@ -1719,7 +1719,7 @@ type NodeDeviceDettachArgs struct {
 
 type NodeDeviceDetachFlagsArgs struct {
 	Name string
-	DriverName String
+	DriverName OptString
 	Flags uint32
 }
 
@@ -1851,7 +1851,7 @@ type SecretLookupByUsageRet struct {
 
 type DomainMigratePrepareTunnelArgs struct {
 	Flags uint64
-	Dname String
+	Dname OptString
 	Resource uint64
 	DomXML string
 }
@@ -2134,8 +2134,8 @@ type DomainEventCallbackBlockJobMsg struct {
 
 type DomainEventDiskChangeMsg struct {
 	Dom NonnullDomain
-	OldSrcPath String
-	NewSrcPath String
+	OldSrcPath OptString
+	NewSrcPath OptString
 	DevAlias string
 	Reason int32
 }
@@ -2226,7 +2226,7 @@ type DomainManagedSaveGetXMLDescRet struct {
 
 type DomainManagedSaveDefineXMLArgs struct {
 	Dom NonnullDomain
-	Dxml String
+	Dxml OptString
 	Flags uint32
 }
 
@@ -2376,13 +2376,13 @@ type DomainSnapshotDeleteArgs struct {
 
 type DomainOpenConsoleArgs struct {
 	Dom NonnullDomain
-	DevName String
+	DevName OptString
 	Flags uint32
 }
 
 type DomainOpenChannelArgs struct {
 	Dom NonnullDomain
-	Name String
+	Name OptString
 	Flags uint32
 }
 
@@ -2412,9 +2412,9 @@ type DomainGetStateRet struct {
 
 type DomainMigrateBegin3Args struct {
 	Dom NonnullDomain
-	Xmlin String
+	Xmlin OptString
 	Flags uint64
-	Dname String
+	Dname OptString
 	Resource uint64
 }
 
@@ -2425,22 +2425,22 @@ type DomainMigrateBegin3Ret struct {
 
 type DomainMigratePrepare3Args struct {
 	CookieIn []byte
-	UriIn String
+	UriIn OptString
 	Flags uint64
-	Dname String
+	Dname OptString
 	Resource uint64
 	DomXML string
 }
 
 type DomainMigratePrepare3Ret struct {
 	CookieOut []byte
-	UriOut String
+	UriOut OptString
 }
 
 type DomainMigratePrepareTunnel3Args struct {
 	CookieIn []byte
 	Flags uint64
-	Dname String
+	Dname OptString
 	Resource uint64
 	DomXML string
 }
@@ -2451,12 +2451,12 @@ type DomainMigratePrepareTunnel3Ret struct {
 
 type DomainMigratePerform3Args struct {
 	Dom NonnullDomain
-	Xmlin String
+	Xmlin OptString
 	CookieIn []byte
-	Dconnuri String
-	Uri String
+	Dconnuri OptString
+	Uri OptString
 	Flags uint64
-	Dname String
+	Dname OptString
 	Resource uint64
 }
 
@@ -2467,8 +2467,8 @@ type DomainMigratePerform3Ret struct {
 type DomainMigrateFinish3Args struct {
 	Dname string
 	CookieIn []byte
-	Dconnuri String
-	Uri String
+	Dconnuri OptString
+	Uri OptString
 	Flags uint64
 	Cancelled int32
 }
@@ -2649,7 +2649,7 @@ type NodeGetCPUMapRet struct {
 
 type DomainFstrimArgs struct {
 	Dom NonnullDomain
-	MountPoint String
+	MountPoint OptString
 	Minimum uint64
 	Flags uint32
 }
@@ -2690,7 +2690,7 @@ type DomainMigratePrepare3ParamsArgs struct {
 
 type DomainMigratePrepare3ParamsRet struct {
 	CookieOut []byte
-	UriOut String
+	UriOut OptString
 }
 
 type DomainMigratePrepareTunnel3ParamsArgs struct {
@@ -2705,7 +2705,7 @@ type DomainMigratePrepareTunnel3ParamsRet struct {
 
 type DomainMigratePerform3ParamsArgs struct {
 	Dom NonnullDomain
-	Dconnuri String
+	Dconnuri OptString
 	Params []TypedParam
 	CookieIn []byte
 	Flags uint32
@@ -2757,7 +2757,7 @@ type DomainEventBlockThresholdMsg struct {
 	CallbackID int32
 	Dom NonnullDomain
 	Dev string
-	Path String
+	Path OptString
 	Threshold uint64
 	Excess uint64
 }
@@ -2906,17 +2906,17 @@ type NetworkDhcpLease struct {
 	Iface string
 	Expirytime int64
 	Type int32
-	Mac String
-	Iaid String
+	Mac OptString
+	Iaid OptString
 	Ipaddr string
 	Prefix uint32
-	Hostname String
-	Clientid String
+	Hostname OptString
+	Clientid OptString
 }
 
 type NetworkGetDhcpLeasesArgs struct {
 	Net NonnullNetwork
-	Mac String
+	Mac OptString
 	NeedResults int32
 	Flags uint32
 }
@@ -2973,7 +2973,7 @@ type DomainIPAddr struct {
 
 type DomainInterface struct {
 	Name string
-	Hwaddr String
+	Hwaddr OptString
 	Addrs []DomainIPAddr
 }
 
@@ -2989,14 +2989,14 @@ type DomainInterfaceAddressesRet struct {
 
 type DomainSetUserPasswordArgs struct {
 	Dom NonnullDomain
-	User String
-	Password String
+	User OptString
+	Password OptString
 	Flags uint32
 }
 
 type DomainRenameArgs struct {
 	Dom NonnullDomain
-	NewName String
+	NewName OptString
 	Flags uint32
 }
 
@@ -3054,7 +3054,7 @@ type DomainEventCallbackMetadataChangeMsg struct {
 	CallbackID int32
 	Dom NonnullDomain
 	Type int32
-	Nsuri String
+	Nsuri OptString
 }
 
 type ConnectSecretEventRegisterAnyArgs struct {
@@ -3280,7 +3280,7 @@ func decodeTypedParams(dec *xdr.Decoder) ([]TypedParam, error) {
 
 // Procedures:
 
-func (l *Libvirt) ConnectOpen(Name String, Flags uint32) (err error) {
+func (l *Libvirt) ConnectOpen(Name OptString, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := ConnectOpenArgs {
@@ -3380,7 +3380,7 @@ func (l *Libvirt) ConnectGetVersion() (rHvVer uint64, err error) {
 	return
 }
 
-func (l *Libvirt) ConnectGetMaxVcpus(Type String) (rMaxVcpus int32, err error) {
+func (l *Libvirt) ConnectGetMaxVcpus(Type OptString) (rMaxVcpus int32, err error) {
 	var buf bytes.Buffer
 
 	args := ConnectGetMaxVcpusArgs {
@@ -5221,7 +5221,7 @@ func (l *Libvirt) ConnectSupportsFeature(Feature int32) (rSupported int32, err e
 	return
 }
 
-func (l *Libvirt) DomainMigratePrepare(UriIn String, Flags uint64, Dname String, Resource uint64) (rCookie []byte, rUriOut String, err error) {
+func (l *Libvirt) DomainMigratePrepare(UriIn OptString, Flags uint64, Dname OptString, Resource uint64) (rCookie []byte, rUriOut OptString, err error) {
 	var buf bytes.Buffer
 
 	args := DomainMigratePrepareArgs {
@@ -5256,7 +5256,7 @@ func (l *Libvirt) DomainMigratePrepare(UriIn String, Flags uint64, Dname String,
 	if err != nil {
 		return
 	}
-	// UriOut: String
+	// UriOut: OptString
 	_, err = dec.Decode(&rUriOut)
 	if err != nil {
 		return
@@ -5265,7 +5265,7 @@ func (l *Libvirt) DomainMigratePrepare(UriIn String, Flags uint64, Dname String,
 	return
 }
 
-func (l *Libvirt) DomainMigratePerform(Dom NonnullDomain, Cookie []byte, Uri string, Flags uint64, Dname String, Resource uint64) (err error) {
+func (l *Libvirt) DomainMigratePerform(Dom NonnullDomain, Cookie []byte, Uri string, Flags uint64, Dname OptString, Resource uint64) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainMigratePerformArgs {
@@ -5767,7 +5767,7 @@ func (l *Libvirt) ConnectListDefinedStoragePools(Maxnames int32) (rNames []strin
 	return
 }
 
-func (l *Libvirt) ConnectFindStoragePoolSources(Type string, SrcSpec String, Flags uint32) (rXML string, err error) {
+func (l *Libvirt) ConnectFindStoragePoolSources(Type string, SrcSpec OptString, Flags uint32) (rXML string, err error) {
 	var buf bytes.Buffer
 
 	args := ConnectFindStoragePoolSourcesArgs {
@@ -6887,7 +6887,7 @@ func (l *Libvirt) DomainEventLifecycle() (err error) {
 	return
 }
 
-func (l *Libvirt) DomainMigratePrepare2(UriIn String, Flags uint64, Dname String, Resource uint64, DomXML string) (rCookie []byte, rUriOut String, err error) {
+func (l *Libvirt) DomainMigratePrepare2(UriIn OptString, Flags uint64, Dname OptString, Resource uint64, DomXML string) (rCookie []byte, rUriOut OptString, err error) {
 	var buf bytes.Buffer
 
 	args := DomainMigratePrepare2Args {
@@ -6923,7 +6923,7 @@ func (l *Libvirt) DomainMigratePrepare2(UriIn String, Flags uint64, Dname String
 	if err != nil {
 		return
 	}
-	// UriOut: String
+	// UriOut: OptString
 	_, err = dec.Decode(&rUriOut)
 	if err != nil {
 		return
@@ -6999,7 +6999,7 @@ func (l *Libvirt) ConnectGetUri() (rUri string, err error) {
 	return
 }
 
-func (l *Libvirt) NodeNumOfDevices(Cap String, Flags uint32) (rNum int32, err error) {
+func (l *Libvirt) NodeNumOfDevices(Cap OptString, Flags uint32) (rNum int32, err error) {
 	var buf bytes.Buffer
 
 	args := NodeNumOfDevicesArgs {
@@ -7036,7 +7036,7 @@ func (l *Libvirt) NodeNumOfDevices(Cap String, Flags uint32) (rNum int32, err er
 	return
 }
 
-func (l *Libvirt) NodeListDevices(Cap String, Maxnames int32, Flags uint32) (rNames []string, err error) {
+func (l *Libvirt) NodeListDevices(Cap OptString, Maxnames int32, Flags uint32) (rNames []string, err error) {
 	var buf bytes.Buffer
 
 	args := NodeListDevicesArgs {
@@ -7147,7 +7147,7 @@ func (l *Libvirt) NodeDeviceGetXMLDesc(Name string, Flags uint32) (rXML string, 
 	return
 }
 
-func (l *Libvirt) NodeDeviceGetParent(Name string) (rParent String, err error) {
+func (l *Libvirt) NodeDeviceGetParent(Name string) (rParent OptString, err error) {
 	var buf bytes.Buffer
 
 	args := NodeDeviceGetParentArgs {
@@ -7174,7 +7174,7 @@ func (l *Libvirt) NodeDeviceGetParent(Name string) (rParent String, err error) {
 	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	// Parent: String
+	// Parent: OptString
 	_, err = dec.Decode(&rParent)
 	if err != nil {
 		return
@@ -8247,7 +8247,7 @@ func (l *Libvirt) SecretLookupByUsage(UsageType int32, UsageID string) (rSecret 
 	return
 }
 
-func (l *Libvirt) DomainMigratePrepareTunnel(Flags uint64, Dname String, Resource uint64, DomXML string) (err error) {
+func (l *Libvirt) DomainMigratePrepareTunnel(Flags uint64, Dname OptString, Resource uint64, DomXML string) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainMigratePrepareTunnelArgs {
@@ -9989,7 +9989,7 @@ func (l *Libvirt) DomainGetVcpusFlags(Dom NonnullDomain, Flags uint32) (rNum int
 	return
 }
 
-func (l *Libvirt) DomainOpenConsole(Dom NonnullDomain, DevName String, Flags uint32) (err error) {
+func (l *Libvirt) DomainOpenConsole(Dom NonnullDomain, DevName OptString, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainOpenConsoleArgs {
@@ -10309,7 +10309,7 @@ func (l *Libvirt) DomainInjectNmi(Dom NonnullDomain, Flags uint32) (err error) {
 	return
 }
 
-func (l *Libvirt) DomainScreenshot(Dom NonnullDomain, Screen uint32, Flags uint32) (rMime String, err error) {
+func (l *Libvirt) DomainScreenshot(Dom NonnullDomain, Screen uint32, Flags uint32) (rMime OptString, err error) {
 	var buf bytes.Buffer
 
 	args := DomainScreenshotArgs {
@@ -10338,7 +10338,7 @@ func (l *Libvirt) DomainScreenshot(Dom NonnullDomain, Screen uint32, Flags uint3
 	// Return value unmarshaling
 	rdr := bytes.NewReader(r.Payload)
 	dec := xdr.NewDecoder(rdr)
-	// Mime: String
+	// Mime: OptString
 	_, err = dec.Decode(&rMime)
 	if err != nil {
 		return
@@ -10389,7 +10389,7 @@ func (l *Libvirt) DomainGetState(Dom NonnullDomain, Flags uint32) (rState int32,
 	return
 }
 
-func (l *Libvirt) DomainMigrateBegin3(Dom NonnullDomain, Xmlin String, Flags uint64, Dname String, Resource uint64) (rCookieOut []byte, rXML string, err error) {
+func (l *Libvirt) DomainMigrateBegin3(Dom NonnullDomain, Xmlin OptString, Flags uint64, Dname OptString, Resource uint64) (rCookieOut []byte, rXML string, err error) {
 	var buf bytes.Buffer
 
 	args := DomainMigrateBegin3Args {
@@ -10434,7 +10434,7 @@ func (l *Libvirt) DomainMigrateBegin3(Dom NonnullDomain, Xmlin String, Flags uin
 	return
 }
 
-func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn String, Flags uint64, Dname String, Resource uint64, DomXML string) (rCookieOut []byte, rUriOut String, err error) {
+func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn OptString, Flags uint64, Dname OptString, Resource uint64, DomXML string) (rCookieOut []byte, rUriOut OptString, err error) {
 	var buf bytes.Buffer
 
 	args := DomainMigratePrepare3Args {
@@ -10471,7 +10471,7 @@ func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn String, Flags uin
 	if err != nil {
 		return
 	}
-	// UriOut: String
+	// UriOut: OptString
 	_, err = dec.Decode(&rUriOut)
 	if err != nil {
 		return
@@ -10480,7 +10480,7 @@ func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn String, Flags uin
 	return
 }
 
-func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, Flags uint64, Dname String, Resource uint64, DomXML string) (rCookieOut []byte, err error) {
+func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, Flags uint64, Dname OptString, Resource uint64, DomXML string) (rCookieOut []byte, err error) {
 	var buf bytes.Buffer
 
 	args := DomainMigratePrepareTunnel3Args {
@@ -10520,7 +10520,7 @@ func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, Flags uint64, Dna
 	return
 }
 
-func (l *Libvirt) DomainMigratePerform3(Dom NonnullDomain, Xmlin String, CookieIn []byte, Dconnuri String, Uri String, Flags uint64, Dname String, Resource uint64) (rCookieOut []byte, err error) {
+func (l *Libvirt) DomainMigratePerform3(Dom NonnullDomain, Xmlin OptString, CookieIn []byte, Dconnuri OptString, Uri OptString, Flags uint64, Dname OptString, Resource uint64) (rCookieOut []byte, err error) {
 	var buf bytes.Buffer
 
 	args := DomainMigratePerform3Args {
@@ -10563,7 +10563,7 @@ func (l *Libvirt) DomainMigratePerform3(Dom NonnullDomain, Xmlin String, CookieI
 	return
 }
 
-func (l *Libvirt) DomainMigrateFinish3(Dname string, CookieIn []byte, Dconnuri String, Uri String, Flags uint64, Cancelled int32) (rDom NonnullDomain, rCookieOut []byte, err error) {
+func (l *Libvirt) DomainMigrateFinish3(Dname string, CookieIn []byte, Dconnuri OptString, Uri OptString, Flags uint64, Cancelled int32) (rDom NonnullDomain, rCookieOut []byte, err error) {
 	var buf bytes.Buffer
 
 	args := DomainMigrateFinish3Args {
@@ -11072,7 +11072,7 @@ func (l *Libvirt) DomainUndefineFlags(Dom NonnullDomain, Flags uint32) (err erro
 	return
 }
 
-func (l *Libvirt) DomainSaveFlags(Dom NonnullDomain, To string, Dxml String, Flags uint32) (err error) {
+func (l *Libvirt) DomainSaveFlags(Dom NonnullDomain, To string, Dxml OptString, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainSaveFlagsArgs {
@@ -11102,7 +11102,7 @@ func (l *Libvirt) DomainSaveFlags(Dom NonnullDomain, To string, Dxml String, Fla
 	return
 }
 
-func (l *Libvirt) DomainRestoreFlags(From string, Dxml String, Flags uint32) (err error) {
+func (l *Libvirt) DomainRestoreFlags(From string, Dxml OptString, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainRestoreFlagsArgs {
@@ -11748,7 +11748,7 @@ func (l *Libvirt) DomainSetBlockIOTune(Dom NonnullDomain, Disk string, Params []
 	return
 }
 
-func (l *Libvirt) DomainGetBlockIOTune(Dom NonnullDomain, Disk String, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+func (l *Libvirt) DomainGetBlockIOTune(Dom NonnullDomain, Disk OptString, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
 	var buf bytes.Buffer
 
 	args := DomainGetBlockIOTuneArgs {
@@ -12146,7 +12146,7 @@ func (l *Libvirt) DomainGetDiskErrors(Dom NonnullDomain, Maxerrors uint32, Flags
 	return
 }
 
-func (l *Libvirt) DomainSetMetadata(Dom NonnullDomain, Type int32, Metadata String, Key String, Uri String, Flags uint32) (err error) {
+func (l *Libvirt) DomainSetMetadata(Dom NonnullDomain, Type int32, Metadata OptString, Key OptString, Uri OptString, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainSetMetadataArgs {
@@ -12178,7 +12178,7 @@ func (l *Libvirt) DomainSetMetadata(Dom NonnullDomain, Type int32, Metadata Stri
 	return
 }
 
-func (l *Libvirt) DomainGetMetadata(Dom NonnullDomain, Type int32, Uri String, Flags uint32) (rMetadata string, err error) {
+func (l *Libvirt) DomainGetMetadata(Dom NonnullDomain, Type int32, Uri OptString, Flags uint32) (rMetadata string, err error) {
 	var buf bytes.Buffer
 
 	args := DomainGetMetadataArgs {
@@ -12217,7 +12217,7 @@ func (l *Libvirt) DomainGetMetadata(Dom NonnullDomain, Type int32, Uri String, F
 	return
 }
 
-func (l *Libvirt) DomainBlockRebase(Dom NonnullDomain, Path string, Base String, Bandwidth uint64, Flags uint32) (err error) {
+func (l *Libvirt) DomainBlockRebase(Dom NonnullDomain, Path string, Base OptString, Bandwidth uint64, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainBlockRebaseArgs {
@@ -13066,7 +13066,7 @@ func (l *Libvirt) NodeGetMemoryParameters(Nparams int32, Flags uint32) (rParams 
 	return
 }
 
-func (l *Libvirt) DomainBlockCommit(Dom NonnullDomain, Disk string, Base String, Top String, Bandwidth uint64, Flags uint32) (err error) {
+func (l *Libvirt) DomainBlockCommit(Dom NonnullDomain, Disk string, Base OptString, Top OptString, Bandwidth uint64, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainBlockCommitArgs {
@@ -13196,7 +13196,7 @@ func (l *Libvirt) NodeGetCPUMap(NeedMap int32, NeedOnline int32, Flags uint32) (
 	return
 }
 
-func (l *Libvirt) DomainFstrim(Dom NonnullDomain, MountPoint String, Minimum uint64, Flags uint32) (err error) {
+func (l *Libvirt) DomainFstrim(Dom NonnullDomain, MountPoint OptString, Minimum uint64, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainFstrimArgs {
@@ -13256,7 +13256,7 @@ func (l *Libvirt) DomainSendProcessSignal(Dom NonnullDomain, PidValue int64, Sig
 	return
 }
 
-func (l *Libvirt) DomainOpenChannel(Dom NonnullDomain, Name String, Flags uint32) (err error) {
+func (l *Libvirt) DomainOpenChannel(Dom NonnullDomain, Name OptString, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainOpenChannelArgs {
@@ -13432,7 +13432,7 @@ func (l *Libvirt) DomainMigrateSetCompressionCache(Dom NonnullDomain, CacheSize 
 	return
 }
 
-func (l *Libvirt) NodeDeviceDetachFlags(Name string, DriverName String, Flags uint32) (err error) {
+func (l *Libvirt) NodeDeviceDetachFlags(Name string, DriverName OptString, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := NodeDeviceDetachFlagsArgs {
@@ -13504,7 +13504,7 @@ func (l *Libvirt) DomainMigrateBegin3Params(Dom NonnullDomain, Params []TypedPar
 	return
 }
 
-func (l *Libvirt) DomainMigratePrepare3Params(Params []TypedParam, CookieIn []byte, Flags uint32) (rCookieOut []byte, rUriOut String, err error) {
+func (l *Libvirt) DomainMigratePrepare3Params(Params []TypedParam, CookieIn []byte, Flags uint32) (rCookieOut []byte, rUriOut OptString, err error) {
 	var buf bytes.Buffer
 
 	args := DomainMigratePrepare3ParamsArgs {
@@ -13538,7 +13538,7 @@ func (l *Libvirt) DomainMigratePrepare3Params(Params []TypedParam, CookieIn []by
 	if err != nil {
 		return
 	}
-	// UriOut: String
+	// UriOut: OptString
 	_, err = dec.Decode(&rUriOut)
 	if err != nil {
 		return
@@ -13585,7 +13585,7 @@ func (l *Libvirt) DomainMigratePrepareTunnel3Params(Params []TypedParam, CookieI
 	return
 }
 
-func (l *Libvirt) DomainMigratePerform3Params(Dom NonnullDomain, Dconnuri String, Params []TypedParam, CookieIn []byte, Flags uint32) (rCookieOut []byte, err error) {
+func (l *Libvirt) DomainMigratePerform3Params(Dom NonnullDomain, Dconnuri OptString, Params []TypedParam, CookieIn []byte, Flags uint32) (rCookieOut []byte, err error) {
 	var buf bytes.Buffer
 
 	args := DomainMigratePerform3ParamsArgs {
@@ -14533,7 +14533,7 @@ func (l *Libvirt) NodeGetFreePages(Pages []uint32, StartCell int32, CellCount ui
 	return
 }
 
-func (l *Libvirt) NetworkGetDhcpLeases(Net NonnullNetwork, Mac String, NeedResults int32, Flags uint32) (rLeases []NetworkDhcpLease, rRet uint32, err error) {
+func (l *Libvirt) NetworkGetDhcpLeases(Net NonnullNetwork, Mac OptString, NeedResults int32, Flags uint32) (rLeases []NetworkDhcpLease, rRet uint32, err error) {
 	var buf bytes.Buffer
 
 	args := NetworkGetDhcpLeasesArgs {
@@ -14577,7 +14577,7 @@ func (l *Libvirt) NetworkGetDhcpLeases(Net NonnullNetwork, Mac String, NeedResul
 	return
 }
 
-func (l *Libvirt) ConnectGetDomainCapabilities(Emulatorbin String, Arch String, Machine String, Virttype String, Flags uint32) (rCapabilities string, err error) {
+func (l *Libvirt) ConnectGetDomainCapabilities(Emulatorbin OptString, Arch OptString, Machine OptString, Virttype OptString, Flags uint32) (rCapabilities string, err error) {
 	var buf bytes.Buffer
 
 	args := ConnectGetDomainCapabilitiesArgs {
@@ -15056,7 +15056,7 @@ func (l *Libvirt) DomainDelIothread(Dom NonnullDomain, IothreadID uint32, Flags 
 	return
 }
 
-func (l *Libvirt) DomainSetUserPassword(Dom NonnullDomain, User String, Password String, Flags uint32) (err error) {
+func (l *Libvirt) DomainSetUserPassword(Dom NonnullDomain, User OptString, Password OptString, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainSetUserPasswordArgs {
@@ -15086,7 +15086,7 @@ func (l *Libvirt) DomainSetUserPassword(Dom NonnullDomain, User String, Password
 	return
 }
 
-func (l *Libvirt) DomainRename(Dom NonnullDomain, NewName String, Flags uint32) (rRetcode int32, err error) {
+func (l *Libvirt) DomainRename(Dom NonnullDomain, NewName OptString, Flags uint32) (rRetcode int32, err error) {
 	var buf bytes.Buffer
 
 	args := DomainRenameArgs {
@@ -15912,7 +15912,7 @@ func (l *Libvirt) DomainManagedSaveGetXMLDesc(Dom NonnullDomain, Flags uint32) (
 	return
 }
 
-func (l *Libvirt) DomainManagedSaveDefineXML(Dom NonnullDomain, Dxml String, Flags uint32) (err error) {
+func (l *Libvirt) DomainManagedSaveDefineXML(Dom NonnullDomain, Dxml OptString, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainManagedSaveDefineXMLArgs {

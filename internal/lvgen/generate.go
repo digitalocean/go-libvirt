@@ -82,6 +82,10 @@ var goEquivTypes = map[string]string{
 	// requires us to ditch the typedef that would otherwise be generated.
 	"NonnullString": "string",
 
+	// remote_string gets renamed "String" by the generator, so here we'll
+	// rename that to OptString - these are optional strings, and can be "null".
+	"String": "OptString",
+
 	// TODO: Get rid of these. They're only needed because we lose information
 	// that the parser has (the parser knows it has emitted a go type), and then
 	// we capitalize types to make them public.
