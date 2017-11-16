@@ -25,6 +25,10 @@ import (
 	"unicode/utf8"
 )
 
+// If you're making changes to the generator, or troubleshooting the generated
+// code, the docs for sunrpc and xdr (the line encoding) are helpful:
+// https://docs.oracle.com/cd/E26502_01/html/E35597/
+
 // ConstItem stores an const's symbol and value from the parser. This struct is
 // also used for enums.
 type ConstItem struct {
@@ -81,7 +85,6 @@ var goEquivTypes = map[string]string{
 	// TODO: Get rid of these. They're only needed because we lose information
 	// that the parser has (the parser knows it has emitted a go type), and then
 	// we capitalize types to make them public.
-	"String":  "string",
 	"Int":     "int",
 	"Uint":    "uint",
 	"Int8":    "int8",
@@ -580,7 +583,7 @@ func checkIdentifier(i string) string {
 }
 
 // GetUnion returns the type information for a union. If the provided type name
-// isn't a union, the second return value will be false.
+// isn't a union, this will return a zero-value Union type.
 func (decl *Decl) GetUnion() Union {
 	ix, ok := Gen.UnionMap[decl.Type]
 	if ok {

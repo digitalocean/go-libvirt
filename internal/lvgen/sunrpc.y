@@ -146,8 +146,12 @@ variable_array_declaration
     | type_specifier variable_ident '<' '>'         { AddVariableArray($2.val, $1.val, "") }
     ;
 
+// while pointer_declarations may look like their familiar c-equivalents, in the
+// XDR language they actually declare "Optional-data". The simplest
+// representation to use for these is a variable-length array with a size of 1.
+// See the XDR spec for a more complete explanation of this.
 pointer_declaration
-    : type_specifier '*' variable_ident             { AddDeclaration($3.val, "*"+$1.val) }
+    : type_specifier '*' variable_ident             { AddVariableArray($3.val, $1.val, "1") }
     ;
 
 struct_definition

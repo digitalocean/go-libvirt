@@ -153,7 +153,7 @@ func TestDomainMemoryStats(t *testing.T) {
 		t.Error(err)
 	}
 
-	gotDomainMemoryStats, err := l.DomainMemoryStats(*d, 8, 0)
+	gotDomainMemoryStats, err := l.DomainMemoryStats(d, 8, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -361,7 +361,7 @@ func TestStoragePoolRefresh(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	err = l.StoragePoolRefresh(*pool, 0)
+	err = l.StoragePoolRefresh(pool, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -422,7 +422,7 @@ func TestDomainCreateWithFlags(t *testing.T) {
 		t.Fatalf("failed to lookup domain: %v", err)
 	}
 	var flags uint32
-	if _, err := l.DomainCreateWithFlags(*d, flags); err != nil {
+	if _, err := l.DomainCreateWithFlags(d, flags); err != nil {
 		t.Fatalf("unexpected create error: %v", err)
 	}
 }

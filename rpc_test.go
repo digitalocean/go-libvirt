@@ -340,10 +340,6 @@ func TestLookup(t *testing.T) {
 		t.Error(err)
 	}
 
-	if d == nil {
-		t.Error("nil domain returned")
-	}
-
 	if d.Name != name {
 		t.Errorf("expected domain %s, got %s", name, d.Name)
 	}
