@@ -13,7 +13,7 @@ env:
 
 before_install:
   - go get github.com/golang/lint/golint
-  - go get github.com/golang/x/tools/cmd/goyacc
+  - go get golang.org/x/tools/cmd/goyacc
 
 install:
   # credit here goes to the go-libvirt authors,
