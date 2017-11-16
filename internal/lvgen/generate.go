@@ -32,8 +32,9 @@ import (
 // ConstItem stores an const's symbol and value from the parser. This struct is
 // also used for enums.
 type ConstItem struct {
-	Name string
-	Val  string
+	Name   string
+	LVName string
+	Val    string
 }
 
 // Generator holds all the information parsed out of the protocol file.
@@ -120,19 +121,19 @@ var lvTypedParams = map[string]uint32{
 
 // Decl records a declaration, like 'int x' or 'remote_nonnull_string str'
 type Decl struct {
-	Name, Type string
+	Name, LVName, Type string
 }
 
 // Structure records the name and members of a struct definition.
 type Structure struct {
 	Name    string
+	LVName  string
 	Members []Decl
 }
 
 // Typedef holds the name and underlying type for a typedef.
 type Typedef struct {
-	Name string
-	Type string
+	Decl
 }
 
 // Union holds a "discriminated union", which consists of a discriminant, which
@@ -152,12 +153,13 @@ type Case struct {
 
 // Proc holds information about a libvirt procedure the parser has found.
 type Proc struct {
-	Num        int64
-	Name       string
-	Args       []Decl
-	Ret        []Decl
-	ArgsStruct string
-	RetStruct  string
+	Num        int64  // The libvirt procedure number.
+	Name       string // The name of the go func.
+	LVName     string // The name of the libvirt proc this wraps.
+	Args       []Decl // The contents of the args struct for this procedure.
+	Ret        []Decl // The contents of the ret struct for this procedure.
+	ArgsStruct string // The name of the args struct for this procedure.
+	RetStruct  string // The name of the ret struct for this procedure.
 }
 
 type structStack []*Structure
@@ -395,8 +397,8 @@ func procLink() {
 // StartEnum is called when the parser has found a valid enum.
 func StartEnum(name string) {
 	// Enums are always signed 32-bit integers.
-	name = identifierTransform(name)
-	Gen.Enums = append(Gen.Enums, Decl{name, "int32"})
+	goname := identifierTransform(name)
+	Gen.Enums = append(Gen.Enums, Decl{goname, name, "int32"})
 	// Set the automatic value var to -1; it will be incremented before being
 	// assigned to an enum value.
 	CurrentEnumVal = -1
@@ -420,10 +422,10 @@ func AddEnumAutoVal(name string) error {
 }
 
 func addEnumVal(name string, val int64) error {
-	name = constNameTransform(name)
-	Gen.EnumVals = append(Gen.EnumVals, ConstItem{name, fmt.Sprintf("%d", val)})
+	goname := constNameTransform(name)
+	Gen.EnumVals = append(Gen.EnumVals, ConstItem{goname, name, fmt.Sprintf("%d", val)})
 	CurrentEnumVal = val
-	addProc(name, val)
+	addProc(goname, name, val)
 	return nil
 }
 
@@ -433,19 +435,19 @@ func AddConst(name, val string) error {
 	if err != nil {
 		return fmt.Errorf("invalid const value %v = %v", name, val)
 	}
-	name = constNameTransform(name)
-	Gen.Consts = append(Gen.Consts, ConstItem{name, val})
+	goname := constNameTransform(name)
+	Gen.Consts = append(Gen.Consts, ConstItem{goname, name, val})
 	return nil
 }
 
 // addProc checks an enum value to see if it's a procedure number. If so, we
 // add the procedure to our list for later generation.
-func addProc(name string, val int64) {
-	if !strings.HasPrefix(name, "Proc") {
+func addProc(goname, lvname string, val int64) {
+	if !strings.HasPrefix(goname, "Proc") {
 		return
 	}
-	name = name[4:]
-	proc := &Proc{Num: val, Name: name}
+	goname = goname[4:]
+	proc := &Proc{Num: val, Name: goname, LVName: lvname}
 	Gen.Procs = append(Gen.Procs, *proc)
 }
 
@@ -464,8 +466,8 @@ func parseNumber(val string) (int64, error) {
 // StartStruct is called from the parser when a struct definition is found, but
 // before the member declarations are processed.
 func StartStruct(name string) {
-	name = identifierTransform(name)
-	CurrentStruct.push(&Structure{Name: name})
+	goname := identifierTransform(name)
+	CurrentStruct.push(&Structure{Name: goname, LVName: name})
 }
 
 // AddStruct is called when the parser has finished parsing a struct. It adds
@@ -529,23 +531,24 @@ func AddCase() {
 func AddDeclaration(identifier, itype string) {
 	// fmt.Println("adding", identifier, itype)
 	// If the name is a reserved word, transform it so it isn't.
-	identifier = identifierTransform(identifier)
+	goidentifier := identifierTransform(identifier)
 	itype = typeTransform(itype)
-	decl := Decl{Name: identifier, Type: itype}
+	decl := Decl{Name: goidentifier, LVName: identifier, Type: itype}
 	if !CurrentStruct.empty() {
 		st := CurrentStruct.peek()
 		st.Members = append(st.Members, decl)
 	} else if CurrentTypedef != nil {
-		CurrentTypedef.Name = identifier
+		CurrentTypedef.Name = goidentifier
+		CurrentTypedef.LVName = identifier
 		CurrentTypedef.Type = itype
-		if identifier != "string" {
+		if goidentifier != "string" {
 			// Omit recursive typedefs. These happen because we're massaging
 			// some of the type names.
 			Gen.Typedefs = append(Gen.Typedefs, *CurrentTypedef)
 		}
 		CurrentTypedef = nil
 	} else if CurrentCase != nil {
-		CurrentCase.Name = identifier
+		CurrentCase.Name = goidentifier
 		CurrentCase.Type = itype
 	} else if CurrentUnion != nil {
 		CurrentUnion.DiscriminantType = itype

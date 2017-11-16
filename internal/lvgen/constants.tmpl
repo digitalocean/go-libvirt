@@ -19,10 +19,12 @@ package constants
 //	REMOTE_PROC_DOMAIN_MIGRATE_SET_MAX_SPEED = 207,
 const (
 	// From enums:
-{{range .EnumVals}}	{{.Name}} = {{.Val}}
+{{range .EnumVals}}	// {{.Name}} is libvirt's {{.LVName}}
+	{{.Name}} = {{.Val}}
 {{end}}
 
 	// From consts:
-{{range .Consts}}	{{.Name}} = {{.Val}}
+{{range .Consts}}	// {{.Name}} is libvirt's {{.LVName}}
+	{{.Name}} = {{.Val}}
 {{end -}}
 )

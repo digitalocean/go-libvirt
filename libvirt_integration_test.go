@@ -94,7 +94,7 @@ func TestSecretsIntegration(t *testing.T) {
 	s := secrets[0]
 
 	wantType := SecretUsageTypeVolume
-	if s.UsageType != wantType {
+	if s.UsageType != int32(wantType) {
 		t.Errorf("expected usage type: %d, got %d", wantType, s.UsageType)
 	}
 
@@ -201,7 +201,12 @@ func TestStoragePoolRefreshIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := l.StoragePoolRefresh("test")
+	pool, err := l.StoragePool("default")
+	if err != nil {
+		t.Error(err)
+	}
+
+	err = l.StoragePoolRefresh(pool, 0)
 	if err != nil {
 		t.Error(err)
 	}
@@ -215,7 +220,12 @@ func TestStoragePoolRefreshInvalidIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := l.StoragePoolRefresh("test-does-not-exist")
+	pool, err := l.StoragePool("test-does-not-exist")
+	if err == nil {
+		t.Error(err)
+	}
+
+	err := l.StoragePoolRefresh(pool, 0)
 	if err == nil {
 		t.Error("expected non-existent storage pool to fail refresh")
 	}

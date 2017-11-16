@@ -568,41 +568,8 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 
 // Secrets returns all secrets managed by the libvirt daemon.
 func (l *Libvirt) Secrets() ([]NonnullSecret, error) {
-	req := struct {
-		NeedResults uint32
-		Flags       uint32
-	}{
-		NeedResults: 1,
-		Flags:       0, // unused per libvirt source, callers should pass 0
-	}
-
-	buf, err := encode(&req)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := l.request(constants.ProcConnectListAllSecrets, constants.Program, &buf)
-	if err != nil {
-		return nil, err
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		return nil, decodeError(r.Payload)
-	}
-
-	result := struct {
-		Secrets []NonnullSecret
-		Count   uint32
-	}{}
-
-	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
-	_, err = dec.Decode(&result)
-	if err != nil {
-		return nil, err
-	}
-
-	return result.Secrets, nil
+	secrets, _, err := l.ConnectListAllSecrets(1, 0)
+	return secrets, err
 }
 
 // StoragePool returns the storage pool associated with the provided name.
@@ -809,35 +776,7 @@ func (l *Libvirt) GetBlockIOTune(dom string, disk string) ([]BlockLimit, error) 
 
 // lookup returns a domain as seen by libvirt.
 func (l *Libvirt) lookup(name string) (NonnullDomain, error) {
-	var d NonnullDomain
-	payload := struct {
-		Name string
-	}{name}
-
-	buf, err := encode(&payload)
-	if err != nil {
-		return d, err
-	}
-
-	resp, err := l.request(constants.ProcDomainLookupByName, constants.Program, &buf)
-	if err != nil {
-		return d, err
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		return d, decodeError(r.Payload)
-	}
-
-	dec := xdr.NewDecoder(bytes.NewReader(r.Payload))
-
-	// var d Domain
-	_, err = dec.Decode(&d)
-	if err != nil {
-		return d, err
-	}
-
-	return d, nil
+	return l.DomainLookupByName(name)
 }
 
 // getQEMUError checks the provided response for QEMU process errors.
