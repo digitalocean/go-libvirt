@@ -201,7 +201,7 @@ func TestStoragePoolRefreshIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pool, err := l.StoragePool("default")
+	pool, err := l.StoragePool("test")
 	if err != nil {
 		t.Error(err)
 	}
