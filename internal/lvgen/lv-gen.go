@@ -1,9 +1,8 @@
-package lvgen
-
-// This file contains the instructions for regenerating the libvirt bindings.
-// We do this by parsing the remote_protocol.x file included in the libvirt
-// sources. Bindings will be generated if you run `go generate` in this
+// Package lvgen contains the instructions for regenerating the libvirt
+// bindings. We do this by parsing the remote_protocol.x file included in the
+// libvirt sources. Bindings will be generated if you run `go generate` in this
 // directory.
+package lvgen
 
 // Before running `go generate`:
 // 1) Make sure goyacc is installed from golang.org/x/tools (you can use this

@@ -124,7 +124,6 @@ func (l *Lexer) Lex(st *yySymType) int {
 	s := <-l.items
 	l.lastItem = s
 	st.val = s.val
-	// fmt.Println("Lex returning", s)
 	return int(s.typ)
 }
 

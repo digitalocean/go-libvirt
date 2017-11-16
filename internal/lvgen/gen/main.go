@@ -17,7 +17,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"path"
+	"path/filepath"
 
 	"github.com/digitalocean/go-libvirt/internal/lvgen"
 )
@@ -30,7 +30,7 @@ func main() {
 		fmt.Println("set $LIBVIRT_SOURCE to point to the root of the libvirt sources and retry")
 		os.Exit(1)
 	}
-	lvFile := path.Join(lvPath, protoPath)
+	lvFile := filepath.Join(lvPath, protoPath)
 	rdr, err := os.Open(lvFile)
 	if err != nil {
 		fmt.Printf("failed to open protocol file at %v: %v\n", lvFile, err)
