@@ -1,0 +1,1195 @@
+
+state 0
+	$accept: .specification $end 
+
+	CONST  shift 11
+	ENUM  shift 10
+	STRUCT  shift 13
+	TYPEDEF  shift 12
+	UNION  shift 14
+	PROGRAM  shift 15
+	.  error
+
+	specification  goto 1
+	definition_list  goto 2
+	definition  goto 3
+	enum_definition  goto 4
+	const_definition  goto 5
+	typedef_definition  goto 6
+	struct_definition  goto 7
+	union_definition  goto 8
+	program_definition  goto 9
+
+state 1
+	$accept:  specification.$end 
+
+	$end  accept
+	.  error
+
+
+state 2
+	specification:  definition_list.    (1)
+
+	.  reduce 1 (src line 62)
+
+
+state 3
+	definition_list:  definition.';' 
+	definition_list:  definition.';' definition_list 
+
+	';'  shift 16
+	.  error
+
+
+state 4
+	definition:  enum_definition.    (6)
+
+	.  reduce 6 (src line 76)
+
+
+state 5
+	definition:  const_definition.    (7)
+
+	.  reduce 7 (src line 78)
+
+
+state 6
+	definition:  typedef_definition.    (8)
+
+	.  reduce 8 (src line 79)
+
+
+state 7
+	definition:  struct_definition.    (9)
+
+	.  reduce 9 (src line 80)
+
+
+state 8
+	definition:  union_definition.    (10)
+
+	.  reduce 10 (src line 81)
+
+
+state 9
+	definition:  program_definition.    (11)
+
+	.  reduce 11 (src line 82)
+
+
+state 10
+	enum_definition:  ENUM.enum_ident '{' enum_value_list '}' 
+
+	IDENTIFIER  shift 18
+	.  error
+
+	enum_ident  goto 17
+
+state 11
+	const_definition:  CONST.const_ident '=' IDENTIFIER 
+	const_definition:  CONST.const_ident '=' CONSTANT 
+
+	IDENTIFIER  shift 20
+	.  error
+
+	const_ident  goto 19
+
+state 12
+	typedef_definition:  TYPEDEF.$$22 declaration 
+	$$22: .    (22)
+
+	.  reduce 22 (src line 137)
+
+	$$22  goto 21
+
+state 13
+	struct_definition:  STRUCT.struct_ident '{' $$49 declaration_list '}' 
+
+	IDENTIFIER  shift 23
+	.  error
+
+	struct_ident  goto 22
+
+state 14
+	union_definition:  UNION.union_ident $$54 SWITCH '(' simple_declaration ')' '{' case_list '}' 
+
+	IDENTIFIER  shift 25
+	.  error
+
+	union_ident  goto 24
+
+state 15
+	program_definition:  PROGRAM.program_ident '{' version_list '}' '=' value 
+
+	IDENTIFIER  shift 27
+	.  error
+
+	program_ident  goto 26
+
+state 16
+	definition_list:  definition ';'.    (4)
+	definition_list:  definition ';'.definition_list 
+
+	CONST  shift 11
+	ENUM  shift 10
+	STRUCT  shift 13
+	TYPEDEF  shift 12
+	UNION  shift 14
+	PROGRAM  shift 15
+	.  reduce 4 (src line 71)
+
+	definition_list  goto 28
+	definition  goto 3
+	enum_definition  goto 4
+	const_definition  goto 5
+	typedef_definition  goto 6
+	struct_definition  goto 7
+	union_definition  goto 8
+	program_definition  goto 9
+
+state 17
+	enum_definition:  ENUM enum_ident.'{' enum_value_list '}' 
+
+	'{'  shift 29
+	.  error
+
+
+state 18
+	enum_ident:  IDENTIFIER.    (17)
+
+	.  reduce 17 (src line 111)
+
+
+state 19
+	const_definition:  CONST const_ident.'=' IDENTIFIER 
+	const_definition:  CONST const_ident.'=' CONSTANT 
+
+	'='  shift 30
+	.  error
+
+
+state 20
+	const_ident:  IDENTIFIER.    (21)
+
+	.  reduce 21 (src line 133)
+
+
+state 21
+	typedef_definition:  TYPEDEF $$22.declaration 
+
+	BOOL  shift 41
+	DOUBLE  shift 40
+	ENUM  shift 10
+	FLOAT  shift 39
+	OPAQUE  shift 43
+	STRING  shift 42
+	STRUCT  shift 13
+	UNION  shift 14
+	UNSIGNED  shift 38
+	HYPER  shift 48
+	INT  shift 49
+	SHORT  shift 50
+	CHAR  shift 51
+	IDENTIFIER  shift 47
+	.  error
+
+	enum_definition  goto 44
+	struct_definition  goto 45
+	union_definition  goto 46
+	declaration  goto 31
+	simple_declaration  goto 32
+	fixed_array_declaration  goto 33
+	variable_array_declaration  goto 34
+	pointer_declaration  goto 35
+	type_specifier  goto 36
+	int_spec  goto 37
+
+state 22
+	struct_definition:  STRUCT struct_ident.'{' $$49 declaration_list '}' 
+
+	'{'  shift 52
+	.  error
+
+
+state 23
+	struct_ident:  IDENTIFIER.    (51)
+
+	.  reduce 51 (src line 198)
+
+
+state 24
+	union_definition:  UNION union_ident.$$54 SWITCH '(' simple_declaration ')' '{' case_list '}' 
+	$$54: .    (54)
+
+	.  reduce 54 (src line 207)
+
+	$$54  goto 53
+
+state 25
+	union_ident:  IDENTIFIER.    (56)
+
+	.  reduce 56 (src line 211)
+
+
+state 26
+	program_definition:  PROGRAM program_ident.'{' version_list '}' '=' value 
+
+	'{'  shift 54
+	.  error
+
+
+state 27
+	program_ident:  IDENTIFIER.    (64)
+
+	.  reduce 64 (src line 229)
+
+
+state 28
+	definition_list:  definition ';' definition_list.    (5)
+
+	.  reduce 5 (src line 73)
+
+
+state 29
+	enum_definition:  ENUM enum_ident '{'.enum_value_list '}' 
+
+	IDENTIFIER  shift 58
+	.  error
+
+	enum_value_list  goto 55
+	enum_value  goto 56
+	enum_value_ident  goto 57
+
+state 30
+	const_definition:  CONST const_ident '='.IDENTIFIER 
+	const_definition:  CONST const_ident '='.CONSTANT 
+
+	IDENTIFIER  shift 59
+	CONSTANT  shift 60
+	.  error
+
+
+state 31
+	typedef_definition:  TYPEDEF $$22 declaration.    (23)
+
+	.  reduce 23 (src line 138)
+
+
+state 32
+	declaration:  simple_declaration.    (24)
+
+	.  reduce 24 (src line 141)
+
+
+state 33
+	declaration:  fixed_array_declaration.    (25)
+
+	.  reduce 25 (src line 143)
+
+
+state 34
+	declaration:  variable_array_declaration.    (26)
+
+	.  reduce 26 (src line 144)
+
+
+state 35
+	declaration:  pointer_declaration.    (27)
+
+	.  reduce 27 (src line 145)
+
+
+state 36
+	simple_declaration:  type_specifier.variable_ident 
+	fixed_array_declaration:  type_specifier.variable_ident '[' value ']' 
+	variable_array_declaration:  type_specifier.variable_ident '<' value '>' 
+	variable_array_declaration:  type_specifier.variable_ident '<' '>' 
+	pointer_declaration:  type_specifier.'*' variable_ident 
+
+	IDENTIFIER  shift 63
+	'*'  shift 62
+	.  error
+
+	variable_ident  goto 61
+
+state 37
+	type_specifier:  int_spec.    (29)
+
+	.  reduce 29 (src line 152)
+
+
+state 38
+	type_specifier:  UNSIGNED.int_spec 
+
+	HYPER  shift 48
+	INT  shift 49
+	SHORT  shift 50
+	CHAR  shift 51
+	.  error
+
+	int_spec  goto 64
+
+state 39
+	type_specifier:  FLOAT.    (31)
+
+	.  reduce 31 (src line 155)
+
+
+state 40
+	type_specifier:  DOUBLE.    (32)
+
+	.  reduce 32 (src line 156)
+
+
+state 41
+	type_specifier:  BOOL.    (33)
+
+	.  reduce 33 (src line 157)
+
+
+state 42
+	type_specifier:  STRING.    (34)
+
+	.  reduce 34 (src line 158)
+
+
+state 43
+	type_specifier:  OPAQUE.    (35)
+
+	.  reduce 35 (src line 159)
+
+
+state 44
+	type_specifier:  enum_definition.    (36)
+
+	.  reduce 36 (src line 160)
+
+
+state 45
+	type_specifier:  struct_definition.    (37)
+
+	.  reduce 37 (src line 161)
+
+
+state 46
+	type_specifier:  union_definition.    (38)
+
+	.  reduce 38 (src line 162)
+
+
+state 47
+	type_specifier:  IDENTIFIER.    (39)
+
+	.  reduce 39 (src line 163)
+
+
+state 48
+	int_spec:  HYPER.    (40)
+
+	.  reduce 40 (src line 166)
+
+
+state 49
+	int_spec:  INT.    (41)
+
+	.  reduce 41 (src line 168)
+
+
+state 50
+	int_spec:  SHORT.    (42)
+
+	.  reduce 42 (src line 169)
+
+
+state 51
+	int_spec:  CHAR.    (43)
+
+	.  reduce 43 (src line 170)
+
+
+state 52
+	struct_definition:  STRUCT struct_ident '{'.$$49 declaration_list '}' 
+	$$49: .    (49)
+
+	.  reduce 49 (src line 194)
+
+	$$49  goto 65
+
+state 53
+	union_definition:  UNION union_ident $$54.SWITCH '(' simple_declaration ')' '{' case_list '}' 
+
+	SWITCH  shift 66
+	.  error
+
+
+state 54
+	program_definition:  PROGRAM program_ident '{'.version_list '}' '=' value 
+
+	VERSION  shift 69
+	.  error
+
+	version_list  goto 67
+	version  goto 68
+
+state 55
+	enum_definition:  ENUM enum_ident '{' enum_value_list.'}' 
+
+	'}'  shift 70
+	.  error
+
+
+state 56
+	enum_value_list:  enum_value.    (13)
+	enum_value_list:  enum_value.',' enum_value_list 
+
+	','  shift 71
+	.  reduce 13 (src line 89)
+
+
+state 57
+	enum_value:  enum_value_ident.    (15)
+	enum_value:  enum_value_ident.'=' value 
+
+	'='  shift 72
+	.  reduce 15 (src line 94)
+
+
+state 58
+	enum_value_ident:  IDENTIFIER.    (18)
+
+	.  reduce 18 (src line 115)
+
+
+state 59
+	const_definition:  CONST const_ident '=' IDENTIFIER.    (19)
+
+	.  reduce 19 (src line 122)
+
+
+state 60
+	const_definition:  CONST const_ident '=' CONSTANT.    (20)
+
+	.  reduce 20 (src line 124)
+
+
+state 61
+	simple_declaration:  type_specifier variable_ident.    (28)
+	fixed_array_declaration:  type_specifier variable_ident.'[' value ']' 
+	variable_array_declaration:  type_specifier variable_ident.'<' value '>' 
+	variable_array_declaration:  type_specifier variable_ident.'<' '>' 
+
+	'['  shift 73
+	'<'  shift 74
+	.  reduce 28 (src line 148)
+
+
+state 62
+	pointer_declaration:  type_specifier '*'.variable_ident 
+
+	IDENTIFIER  shift 63
+	.  error
+
+	variable_ident  goto 75
+
+state 63
+	variable_ident:  IDENTIFIER.    (44)
+
+	.  reduce 44 (src line 173)
+
+
+state 64
+	type_specifier:  UNSIGNED int_spec.    (30)
+
+	.  reduce 30 (src line 154)
+
+
+state 65
+	struct_definition:  STRUCT struct_ident '{' $$49.declaration_list '}' 
+
+	BOOL  shift 41
+	DOUBLE  shift 40
+	ENUM  shift 10
+	FLOAT  shift 39
+	OPAQUE  shift 43
+	STRING  shift 42
+	STRUCT  shift 13
+	UNION  shift 14
+	UNSIGNED  shift 38
+	HYPER  shift 48
+	INT  shift 49
+	SHORT  shift 50
+	CHAR  shift 51
+	IDENTIFIER  shift 47
+	.  error
+
+	enum_definition  goto 44
+	struct_definition  goto 45
+	union_definition  goto 46
+	declaration  goto 77
+	simple_declaration  goto 32
+	fixed_array_declaration  goto 33
+	variable_array_declaration  goto 34
+	pointer_declaration  goto 35
+	type_specifier  goto 36
+	int_spec  goto 37
+	declaration_list  goto 76
+
+state 66
+	union_definition:  UNION union_ident $$54 SWITCH.'(' simple_declaration ')' '{' case_list '}' 
+
+	'('  shift 78
+	.  error
+
+
+state 67
+	program_definition:  PROGRAM program_ident '{' version_list.'}' '=' value 
+
+	'}'  shift 79
+	.  error
+
+
+state 68
+	version_list:  version.';' 
+	version_list:  version.';' version_list 
+
+	';'  shift 80
+	.  error
+
+
+state 69
+	version:  VERSION.version_ident '{' procedure_list '}' '=' value ';' 
+
+	IDENTIFIER  shift 82
+	.  error
+
+	version_ident  goto 81
+
+state 70
+	enum_definition:  ENUM enum_ident '{' enum_value_list '}'.    (12)
+
+	.  reduce 12 (src line 85)
+
+
+state 71
+	enum_value_list:  enum_value ','.enum_value_list 
+
+	IDENTIFIER  shift 58
+	.  error
+
+	enum_value_list  goto 83
+	enum_value  goto 56
+	enum_value_ident  goto 57
+
+state 72
+	enum_value:  enum_value_ident '='.value 
+
+	IDENTIFIER  shift 85
+	CONSTANT  shift 86
+	.  error
+
+	value  goto 84
+
+state 73
+	fixed_array_declaration:  type_specifier variable_ident '['.value ']' 
+
+	IDENTIFIER  shift 85
+	CONSTANT  shift 86
+	.  error
+
+	value  goto 87
+
+state 74
+	variable_array_declaration:  type_specifier variable_ident '<'.value '>' 
+	variable_array_declaration:  type_specifier variable_ident '<'.'>' 
+
+	IDENTIFIER  shift 85
+	CONSTANT  shift 86
+	'>'  shift 89
+	.  error
+
+	value  goto 88
+
+state 75
+	pointer_declaration:  type_specifier '*' variable_ident.    (48)
+
+	.  reduce 48 (src line 190)
+
+
+state 76
+	struct_definition:  STRUCT struct_ident '{' $$49 declaration_list.'}' 
+
+	'}'  shift 90
+	.  error
+
+
+state 77
+	declaration_list:  declaration.';' 
+	declaration_list:  declaration.';' declaration_list 
+
+	';'  shift 91
+	.  error
+
+
+state 78
+	union_definition:  UNION union_ident $$54 SWITCH '('.simple_declaration ')' '{' case_list '}' 
+
+	BOOL  shift 41
+	DOUBLE  shift 40
+	ENUM  shift 10
+	FLOAT  shift 39
+	OPAQUE  shift 43
+	STRING  shift 42
+	STRUCT  shift 13
+	UNION  shift 14
+	UNSIGNED  shift 38
+	HYPER  shift 48
+	INT  shift 49
+	SHORT  shift 50
+	CHAR  shift 51
+	IDENTIFIER  shift 47
+	.  error
+
+	enum_definition  goto 44
+	struct_definition  goto 45
+	union_definition  goto 46
+	simple_declaration  goto 92
+	type_specifier  goto 93
+	int_spec  goto 37
+
+state 79
+	program_definition:  PROGRAM program_ident '{' version_list '}'.'=' value 
+
+	'='  shift 94
+	.  error
+
+
+state 80
+	version_list:  version ';'.    (65)
+	version_list:  version ';'.version_list 
+
+	VERSION  shift 69
+	.  reduce 65 (src line 233)
+
+	version_list  goto 95
+	version  goto 68
+
+state 81
+	version:  VERSION version_ident.'{' procedure_list '}' '=' value ';' 
+
+	'{'  shift 96
+	.  error
+
+
+state 82
+	version_ident:  IDENTIFIER.    (68)
+
+	.  reduce 68 (src line 242)
+
+
+state 83
+	enum_value_list:  enum_value ',' enum_value_list.    (14)
+
+	.  reduce 14 (src line 91)
+
+
+state 84
+	enum_value:  enum_value_ident '=' value.    (16)
+
+	.  reduce 16 (src line 102)
+
+
+state 85
+	value:  IDENTIFIER.    (2)
+
+	.  reduce 2 (src line 66)
+
+
+state 86
+	value:  CONSTANT.    (3)
+
+	.  reduce 3 (src line 68)
+
+
+state 87
+	fixed_array_declaration:  type_specifier variable_ident '[' value.']' 
+
+	']'  shift 97
+	.  error
+
+
+state 88
+	variable_array_declaration:  type_specifier variable_ident '<' value.'>' 
+
+	'>'  shift 98
+	.  error
+
+
+state 89
+	variable_array_declaration:  type_specifier variable_ident '<' '>'.    (47)
+
+	.  reduce 47 (src line 183)
+
+
+state 90
+	struct_definition:  STRUCT struct_ident '{' $$49 declaration_list '}'.    (50)
+
+	.  reduce 50 (src line 195)
+
+
+state 91
+	declaration_list:  declaration ';'.    (52)
+	declaration_list:  declaration ';'.declaration_list 
+
+	BOOL  shift 41
+	DOUBLE  shift 40
+	ENUM  shift 10
+	FLOAT  shift 39
+	OPAQUE  shift 43
+	STRING  shift 42
+	STRUCT  shift 13
+	UNION  shift 14
+	UNSIGNED  shift 38
+	HYPER  shift 48
+	INT  shift 49
+	SHORT  shift 50
+	CHAR  shift 51
+	IDENTIFIER  shift 47
+	.  reduce 52 (src line 202)
+
+	enum_definition  goto 44
+	struct_definition  goto 45
+	union_definition  goto 46
+	declaration  goto 77
+	simple_declaration  goto 32
+	fixed_array_declaration  goto 33
+	variable_array_declaration  goto 34
+	pointer_declaration  goto 35
+	type_specifier  goto 36
+	int_spec  goto 37
+	declaration_list  goto 99
+
+state 92
+	union_definition:  UNION union_ident $$54 SWITCH '(' simple_declaration.')' '{' case_list '}' 
+
+	')'  shift 100
+	.  error
+
+
+state 93
+	simple_declaration:  type_specifier.variable_ident 
+
+	IDENTIFIER  shift 63
+	.  error
+
+	variable_ident  goto 101
+
+state 94
+	program_definition:  PROGRAM program_ident '{' version_list '}' '='.value 
+
+	IDENTIFIER  shift 85
+	CONSTANT  shift 86
+	.  error
+
+	value  goto 102
+
+state 95
+	version_list:  version ';' version_list.    (66)
+
+	.  reduce 66 (src line 235)
+
+
+state 96
+	version:  VERSION version_ident '{'.procedure_list '}' '=' value ';' 
+
+	BOOL  shift 41
+	DOUBLE  shift 40
+	ENUM  shift 10
+	FLOAT  shift 39
+	OPAQUE  shift 43
+	STRING  shift 42
+	STRUCT  shift 13
+	UNION  shift 14
+	UNSIGNED  shift 38
+	HYPER  shift 48
+	INT  shift 49
+	SHORT  shift 50
+	CHAR  shift 51
+	IDENTIFIER  shift 47
+	.  error
+
+	enum_definition  goto 44
+	struct_definition  goto 45
+	union_definition  goto 46
+	type_specifier  goto 105
+	int_spec  goto 37
+	procedure_list  goto 103
+	procedure  goto 104
+
+state 97
+	fixed_array_declaration:  type_specifier variable_ident '[' value ']'.    (45)
+
+	.  reduce 45 (src line 177)
+
+
+state 98
+	variable_array_declaration:  type_specifier variable_ident '<' value '>'.    (46)
+
+	.  reduce 46 (src line 181)
+
+
+state 99
+	declaration_list:  declaration ';' declaration_list.    (53)
+
+	.  reduce 53 (src line 204)
+
+
+state 100
+	union_definition:  UNION union_ident $$54 SWITCH '(' simple_declaration ')'.'{' case_list '}' 
+
+	'{'  shift 106
+	.  error
+
+
+state 101
+	simple_declaration:  type_specifier variable_ident.    (28)
+
+	.  reduce 28 (src line 148)
+
+
+state 102
+	program_definition:  PROGRAM program_ident '{' version_list '}' '=' value.    (63)
+
+	.  reduce 63 (src line 225)
+
+
+state 103
+	version:  VERSION version_ident '{' procedure_list.'}' '=' value ';' 
+
+	'}'  shift 107
+	.  error
+
+
+state 104
+	procedure_list:  procedure.';' 
+	procedure_list:  procedure.';' procedure_list 
+
+	';'  shift 108
+	.  error
+
+
+state 105
+	procedure:  type_specifier.procedure_ident '(' type_specifier ')' '=' value ';' 
+
+	IDENTIFIER  shift 110
+	.  error
+
+	procedure_ident  goto 109
+
+state 106
+	union_definition:  UNION union_ident $$54 SWITCH '(' simple_declaration ')' '{'.case_list '}' 
+
+	CASE  shift 113
+	DEFAULT  shift 114
+	.  error
+
+	case_list  goto 111
+	case  goto 112
+
+state 107
+	version:  VERSION version_ident '{' procedure_list '}'.'=' value ';' 
+
+	'='  shift 115
+	.  error
+
+
+state 108
+	procedure_list:  procedure ';'.    (69)
+	procedure_list:  procedure ';'.procedure_list 
+
+	BOOL  shift 41
+	DOUBLE  shift 40
+	ENUM  shift 10
+	FLOAT  shift 39
+	OPAQUE  shift 43
+	STRING  shift 42
+	STRUCT  shift 13
+	UNION  shift 14
+	UNSIGNED  shift 38
+	HYPER  shift 48
+	INT  shift 49
+	SHORT  shift 50
+	CHAR  shift 51
+	IDENTIFIER  shift 47
+	.  reduce 69 (src line 246)
+
+	enum_definition  goto 44
+	struct_definition  goto 45
+	union_definition  goto 46
+	type_specifier  goto 105
+	int_spec  goto 37
+	procedure_list  goto 116
+	procedure  goto 104
+
+state 109
+	procedure:  type_specifier procedure_ident.'(' type_specifier ')' '=' value ';' 
+
+	'('  shift 117
+	.  error
+
+
+state 110
+	procedure_ident:  IDENTIFIER.    (72)
+
+	.  reduce 72 (src line 255)
+
+
+state 111
+	union_definition:  UNION union_ident $$54 SWITCH '(' simple_declaration ')' '{' case_list.'}' 
+
+	'}'  shift 118
+	.  error
+
+
+state 112
+	case_list:  case.';' 
+	case_list:  case.';' case_list 
+
+	';'  shift 119
+	.  error
+
+
+state 113
+	case:  CASE.value $$59 ':' declaration 
+
+	IDENTIFIER  shift 85
+	CONSTANT  shift 86
+	.  error
+
+	value  goto 120
+
+state 114
+	case:  DEFAULT.$$61 ':' declaration 
+	$$61: .    (61)
+
+	.  reduce 61 (src line 222)
+
+	$$61  goto 121
+
+state 115
+	version:  VERSION version_ident '{' procedure_list '}' '='.value ';' 
+
+	IDENTIFIER  shift 85
+	CONSTANT  shift 86
+	.  error
+
+	value  goto 122
+
+state 116
+	procedure_list:  procedure ';' procedure_list.    (70)
+
+	.  reduce 70 (src line 248)
+
+
+state 117
+	procedure:  type_specifier procedure_ident '('.type_specifier ')' '=' value ';' 
+
+	BOOL  shift 41
+	DOUBLE  shift 40
+	ENUM  shift 10
+	FLOAT  shift 39
+	OPAQUE  shift 43
+	STRING  shift 42
+	STRUCT  shift 13
+	UNION  shift 14
+	UNSIGNED  shift 38
+	HYPER  shift 48
+	INT  shift 49
+	SHORT  shift 50
+	CHAR  shift 51
+	IDENTIFIER  shift 47
+	.  error
+
+	enum_definition  goto 44
+	struct_definition  goto 45
+	union_definition  goto 46
+	type_specifier  goto 123
+	int_spec  goto 37
+
+state 118
+	union_definition:  UNION union_ident $$54 SWITCH '(' simple_declaration ')' '{' case_list '}'.    (55)
+
+	.  reduce 55 (src line 208)
+
+
+state 119
+	case_list:  case ';'.    (57)
+	case_list:  case ';'.case_list 
+
+	CASE  shift 113
+	DEFAULT  shift 114
+	.  reduce 57 (src line 215)
+
+	case_list  goto 124
+	case  goto 112
+
+state 120
+	case:  CASE value.$$59 ':' declaration 
+	$$59: .    (59)
+
+	.  reduce 59 (src line 220)
+
+	$$59  goto 125
+
+state 121
+	case:  DEFAULT $$61.':' declaration 
+
+	':'  shift 126
+	.  error
+
+
+state 122
+	version:  VERSION version_ident '{' procedure_list '}' '=' value.';' 
+
+	';'  shift 127
+	.  error
+
+
+state 123
+	procedure:  type_specifier procedure_ident '(' type_specifier.')' '=' value ';' 
+
+	')'  shift 128
+	.  error
+
+
+state 124
+	case_list:  case ';' case_list.    (58)
+
+	.  reduce 58 (src line 217)
+
+
+state 125
+	case:  CASE value $$59.':' declaration 
+
+	':'  shift 129
+	.  error
+
+
+state 126
+	case:  DEFAULT $$61 ':'.declaration 
+
+	BOOL  shift 41
+	DOUBLE  shift 40
+	ENUM  shift 10
+	FLOAT  shift 39
+	OPAQUE  shift 43
+	STRING  shift 42
+	STRUCT  shift 13
+	UNION  shift 14
+	UNSIGNED  shift 38
+	HYPER  shift 48
+	INT  shift 49
+	SHORT  shift 50
+	CHAR  shift 51
+	IDENTIFIER  shift 47
+	.  error
+
+	enum_definition  goto 44
+	struct_definition  goto 45
+	union_definition  goto 46
+	declaration  goto 130
+	simple_declaration  goto 32
+	fixed_array_declaration  goto 33
+	variable_array_declaration  goto 34
+	pointer_declaration  goto 35
+	type_specifier  goto 36
+	int_spec  goto 37
+
+state 127
+	version:  VERSION version_ident '{' procedure_list '}' '=' value ';'.    (67)
+
+	.  reduce 67 (src line 238)
+
+
+state 128
+	procedure:  type_specifier procedure_ident '(' type_specifier ')'.'=' value ';' 
+
+	'='  shift 131
+	.  error
+
+
+state 129
+	case:  CASE value $$59 ':'.declaration 
+
+	BOOL  shift 41
+	DOUBLE  shift 40
+	ENUM  shift 10
+	FLOAT  shift 39
+	OPAQUE  shift 43
+	STRING  shift 42
+	STRUCT  shift 13
+	UNION  shift 14
+	UNSIGNED  shift 38
+	HYPER  shift 48
+	INT  shift 49
+	SHORT  shift 50
+	CHAR  shift 51
+	IDENTIFIER  shift 47
+	.  error
+
+	enum_definition  goto 44
+	struct_definition  goto 45
+	union_definition  goto 46
+	declaration  goto 132
+	simple_declaration  goto 32
+	fixed_array_declaration  goto 33
+	variable_array_declaration  goto 34
+	pointer_declaration  goto 35
+	type_specifier  goto 36
+	int_spec  goto 37
+
+state 130
+	case:  DEFAULT $$61 ':' declaration.    (62)
+
+	.  reduce 62 (src line 222)
+
+
+state 131
+	procedure:  type_specifier procedure_ident '(' type_specifier ')' '='.value ';' 
+
+	IDENTIFIER  shift 85
+	CONSTANT  shift 86
+	.  error
+
+	value  goto 133
+
+state 132
+	case:  CASE value $$59 ':' declaration.    (60)
+
+	.  reduce 60 (src line 221)
+
+
+state 133
+	procedure:  type_specifier procedure_ident '(' type_specifier ')' '=' value.';' 
+
+	';'  shift 134
+	.  error
+
+
+state 134
+	procedure:  type_specifier procedure_ident '(' type_specifier ')' '=' value ';'.    (71)
+
+	.  reduce 71 (src line 251)
+
+
+40 terminals, 41 nonterminals
+73 grammar rules, 135/8000 states
+0 shift/reduce, 0 reduce/reduce conflicts reported
+90 working sets used
+memory: parser 155/120000
+40 extra closures
+212 shift entries, 1 exceptions
+69 goto entries
+62 entries saved by goto default
+Optimizer space used: output 148/120000
+148 table entries, 0 zero
+maximum spread: 40, maximum offset: 131

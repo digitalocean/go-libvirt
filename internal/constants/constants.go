@@ -12,55 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package constants provides shared data for the libvirt package.
+// Package constants provides shared data for the libvirt package. This file
+// includes only things not generated automatically by the parser that runs on
+// libvirt's remote_protocol.x file - see constants.gen.go for the generated
+// definitions.
 package constants
 
-// protocol procedure numbers
+// qemu constants
 const (
-	ProgramVersion   = 1
-	ProgramRemote    = 0x20008086
 	ProgramQEMU      = 0x20008087
 	ProgramKeepAlive = 0x6b656570
-)
-
-// libvirt procedure identifiers
-// These are libvirt procedure numbers which correspond to each respective
-// API call between remote_internal driver and libvirtd. Although stable.
-// Each call is identified by a unique number which *may change at any time*.
-//
-// Examples:
-//	REMOTE_PROC_CONNECT_OPEN = 1
-//	REMOTE_PROC_DOMAIN_DEFINE_XML = 11
-//	REMOTE_PROC_DOMAIN_MIGRATE_SET_MAX_SPEED = 207,
-//
-// See:
-// https://libvirt.org/git/?p=libvirt.git;a=blob_plain;f=src/remote/remote_protocol.x;hb=HEAD
-const (
-	ProcConnectOpen                = 1
-	ProcConnectClose               = 2
-	ProcConnectGetCapabilties      = 7
-	ProcDomainGetXMLDesc           = 14
-	ProcDomainLookupByName         = 23
-	ProcDomainReboot               = 27
-	ProcAuthList                   = 66
-	ProcStoragePoolRefresh         = 83
-	ProcStoragePoolLookupByName    = 84
-	ProcConnectGetLibVersion       = 157
-	ProcDomainMemoryStats          = 159
-	ProcDomainCreateWithFlags      = 196
-	ProcDomainMigrateSetMaxSpeed   = 207
-	ProcDomainGetState             = 212
-	ProcDomainUndefineFlags        = 231
-	ProcDomainDestroyFlags         = 234
-	ProcDomainReset                = 245
-	ProcDomainSetBlockIOTune       = 252
-	ProcDomainGetBlockIOTune       = 253
-	ProcDomainShutdownFlags        = 258
-	ProcConnectListAllDomains      = 273
-	ProcConnectListAllStoragePools = 281
-	ProcConnectListAllSecrets      = 287
-	ProcMigratePerformParams       = 305
-	ProcDomainDefineXMLFlags       = 350
 )
 
 // qemu procedure identifiers

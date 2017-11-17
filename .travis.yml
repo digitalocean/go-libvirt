@@ -4,15 +4,16 @@ dist: trusty
 sudo: require
 
 go:
-  - 1.7
+  - 1.9
 
 env:
-  - LIBVIRT=1.2.2  EXT=gz
+  - LIBVIRT=1.2.12 EXT=gz
   - LIBVIRT=2.3.0  EXT=xz
   - LIBVIRT=3.1.0  EXT=xz
 
 before_install:
   - go get github.com/golang/lint/golint
+  - go get golang.org/x/tools/cmd/goyacc
 
 install:
   # credit here goes to the go-libvirt authors,
@@ -44,6 +45,7 @@ before_script:
 
 script:
   - ./scripts/licensecheck.sh
+  - LIBVIRT_SOURCE=/usr/src/libvirt-${LIBVIRT} go generate ./...
   - go build ./...
   - golint -set_exit_status ./...
   - go vet ./...

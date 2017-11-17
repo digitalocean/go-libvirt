@@ -563,7 +563,7 @@ func (m *MockLibvirt) handle(conn net.Conn) {
 		proc := binary.BigEndian.Uint32(buf[12:16])
 
 		switch prog {
-		case constants.ProgramRemote:
+		case constants.Program:
 			m.handleRemote(proc, conn)
 		case constants.ProgramQEMU:
 			m.handleQEMU(proc, conn)
@@ -599,7 +599,7 @@ func (m *MockLibvirt) handleRemote(procedure uint32, conn net.Conn) {
 		conn.Write(m.reply(testDomainMemoryStatsReply))
 	case constants.ProcDomainMigrateSetMaxSpeed:
 		conn.Write(m.reply(testSetSpeedReply))
-	case constants.ProcMigratePerformParams:
+	case constants.ProcDomainMigratePerform3Params:
 		conn.Write(m.reply(testMigrateReply))
 	case constants.ProcDomainUndefineFlags:
 		conn.Write(m.reply(testUndefineReply))

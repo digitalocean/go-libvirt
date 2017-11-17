@@ -131,7 +131,7 @@ func (l *Libvirt) connect() error {
 
 	// libvirt requires that we call auth-list prior to connecting,
 	// event when no authentication is used.
-	resp, err := l.request(constants.ProcAuthList, constants.ProgramRemote, &buf)
+	resp, err := l.request(constants.ProcAuthList, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -141,7 +141,7 @@ func (l *Libvirt) connect() error {
 		return decodeError(r.Payload)
 	}
 
-	resp, err = l.request(constants.ProcConnectOpen, constants.ProgramRemote, &buf)
+	resp, err = l.request(constants.ProcConnectOpen, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (l *Libvirt) connect() error {
 }
 
 func (l *Libvirt) disconnect() error {
-	resp, err := l.request(constants.ProcConnectClose, constants.ProgramRemote, nil)
+	resp, err := l.request(constants.ProcConnectClose, constants.Program, nil)
 	if err != nil {
 		return err
 	}
@@ -329,7 +329,7 @@ func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (<
 		Len: uint32(size),
 		Header: header{
 			Program:   program,
-			Version:   constants.ProgramVersion,
+			Version:   constants.ProtocolVersion,
 			Procedure: proc,
 			Type:      Call,
 			Serial:    serial,

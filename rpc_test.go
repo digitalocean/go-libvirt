@@ -106,7 +106,7 @@ var (
 		0x00, 0x00, 0x00, 0x02,
 	}
 
-	testDomain = Domain{
+	testDomain = &NonnullDomain{
 		Name: "test-domain",
 		UUID: testUUID,
 		ID:   1,
@@ -120,12 +120,12 @@ func TestExtractHeader(t *testing.T) {
 		t.Error(err)
 	}
 
-	if h.Program != constants.ProgramRemote {
-		t.Errorf("expected Program %q, got %q", constants.ProgramRemote, h.Program)
+	if h.Program != constants.Program {
+		t.Errorf("expected Program %q, got %q", constants.Program, h.Program)
 	}
 
-	if h.Version != constants.ProgramVersion {
-		t.Errorf("expected version %q, got %q", constants.ProgramVersion, h.Version)
+	if h.Version != constants.ProtocolVersion {
+		t.Errorf("expected version %q, got %q", constants.ProtocolVersion, h.Version)
 	}
 
 	if h.Procedure != constants.ProcConnectOpen {
@@ -177,7 +177,7 @@ func TestDecodeEvent(t *testing.T) {
 		t.Errorf("expected uuid:\t%x, got\n\t\t\t%x", expUUID, e.Domain.UUID)
 	}
 
-	expID := 14
+	expID := int32(14)
 	if e.Domain.ID != expID {
 		t.Errorf("expected id %d, got %d", expID, e.Domain.ID)
 	}
@@ -338,10 +338,6 @@ func TestLookup(t *testing.T) {
 	d, err := l.lookup(name)
 	if err != nil {
 		t.Error(err)
-	}
-
-	if d == nil {
-		t.Error("nil domain returned")
 	}
 
 	if d.Name != name {
