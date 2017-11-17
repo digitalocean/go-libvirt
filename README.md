@@ -8,9 +8,15 @@ Libvirt's RPC interface, as documented [here](https://libvirt.org/internals/rpc.
 Connections to the libvirt server may be local, or remote. RPC packets are encoded
 using the XDR standard as defined by [RFC 4506](https://tools.ietf.org/html/rfc4506.html).
 
-This should be considered a work in progress. Most functionaly provided by the C
-bindings have not yet made their way into this library. [Pull requests are welcome](https://github.com/digitalocean/go-libvirt/blob/master/CONTRIBUTING.md)!
-The definition of the RPC protocol is in the libvirt source tree under [src/rpc/virnetprotocol.x](https://github.com/libvirt/libvirt/blob/master/src/rpc/virnetprotocol.x).
+Libvirt's RPC interface is quite extensive, and changes from one version to the next, so
+this project uses a code generator to build the go bindings. The code generator should
+be run whenever you want to build go-libvirt for a new version of libvirt. To do this,
+you'll need to set an environment variable `LIBVIRT_SOURCE` to the directory containing
+the untarred libvirt sources, and then run `go generate ./...` from the go-libvirt directory.
+The code generator consumes [src/remote/remote_protocol.x](https://github.com/libvirt/libvirt/blob/master/src/remote/remote_protocol.x)
+and produces go bindings for all the remote procedures defined there.
+
+[Pull requests are welcome](https://github.com/digitalocean/go-libvirt/blob/master/CONTRIBUTING.md)!
 
 Feel free to join us in [`#go-qemu` on freenode](https://webchat.freenode.net/)
 if you'd like to discuss the project.
