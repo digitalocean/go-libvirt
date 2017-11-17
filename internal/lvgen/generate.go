@@ -260,11 +260,7 @@ func genGo(constFile, procFile io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if err := t.Execute(procFile, Gen); err != nil {
-		return err
-	}
-
-	return nil
+	return t.Execute(procFile, Gen)
 }
 
 // constNameTransform changes an upcased, snake-style name like
