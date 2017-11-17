@@ -30,7 +30,7 @@ state 1
 state 2
 	specification:  definition_list.    (1)
 
-	.  reduce 1 (src line 38)
+	.  reduce 1 (src line 62)
 
 
 state 3
@@ -44,37 +44,37 @@ state 3
 state 4
 	definition:  enum_definition.    (6)
 
-	.  reduce 6 (src line 52)
+	.  reduce 6 (src line 76)
 
 
 state 5
 	definition:  const_definition.    (7)
 
-	.  reduce 7 (src line 54)
+	.  reduce 7 (src line 78)
 
 
 state 6
 	definition:  typedef_definition.    (8)
 
-	.  reduce 8 (src line 55)
+	.  reduce 8 (src line 79)
 
 
 state 7
 	definition:  struct_definition.    (9)
 
-	.  reduce 9 (src line 56)
+	.  reduce 9 (src line 80)
 
 
 state 8
 	definition:  union_definition.    (10)
 
-	.  reduce 10 (src line 57)
+	.  reduce 10 (src line 81)
 
 
 state 9
 	definition:  program_definition.    (11)
 
-	.  reduce 11 (src line 58)
+	.  reduce 11 (src line 82)
 
 
 state 10
@@ -98,7 +98,7 @@ state 12
 	typedef_definition:  TYPEDEF.$$22 declaration 
 	$$22: .    (22)
 
-	.  reduce 22 (src line 113)
+	.  reduce 22 (src line 137)
 
 	$$22  goto 21
 
@@ -136,7 +136,7 @@ state 16
 	TYPEDEF  shift 12
 	UNION  shift 14
 	PROGRAM  shift 15
-	.  reduce 4 (src line 47)
+	.  reduce 4 (src line 71)
 
 	definition_list  goto 28
 	definition  goto 3
@@ -157,7 +157,7 @@ state 17
 state 18
 	enum_ident:  IDENTIFIER.    (17)
 
-	.  reduce 17 (src line 87)
+	.  reduce 17 (src line 111)
 
 
 state 19
@@ -171,7 +171,7 @@ state 19
 state 20
 	const_ident:  IDENTIFIER.    (21)
 
-	.  reduce 21 (src line 109)
+	.  reduce 21 (src line 133)
 
 
 state 21
@@ -214,21 +214,21 @@ state 22
 state 23
 	struct_ident:  IDENTIFIER.    (51)
 
-	.  reduce 51 (src line 174)
+	.  reduce 51 (src line 198)
 
 
 state 24
 	union_definition:  UNION union_ident.$$54 SWITCH '(' simple_declaration ')' '{' case_list '}' 
 	$$54: .    (54)
 
-	.  reduce 54 (src line 183)
+	.  reduce 54 (src line 207)
 
 	$$54  goto 53
 
 state 25
 	union_ident:  IDENTIFIER.    (56)
 
-	.  reduce 56 (src line 187)
+	.  reduce 56 (src line 211)
 
 
 state 26
@@ -241,13 +241,13 @@ state 26
 state 27
 	program_ident:  IDENTIFIER.    (64)
 
-	.  reduce 64 (src line 205)
+	.  reduce 64 (src line 229)
 
 
 state 28
 	definition_list:  definition ';' definition_list.    (5)
 
-	.  reduce 5 (src line 49)
+	.  reduce 5 (src line 73)
 
 
 state 29
@@ -272,31 +272,31 @@ state 30
 state 31
 	typedef_definition:  TYPEDEF $$22 declaration.    (23)
 
-	.  reduce 23 (src line 114)
+	.  reduce 23 (src line 138)
 
 
 state 32
 	declaration:  simple_declaration.    (24)
 
-	.  reduce 24 (src line 117)
+	.  reduce 24 (src line 141)
 
 
 state 33
 	declaration:  fixed_array_declaration.    (25)
 
-	.  reduce 25 (src line 119)
+	.  reduce 25 (src line 143)
 
 
 state 34
 	declaration:  variable_array_declaration.    (26)
 
-	.  reduce 26 (src line 120)
+	.  reduce 26 (src line 144)
 
 
 state 35
 	declaration:  pointer_declaration.    (27)
 
-	.  reduce 27 (src line 121)
+	.  reduce 27 (src line 145)
 
 
 state 36
@@ -315,7 +315,7 @@ state 36
 state 37
 	type_specifier:  int_spec.    (29)
 
-	.  reduce 29 (src line 128)
+	.  reduce 29 (src line 152)
 
 
 state 38
@@ -332,86 +332,86 @@ state 38
 state 39
 	type_specifier:  FLOAT.    (31)
 
-	.  reduce 31 (src line 131)
+	.  reduce 31 (src line 155)
 
 
 state 40
 	type_specifier:  DOUBLE.    (32)
 
-	.  reduce 32 (src line 132)
+	.  reduce 32 (src line 156)
 
 
 state 41
 	type_specifier:  BOOL.    (33)
 
-	.  reduce 33 (src line 133)
+	.  reduce 33 (src line 157)
 
 
 state 42
 	type_specifier:  STRING.    (34)
 
-	.  reduce 34 (src line 134)
+	.  reduce 34 (src line 158)
 
 
 state 43
 	type_specifier:  OPAQUE.    (35)
 
-	.  reduce 35 (src line 135)
+	.  reduce 35 (src line 159)
 
 
 state 44
 	type_specifier:  enum_definition.    (36)
 
-	.  reduce 36 (src line 136)
+	.  reduce 36 (src line 160)
 
 
 state 45
 	type_specifier:  struct_definition.    (37)
 
-	.  reduce 37 (src line 137)
+	.  reduce 37 (src line 161)
 
 
 state 46
 	type_specifier:  union_definition.    (38)
 
-	.  reduce 38 (src line 138)
+	.  reduce 38 (src line 162)
 
 
 state 47
 	type_specifier:  IDENTIFIER.    (39)
 
-	.  reduce 39 (src line 139)
+	.  reduce 39 (src line 163)
 
 
 state 48
 	int_spec:  HYPER.    (40)
 
-	.  reduce 40 (src line 142)
+	.  reduce 40 (src line 166)
 
 
 state 49
 	int_spec:  INT.    (41)
 
-	.  reduce 41 (src line 144)
+	.  reduce 41 (src line 168)
 
 
 state 50
 	int_spec:  SHORT.    (42)
 
-	.  reduce 42 (src line 145)
+	.  reduce 42 (src line 169)
 
 
 state 51
 	int_spec:  CHAR.    (43)
 
-	.  reduce 43 (src line 146)
+	.  reduce 43 (src line 170)
 
 
 state 52
 	struct_definition:  STRUCT struct_ident '{'.$$49 declaration_list '}' 
 	$$49: .    (49)
 
-	.  reduce 49 (src line 170)
+	.  reduce 49 (src line 194)
 
 	$$49  goto 65
 
@@ -443,7 +443,7 @@ state 56
 	enum_value_list:  enum_value.',' enum_value_list 
 
 	','  shift 71
-	.  reduce 13 (src line 65)
+	.  reduce 13 (src line 89)
 
 
 state 57
@@ -451,25 +451,25 @@ state 57
 	enum_value:  enum_value_ident.'=' value 
 
 	'='  shift 72
-	.  reduce 15 (src line 70)
+	.  reduce 15 (src line 94)
 
 
 state 58
 	enum_value_ident:  IDENTIFIER.    (18)
 
-	.  reduce 18 (src line 91)
+	.  reduce 18 (src line 115)
 
 
 state 59
 	const_definition:  CONST const_ident '=' IDENTIFIER.    (19)
 
-	.  reduce 19 (src line 98)
+	.  reduce 19 (src line 122)
 
 
 state 60
 	const_definition:  CONST const_ident '=' CONSTANT.    (20)
 
-	.  reduce 20 (src line 100)
+	.  reduce 20 (src line 124)
 
 
 state 61
@@ -480,7 +480,7 @@ state 61
 
 	'['  shift 73
 	'<'  shift 74
-	.  reduce 28 (src line 124)
+	.  reduce 28 (src line 148)
 
 
 state 62
@@ -494,13 +494,13 @@ state 62
 state 63
 	variable_ident:  IDENTIFIER.    (44)
 
-	.  reduce 44 (src line 149)
+	.  reduce 44 (src line 173)
 
 
 state 64
 	type_specifier:  UNSIGNED int_spec.    (30)
 
-	.  reduce 30 (src line 130)
+	.  reduce 30 (src line 154)
 
 
 state 65
@@ -567,7 +567,7 @@ state 69
 state 70
 	enum_definition:  ENUM enum_ident '{' enum_value_list '}'.    (12)
 
-	.  reduce 12 (src line 61)
+	.  reduce 12 (src line 85)
 
 
 state 71
@@ -612,7 +612,7 @@ state 74
 state 75
 	pointer_declaration:  type_specifier '*' variable_ident.    (48)
 
-	.  reduce 48 (src line 166)
+	.  reduce 48 (src line 190)
 
 
 state 76
@@ -668,7 +668,7 @@ state 80
 	version_list:  version ';'.version_list 
 
 	VERSION  shift 69
-	.  reduce 65 (src line 209)
+	.  reduce 65 (src line 233)
 
 	version_list  goto 95
 	version  goto 68
@@ -683,31 +683,31 @@ state 81
 state 82
 	version_ident:  IDENTIFIER.    (68)
 
-	.  reduce 68 (src line 218)
+	.  reduce 68 (src line 242)
 
 
 state 83
 	enum_value_list:  enum_value ',' enum_value_list.    (14)
 
-	.  reduce 14 (src line 67)
+	.  reduce 14 (src line 91)
 
 
 state 84
 	enum_value:  enum_value_ident '=' value.    (16)
 
-	.  reduce 16 (src line 78)
+	.  reduce 16 (src line 102)
 
 
 state 85
 	value:  IDENTIFIER.    (2)
 
-	.  reduce 2 (src line 42)
+	.  reduce 2 (src line 66)
 
 
 state 86
 	value:  CONSTANT.    (3)
 
-	.  reduce 3 (src line 44)
+	.  reduce 3 (src line 68)
 
 
 state 87
@@ -727,13 +727,13 @@ state 88
 state 89
 	variable_array_declaration:  type_specifier variable_ident '<' '>'.    (47)
 
-	.  reduce 47 (src line 159)
+	.  reduce 47 (src line 183)
 
 
 state 90
 	struct_definition:  STRUCT struct_ident '{' $$49 declaration_list '}'.    (50)
 
-	.  reduce 50 (src line 171)
+	.  reduce 50 (src line 195)
 
 
 state 91
@@ -754,7 +754,7 @@ state 91
 	SHORT  shift 50
 	CHAR  shift 51
 	IDENTIFIER  shift 47
-	.  reduce 52 (src line 178)
+	.  reduce 52 (src line 202)
 
 	enum_definition  goto 44
 	struct_definition  goto 45
@@ -795,7 +795,7 @@ state 94
 state 95
 	version_list:  version ';' version_list.    (66)
 
-	.  reduce 66 (src line 211)
+	.  reduce 66 (src line 235)
 
 
 state 96
@@ -828,19 +828,19 @@ state 96
 state 97
 	fixed_array_declaration:  type_specifier variable_ident '[' value ']'.    (45)
 
-	.  reduce 45 (src line 153)
+	.  reduce 45 (src line 177)
 
 
 state 98
 	variable_array_declaration:  type_specifier variable_ident '<' value '>'.    (46)
 
-	.  reduce 46 (src line 157)
+	.  reduce 46 (src line 181)
 
 
 state 99
 	declaration_list:  declaration ';' declaration_list.    (53)
 
-	.  reduce 53 (src line 180)
+	.  reduce 53 (src line 204)
 
 
 state 100
@@ -853,13 +853,13 @@ state 100
 state 101
 	simple_declaration:  type_specifier variable_ident.    (28)
 
-	.  reduce 28 (src line 124)
+	.  reduce 28 (src line 148)
 
 
 state 102
 	program_definition:  PROGRAM program_ident '{' version_list '}' '=' value.    (63)
 
-	.  reduce 63 (src line 201)
+	.  reduce 63 (src line 225)
 
 
 state 103
@@ -920,7 +920,7 @@ state 108
 	SHORT  shift 50
 	CHAR  shift 51
 	IDENTIFIER  shift 47
-	.  reduce 69 (src line 222)
+	.  reduce 69 (src line 246)
 
 	enum_definition  goto 44
 	struct_definition  goto 45
@@ -940,7 +940,7 @@ state 109
 state 110
 	procedure_ident:  IDENTIFIER.    (72)
 
-	.  reduce 72 (src line 231)
+	.  reduce 72 (src line 255)
 
 
 state 111
@@ -971,7 +971,7 @@ state 114
 	case:  DEFAULT.$$61 ':' declaration 
 	$$61: .    (61)
 
-	.  reduce 61 (src line 198)
+	.  reduce 61 (src line 222)
 
 	$$61  goto 121
 
@@ -987,7 +987,7 @@ state 115
 state 116
 	procedure_list:  procedure ';' procedure_list.    (70)
 
-	.  reduce 70 (src line 224)
+	.  reduce 70 (src line 248)
 
 
 state 117
@@ -1018,7 +1018,7 @@ state 117
 state 118
 	union_definition:  UNION union_ident $$54 SWITCH '(' simple_declaration ')' '{' case_list '}'.    (55)
 
-	.  reduce 55 (src line 184)
+	.  reduce 55 (src line 208)
 
 
 state 119
@@ -1027,7 +1027,7 @@ state 119
 
 	CASE  shift 113
 	DEFAULT  shift 114
-	.  reduce 57 (src line 191)
+	.  reduce 57 (src line 215)
 
 	case_list  goto 124
 	case  goto 112
@@ -1036,7 +1036,7 @@ state 120
 	case:  CASE value.$$59 ':' declaration 
 	$$59: .    (59)
 
-	.  reduce 59 (src line 196)
+	.  reduce 59 (src line 220)
 
 	$$59  goto 125
 
@@ -1064,7 +1064,7 @@ state 123
 state 124
 	case_list:  case ';' case_list.    (58)
 
-	.  reduce 58 (src line 193)
+	.  reduce 58 (src line 217)
 
 
 state 125
@@ -1107,7 +1107,7 @@ state 126
 state 127
 	version:  VERSION version_ident '{' procedure_list '}' '=' value ';'.    (67)
 
-	.  reduce 67 (src line 214)
+	.  reduce 67 (src line 238)
 
 
 state 128
@@ -1150,7 +1150,7 @@ state 129
 state 130
 	case:  DEFAULT $$61 ':' declaration.    (62)
 
-	.  reduce 62 (src line 198)
+	.  reduce 62 (src line 222)
 
 
 state 131
@@ -1165,7 +1165,7 @@ state 131
 state 132
 	case:  CASE value $$59 ':' declaration.    (60)
 
-	.  reduce 60 (src line 197)
+	.  reduce 60 (src line 221)
 
 
 state 133
@@ -1178,7 +1178,7 @@ state 133
 state 134
 	procedure:  type_specifier procedure_ident '(' type_specifier ')' '=' value ';'.    (71)
 
-	.  reduce 71 (src line 227)
+	.  reduce 71 (src line 251)
 
 
 40 terminals, 41 nonterminals

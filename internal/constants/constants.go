@@ -18,6 +18,7 @@
 // definitions.
 package constants
 
+// qemu constants
 const (
 	ProgramQEMU      = 0x20008087
 	ProgramKeepAlive = 0x6b656570
