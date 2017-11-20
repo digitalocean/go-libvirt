@@ -713,7 +713,7 @@ yydefault:
 		yyDollar = yyS[yypt-3 : yypt+1]
 		//line sunrpc.y:191
 		{
-			AddVariableArray(yyDollar[3].val, yyDollar[1].val, "1")
+			AddOptValue(yyDollar[3].val, yyDollar[1].val)
 		}
 	case 49:
 		yyDollar = yyS[yypt-3 : yypt+1]

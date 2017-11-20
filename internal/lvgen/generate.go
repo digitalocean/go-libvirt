@@ -83,10 +83,6 @@ var goEquivTypes = map[string]string{
 	// requires us to ditch the typedef that would otherwise be generated.
 	"NonnullString": "string",
 
-	// remote_string gets renamed "String" by the generator, so here we'll
-	// rename that to OptString - these are optional strings, and can be "null".
-	"String": "OptString",
-
 	// TODO: Get rid of these. They're only needed because we lose information
 	// that the parser has (the parser knows it has emitted a go type), and then
 	// we capitalize types to make them public.
@@ -122,6 +118,13 @@ var lvTypedParams = map[string]uint32{
 // Decl records a declaration, like 'int x' or 'remote_nonnull_string str'
 type Decl struct {
 	Name, LVName, Type string
+}
+
+// NewDecl returns a new declaration struct.
+func NewDecl(identifier, itype string) *Decl {
+	goidentifier := identifierTransform(identifier)
+	itype = typeTransform(itype)
+	return &Decl{Name: goidentifier, LVName: identifier, Type: itype}
 }
 
 // Structure records the name and members of a struct definition.
@@ -287,6 +290,10 @@ func identifierTransform(name string) string {
 	}
 	nn = fixAbbrevs(nn)
 	nn = checkIdentifier(nn)
+	// Many types in libvirt are prefixed with "Nonnull" to distinguish them
+	// from optional values. We add "Opt" to optional values and strip "Nonnull"
+	// because this makes the go code clearer.
+	nn = strings.TrimPrefix(nn, "Nonnull")
 	return nn
 }
 
@@ -525,29 +532,29 @@ func AddCase() {
 // The declaration will be added to any open container (such as a struct, if the
 // parser is working through a struct definition.)
 func AddDeclaration(identifier, itype string) {
-	// fmt.Println("adding", identifier, itype)
-	// If the name is a reserved word, transform it so it isn't.
-	goidentifier := identifierTransform(identifier)
-	itype = typeTransform(itype)
-	decl := Decl{Name: goidentifier, LVName: identifier, Type: itype}
+	addDecl(NewDecl(identifier, itype))
+}
+
+// addDecl adds a declaration to the current container.
+func addDecl(decl *Decl) {
 	if !CurrentStruct.empty() {
 		st := CurrentStruct.peek()
-		st.Members = append(st.Members, decl)
+		st.Members = append(st.Members, *decl)
 	} else if CurrentTypedef != nil {
-		CurrentTypedef.Name = goidentifier
-		CurrentTypedef.LVName = identifier
-		CurrentTypedef.Type = itype
-		if goidentifier != "string" {
+		CurrentTypedef.Name = decl.Name
+		CurrentTypedef.LVName = decl.LVName
+		CurrentTypedef.Type = decl.Type
+		if CurrentTypedef.Name != "string" {
 			// Omit recursive typedefs. These happen because we're massaging
 			// some of the type names.
 			Gen.Typedefs = append(Gen.Typedefs, *CurrentTypedef)
 		}
 		CurrentTypedef = nil
 	} else if CurrentCase != nil {
-		CurrentCase.Name = goidentifier
-		CurrentCase.Type = itype
+		CurrentCase.Name = decl.Name
+		CurrentCase.Type = decl.Type
 	} else if CurrentUnion != nil {
-		CurrentUnion.DiscriminantType = itype
+		CurrentUnion.DiscriminantType = decl.Type
 	}
 }
 
@@ -556,7 +563,7 @@ func AddDeclaration(identifier, itype string) {
 // prefixed.
 func AddFixedArray(identifier, itype, len string) {
 	atype := fmt.Sprintf("[%v]%v", len, itype)
-	AddDeclaration(identifier, atype)
+	addDecl(NewDecl(identifier, atype))
 }
 
 // AddVariableArray is called by the parser to add a variable-length array.
@@ -574,9 +581,26 @@ func AddVariableArray(identifier, itype, len string) {
 	if itype == "string" {
 		atype = itype
 	}
-	AddDeclaration(identifier, atype)
+	addDecl(NewDecl(identifier, atype))
 }
 
+// AddOptValue is called by the parser to add an optional value. These are
+// declared in the protocol definition file using a syntax that looks like a
+// pointer declaration, but are actually represented by a variable-sized array
+// with a maximum size of 1.
+func AddOptValue(identifier, itype string) {
+	atype := "[]" + itype
+	decl := NewDecl(identifier, atype)
+	newType := "Opt" + decl.Name
+	fmt.Printf("Adding mapping %v = %v\n", decl.Name, newType)
+	goEquivTypes[decl.Name] = newType
+	decl.Name = newType
+	addDecl(decl)
+}
+
+// checkIdentifier determines whether an identifier is in our translation list.
+// If so it returns the translated name. This is used to massage the type names
+// we're emitting.
 func checkIdentifier(i string) string {
 	nn, reserved := goEquivTypes[i]
 	if reserved {

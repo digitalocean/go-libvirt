@@ -55,7 +55,7 @@ type Libvirt struct {
 // DomainEvent represents a libvirt domain event.
 type DomainEvent struct {
 	CallbackID   uint32
-	Domain       NonnullDomain
+	Domain       Domain
 	Event        string
 	Seconds      uint64
 	Microseconds uint32
@@ -395,7 +395,7 @@ func (l *Libvirt) Disconnect() error {
 }
 
 // Domains returns a list of all domains managed by libvirt.
-func (l *Libvirt) Domains() ([]NonnullDomain, error) {
+func (l *Libvirt) Domains() ([]Domain, error) {
 	// these are the flags as passed by `virsh`, defined in:
 	// src/remote/remote_protocol.x # remote_connect_list_all_domains_args
 	domains, _, err := l.ConnectListAllDomains(1, 3)
@@ -425,7 +425,7 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 
 	payload := struct {
 		Padding [4]byte
-		Domain  NonnullDomain
+		Domain  Domain
 		Event   [2]byte
 		Flags   [2]byte
 	}{
@@ -524,7 +524,7 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 	}
 
 	payload := struct {
-		Domain  NonnullDomain
+		Domain  Domain
 		Command []byte
 		Flags   uint32
 	}{
@@ -567,20 +567,20 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 }
 
 // Secrets returns all secrets managed by the libvirt daemon.
-func (l *Libvirt) Secrets() ([]NonnullSecret, error) {
+func (l *Libvirt) Secrets() ([]Secret, error) {
 	secrets, _, err := l.ConnectListAllSecrets(1, 0)
 	return secrets, err
 }
 
 // StoragePool returns the storage pool associated with the provided name.
 // An error is returned if the requested storage pool is not found.
-func (l *Libvirt) StoragePool(name string) (NonnullStoragePool, error) {
+func (l *Libvirt) StoragePool(name string) (StoragePool, error) {
 	return l.StoragePoolLookupByName(name)
 }
 
 // StoragePools returns a list of defined storage pools. Pools are filtered by
 // the provided flags. See StoragePools*.
-func (l *Libvirt) StoragePools(flags StoragePoolsFlags) ([]NonnullStoragePool, error) {
+func (l *Libvirt) StoragePools(flags StoragePoolsFlags) ([]StoragePool, error) {
 	pools, _, err := l.ConnectListAllStoragePools(1, uint32(flags))
 	return pools, err
 }
@@ -775,7 +775,7 @@ func (l *Libvirt) GetBlockIOTune(dom string, disk string) ([]BlockLimit, error) 
 }
 
 // lookup returns a domain as seen by libvirt.
-func (l *Libvirt) lookup(name string) (NonnullDomain, error) {
+func (l *Libvirt) lookup(name string) (Domain, error) {
 	return l.DomainLookupByName(name)
 }
 
