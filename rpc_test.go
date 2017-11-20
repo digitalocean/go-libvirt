@@ -106,7 +106,7 @@ var (
 		0x00, 0x00, 0x00, 0x02,
 	}
 
-	testDomain = &NonnullDomain{
+	testDomain = &Domain{
 		Name: "test-domain",
 		UUID: testUUID,
 		ID:   1,
