@@ -39,6 +39,7 @@ type Libvirt struct {
 	conn net.Conn
 	r    *bufio.Reader
 	w    *bufio.Writer
+	mu   *sync.Mutex
 
 	// method callbacks
 	cm        sync.Mutex
@@ -809,6 +810,7 @@ func New(conn net.Conn) *Libvirt {
 		s:         0,
 		r:         bufio.NewReader(conn),
 		w:         bufio.NewWriter(conn),
+		mu:        &sync.Mutex{},
 		callbacks: make(map[uint32]chan response),
 		events:    make(map[uint32]chan *DomainEvent),
 	}
