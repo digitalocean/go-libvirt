@@ -338,6 +338,8 @@ func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (<
 	}
 
 	// write header
+	l.mu.Lock()
+	defer l.mu.Unlock()
 	err := binary.Write(l.w, binary.BigEndian, p)
 	if err != nil {
 		return nil, err
