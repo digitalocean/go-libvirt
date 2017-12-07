@@ -19,6 +19,7 @@ package libvirt
 import (
 	"encoding/xml"
 	"net"
+	"sync"
 	"testing"
 	"time"
 
@@ -248,6 +249,49 @@ func TestXMLIntegration(t *testing.T) {
 	var v interface{}
 	if err := xml.Unmarshal(data, &v); err != nil {
 		t.Error(err)
+	}
+}
+
+// verify we're able to concurrently communicate with libvirtd.
+// see: https://github.com/digitalocean/go-libvirt/pull/52
+func Test_concurrentWrite(t *testing.T) {
+	l := New(testConn(t))
+
+	if err := l.Connect(); err != nil {
+		t.Error(err)
+	}
+	defer l.Disconnect()
+
+	count := 10
+	wg := sync.WaitGroup{}
+	wg.Add(count)
+
+	start := make(chan struct{})
+	done := make(chan struct{})
+
+	go func() {
+		wg.Wait()
+		close(done)
+	}()
+
+	for i := 0; i < count; i++ {
+		go func() {
+			defer wg.Done()
+			<-start
+
+			_, err := l.Domains()
+			if err != nil {
+				t.Fatal(err)
+			}
+		}()
+	}
+
+	close(start)
+
+	select {
+	case <-done:
+	case <-time.After(10 * time.Second):
+		t.Fatal("timed out waiting for execution to complete")
 	}
 }
 
