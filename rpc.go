@@ -208,7 +208,9 @@ func (l *Libvirt) listen() {
 
 // callback sends rpc responses to their respective caller.
 func (l *Libvirt) callback(id uint32, res response) {
+	l.cm.Lock()
 	c, ok := l.callbacks[id]
+	l.cm.Unlock()
 	if ok {
 		c <- res
 	}
