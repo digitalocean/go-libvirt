@@ -111,7 +111,11 @@ const (
 	DomainXMLFlagMigratable
 )
 
-// scheduler parameters
+// scheduler parameters used as fields in TypedParam by the following functions:
+// DomainGetSchedulerParameters
+// DomainGetSchedulerParametersFlags
+// DomainSetSchedulerParameters
+// DomainSetSchedulerParametersFlags
 const (
 	// DomainSchedulerCPUShares represents the propportional weight
 	// of the scheduler used on the host cpu, when using the posix
