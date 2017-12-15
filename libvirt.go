@@ -111,6 +111,74 @@ const (
 	DomainXMLFlagMigratable
 )
 
+// scheduler parameters
+const (
+	// DomainSchedulerCPUShares represents the propportional weight
+	// of the scheduler used on the host cpu, when using the posix
+	// scheduler. (ullong)
+	DomainSchedulerCPUShares = "cpu_shares"
+
+	// DomainSchedulerGlobalPeriod represents the enforcement period
+	// for a quota, in microseconds, for whole domain, when using the
+	// posix scheduler. (ullong)
+	DomainSchedulerGlobalPeriod = "global_period"
+
+	// DomainSchedulerGlobalQuota represents the maximum bandwidth to be
+	// used within a period for whole domain, when using the posix
+	// scheduler. (llong)
+	DomainSchedulerGlobalQuota = "global_quota"
+
+	// DomainSchedulerVCPUPeriod represents the enforcement period for a
+	// quota, in microseconds, for vcpus only, when using the posix
+	// scheduler. (ullong)
+	DomainSchedulerVCPUPeriod = "vcpu_period"
+
+	// DomainSchedulerVCPUQuota represents the maximum bandwidth to be
+	// used within a period for vcpus only, when using the posix
+	// scheduler. (llong)
+	DomainSchedulerVCPUQuota = "vcpu_quota"
+
+	// DomainSchedulerEmulatorPeriod represents the enforcement period
+	// for a quota in microseconds, when using the posix scheduler, for
+	// all emulator activity not tied to vcpus. (ullong)
+	DomainSchedulerEmulatorPeriod = "emulator_period"
+
+	// DomainSchedulerEmulatorQuota represents the maximum bandwidth to be
+	// used within a period for all emulator activity not tied to vcpus,
+	// when using the posix scheduler. (llong)
+	DomainSchedulerEmulatorQuota = "emulator_quota"
+
+	// DomainSchedulerIOThreadPeriod represents the enforcement period for
+	// a quota, in microseconds, for IOThreads only, when using the posix
+	// scheduler. (ullong)
+	DomainSchedulerIOThreadPeriod = "iothread_period"
+
+	// DomainSchedulerIOThreadQuota represents the maximum bandwidth to be
+	// used within a period for IOThreads only, when using the posix
+	// scheduler. (llong)
+	DomainSchedulerIOThreadQuota = "iothread_quota"
+
+	// DomainSchedulerWeight represents the relative weight, when using the
+	// credit scheduler. (uint)
+	DomainSchedulerWeight = "weight"
+
+	// DomainSchedulerCap represents the maximum scheduler cap, when using
+	// the credit scheduler. (uint)
+	DomainSchedulerCap = "cap"
+
+	// DomainSchedulerReservation represents the scheduler reservation
+	// value, when using the allocation scheduler. (llong)
+	DomainSchedulerReservation = "reservation"
+
+	// DomainSchedulerLimit represents the scheduler limit value, when using
+	// the allocation scheduler. (llong)
+	DomainSchedulerLimit = "limit"
+
+	// DomainSchedulerShares represents the scheduler shares value, when
+	// using the allocation scheduler. (int)
+	DomainSchedulerShares = "shares"
+)
+
 // MigrateFlags specifies options when performing a migration.
 type MigrateFlags uint32
 
