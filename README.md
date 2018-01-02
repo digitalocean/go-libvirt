@@ -41,7 +41,7 @@ over to `virDomainShutdownFlags()`. As its name suggests, this function takes a
 flag parameter which has possible values specified in an enum called
 `virDomainShutdownFlagValues`. Flag types like this are a little tricky for the
 code generator, because the C functions just take an integer type - only the
-libvirt documentation actaully ties the flags to the enum types. In most cases
+libvirt documentation actually ties the flags to the enum types. In most cases
 though we're able to generate a wrapper function with a distinct flag type,
 making it easier for Go tooling to suggest possible flag values while you're
 working. Checking the documentation for this function:
