@@ -31,8 +31,8 @@ fi
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 LVDIR=lv_source
 ln -sF ${LIBVIRT_SOURCE} ${LVDIR}
-if c-for-go -nocgo libvirt.yml; then
-    mv libvirt/const.go ${DIR}/const.gen.go
+if c-for-go -nostamp -nocgo libvirt.yml; then
+    mv libvirt/const.go ${DIR}/../const.gen.go
 fi
 rm ${LVDIR}
 rm -rf libvirt/

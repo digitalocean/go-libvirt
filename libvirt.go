@@ -18,7 +18,7 @@ package libvirt
 
 // We'll use c-for-go to extract the consts and typedefs from the libvirt
 // sources so we don't have to duplicate them here.
-//go:generate ./gen-consts.sh
+//go:generate scripts/gen-consts.sh
 
 import (
 	"bufio"

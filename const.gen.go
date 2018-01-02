@@ -1,5 +1,5 @@
-// WARNING: This file has automatically been generated on Tue, 02 Jan 2018 15:41:59 EST.
-// By https://git.io/c-for-go. DO NOT EDIT.
+// WARNING: This file has automatically been generated
+// by https://git.io/c-for-go. DO NOT EDIT.
 
 package libvirt
 
