@@ -1,14 +1,14 @@
 libvirt [![GoDoc](http://godoc.org/github.com/digitalocean/go-libvirt?status.svg)](http://godoc.org/github.com/digitalocean/go-libvirt) [![Build Status](https://travis-ci.org/digitalocean/go-libvirt.svg?branch=master)](https://travis-ci.org/digitalocean/go-libvirt) [![Report Card](https://goreportcard.com/badge/github.com/digitalocean/go-libvirt)](https://goreportcard.com/report/github.com/digitalocean/go-libvirt)
 ====
 
-Package `libvirt` provides a pure Go interface for interacting with Libvirt.
+Package `go-libvirt` provides a pure Go interface for interacting with libvirt.
 
 Rather than using Libvirt's C bindings, this package makes use of
-Libvirt's RPC interface, as documented [here](https://libvirt.org/internals/rpc.html).
+libvirt's RPC interface, as documented [here](https://libvirt.org/internals/rpc.html).
 Connections to the libvirt server may be local, or remote. RPC packets are encoded
 using the XDR standard as defined by [RFC 4506](https://tools.ietf.org/html/rfc4506.html).
 
-Libvirt's RPC interface is quite extensive, and changes from one version to the next, so
+libvirt's RPC interface is quite extensive, and changes from one version to the next, so
 this project uses a code generator to build the go bindings. The code generator should
 be run whenever you want to build go-libvirt for a new version of libvirt. To do this,
 you'll need to set an environment variable `LIBVIRT_SOURCE` to the directory containing
@@ -18,8 +18,64 @@ and produces go bindings for all the remote procedures defined there.
 
 [Pull requests are welcome](https://github.com/digitalocean/go-libvirt/blob/master/CONTRIBUTING.md)!
 
-Feel free to join us in [`#go-qemu` on freenode](https://webchat.freenode.net/)
-if you'd like to discuss the project.
+How to Use This Library
+-----------------------
+Once you've vendored go-libvirt into your project, you'll probably want to call
+some libvirt functions. There's some example code below showing how to connect
+to libvirt and make one such call, but once you get past the introduction you'll
+next want to call some other libvirt functions. How do you find them?
+
+Start with the [libvirt API reference](https://libvirt.org/html/index.html).
+Let's say you want to gracefully shutdown a VM, and after reading through the
+libvirt docs you determine that virDomainShutdown() is the function you want to
+call to do that. Where's that function in go-libvirt? We transform the names
+slightly when building the go bindings. There's no need for a global prefix like
+"vir" in Go, since all our functions are inside the package namespace, so we
+drop it. That means the Go function for `virDomainShutdown()` is just `DomainShutdown()`,
+and sure enough, you can find the Go function `DomainShutdown()` in libvirt.gen.go,
+with parameters and return values equivalent to those documented in the API
+reference.
+
+Suppose you then decide you need more control over your shutdown, so you switch
+over to `virDomainShutdownFlags()`. As its name suggests, this function takes a
+flag parameter which has possible values specified in an enum called
+`virDomainShutdownFlagValues`. Flag types like this are a little tricky for the
+code generator, because the C functions just take an integer type - only the
+libvirt documentation actaully ties the flags to the enum types. In most cases
+though we're able to generate a wrapper function with a distinct flag type,
+making it easier for Go tooling to suggest possible flag values while you're
+working. Checking the documentation for this function:
+
+`godoc github.com/digitalocean/go-libvirt DomainShutdownFlags`
+
+returns this:
+
+`func (l *Libvirt) DomainShutdownFlags(Dom Domain, Flags DomainShutdownFlagValues) (err error)`
+
+If you want to see the possible flag values, `godoc` can help again:
+
+```
+$ godoc github.com/digitalocean/go-libvirt DomainShutdownFlagValues
+
+type DomainShutdownFlagValues int32
+    DomainShutdownFlagValues as declared in libvirt/libvirt-domain.h:1121
+
+const (
+    DomainShutdownDefault      DomainShutdownFlagValues = iota
+    DomainShutdownAcpiPowerBtn DomainShutdownFlagValues = 1
+    DomainShutdownGuestAgent   DomainShutdownFlagValues = 2
+    DomainShutdownInitctl      DomainShutdownFlagValues = 4
+    DomainShutdownSignal       DomainShutdownFlagValues = 8
+    DomainShutdownParavirt     DomainShutdownFlagValues = 16
+)
+    DomainShutdownFlagValues enumeration from libvirt/libvirt-domain.h:1121
+```
+
+One other suggestion: most of the code in go-libvirt is now generated, but a few
+hand-written routines still exist in libvirt.go, and wrap calls to the generated
+code with slightly different parameters or return values. We suggest avoiding
+these hand-written routines and calling the generated routines in libvirt.gen.go
+instead. Over time these handwritten routines will be removed from go-libvirt.
 
 Warning
 -------

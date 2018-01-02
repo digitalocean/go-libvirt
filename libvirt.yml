@@ -1,0 +1,36 @@
+# Configuration file for c-for-go, which go-libvirt uses to translate the const
+# and type definitions from the C-language sources in the libvirt project into
+# Go. This file is used by the c-for-go binary (github.com/xlab/c-for-go), which
+# is called when 'go generate' is run. See libvirt.go for the command line used.
+---
+GENERATOR:
+    PackageName: libvirt
+    Includes: []
+
+PARSER:
+    # We can't use environment variables here, but we don't want to process the
+    # libvirt version installed in the system folders (if any). Instead we'll
+    # rely on our caller to link the libvirt source directory to lv_source/, and
+    # run on that code. This isn't ideal, but changes to c-for-go are needed to
+    # fix it.
+    IncludePaths: [./lv_source/include, /usr/include]
+    SourcesPaths:
+        - libvirt/libvirt.h
+
+TRANSLATOR:
+    ConstRules:
+        defines: eval
+    Rules:
+        global:
+            - {action: accept, from: "^vir"}
+        post-global:
+            - {action: replace, from: "^vir"}
+            - {load: snakecase}
+            - {action: replace, from: "Xml", to: "XML"}
+            - {action: replace, from: "Cpu", to: "CPU"}
+            - {action: replace, from: "Vcpu", to: "VCPU"}
+        const:
+            - {action: accept, from: "^VIR_"}
+            # Special case to prevent a collision with a type:
+            - {action: replace, from: "^VIR_DOMAIN_JOB_OPERATION", to: "VIR_DOMAIN_JOB_OPERATION_STR"}
+            - {transform: lower}

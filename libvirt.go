@@ -16,6 +16,10 @@
 // For more information on the protocol, see https://libvirt.org/internals/l.html
 package libvirt
 
+// We'll use c-for-go to extract the consts and typedefs from the libvirt
+// sources so we don't have to duplicate them here.
+//go:generate ./gen-consts.sh
+
 import (
 	"bufio"
 	"bytes"
@@ -34,7 +38,7 @@ import (
 // are unsupported by either QEMU or libvirt.
 var ErrEventsNotSupported = errors.New("event monitor is not supported")
 
-// Libvirt implements LibVirt's remote procedure call protocol.
+// Libvirt implements libvirt's remote procedure call protocol.
 type Libvirt struct {
 	conn net.Conn
 	r    *bufio.Reader
@@ -71,299 +75,6 @@ type qemuError struct {
 		Description string `json:"desc"`
 	} `json:"error"`
 }
-
-// DomainXMLFlags specifies options for dumping a domain's XML.
-type DomainXMLFlags uint32
-
-// DomainAffectFlags specifies options for whether an operation affects the
-// running VM, or the persistent VM configuration on disk. See FlagDomain...
-// consts for values.
-type DomainAffectFlags uint32
-
-// Consts used for flags
-
-// virDomainModificationImpact and virTypedParameterFlags values. These are
-// combined here because they are both used to set the same flags fields in the
-// libvirt API.
-const (
-	// FlagDomainAffectCurrent means affect the current domain state
-	FlagDomainAffectCurrent DomainAffectFlags = 0
-	// FlagDomainAffectLive means affect the running domain state
-	FlagDomainAffectLive = 1 << (iota - 1)
-	// FlagDomainAffectConfig means affect the persistent domain state.
-	FlagDomainAffectConfig
-	// FlagTypedParamStringOkay tells the server that this client understands
-	// TypedParamStrings.
-	FlagTypedParamStringOkay
-)
-
-const (
-	// DomainXMLFlagSecure dumps XML with sensitive information included.
-	DomainXMLFlagSecure DomainXMLFlags = 1 << iota
-
-	// DomainXMLFlagInactive dumps XML with inactive domain information.
-	DomainXMLFlagInactive
-
-	// DomainXMLFlagUpdateCPU dumps XML with guest CPU requirements according to the host CPU.
-	DomainXMLFlagUpdateCPU
-
-	// DomainXMLFlagMigratable dumps XML suitable for migration.
-	DomainXMLFlagMigratable
-)
-
-// MigrateFlags specifies options when performing a migration.
-type MigrateFlags uint32
-
-const (
-	// MigrateFlagLive performs a zero-downtime live migration.
-	MigrateFlagLive MigrateFlags = 1 << iota
-
-	// MigrateFlagPeerToPeer creates a direct source to destination control channel.
-	MigrateFlagPeerToPeer
-
-	// MigrateFlagTunneled tunnels migration data over the libvirtd connection.
-	MigrateFlagTunneled
-
-	// MigrateFlagPersistDestination will persist the VM on the destination host.
-	MigrateFlagPersistDestination
-
-	// MigrateFlagUndefineSource undefines the VM on the source host.
-	MigrateFlagUndefineSource
-
-	// MigrateFlagPaused will pause the remote side VM.
-	MigrateFlagPaused
-
-	// MigrateFlagNonSharedDisk migrate non-shared storage with full disk copy.
-	MigrateFlagNonSharedDisk
-
-	// MigrateFlagNonSharedIncremental migrate non-shared storage with incremental copy.
-	MigrateFlagNonSharedIncremental
-
-	// MigrateFlagChangeProtection prevents any changes to the domain configuration through the whole migration process.
-	MigrateFlagChangeProtection
-
-	// MigrateFlagUnsafe will force a migration even when it is considered unsafe.
-	MigrateFlagUnsafe
-
-	// MigrateFlagOffline is used to perform an offline migration.
-	MigrateFlagOffline
-
-	// MigrateFlagCompressed compresses data during migration.
-	MigrateFlagCompressed
-
-	// MigrateFlagAbortOnError will abort a migration on I/O errors encountered during migration.
-	MigrateFlagAbortOnError
-
-	// MigrateFlagAutoConverge forces convergence.
-	MigrateFlagAutoConverge
-
-	// MigrateFlagRDMAPinAll enables RDMA memory pinning.
-	MigrateFlagRDMAPinAll
-)
-
-// UndefineFlags specifies options available when undefining a domain.
-type UndefineFlags uint32
-
-const (
-	// UndefineFlagManagedSave removes all domain managed save data.
-	UndefineFlagManagedSave UndefineFlags = 1 << iota
-
-	// UndefineFlagSnapshotsMetadata removes all domain snapshot metadata.
-	UndefineFlagSnapshotsMetadata
-
-	// UndefineFlagNVRAM removes all domain NVRAM files.
-	UndefineFlagNVRAM
-)
-
-// DomainDefineXMLFlags specifies options available when defining a domain.
-type DomainDefineXMLFlags uint32
-
-const (
-	// DefineValidate validates the XML document against schema
-	DefineValidate DomainDefineXMLFlags = 1
-)
-
-// DestroyFlags specifies options available when destroying a domain.
-type DestroyFlags uint32
-
-const (
-	// DestroyFlagDefault default behavior, forcefully terminate the domain.
-	DestroyFlagDefault DestroyFlags = 1 << iota
-
-	// DestroyFlagGraceful only sends a SIGTERM no SIGKILL.
-	DestroyFlagGraceful
-)
-
-// ShutdownFlags specifies options available when shutting down a domain.
-type ShutdownFlags uint32
-
-const (
-	// ShutdownAcpiPowerBtn - send ACPI event
-	ShutdownAcpiPowerBtn ShutdownFlags = 1 << iota
-
-	// ShutdownGuestAgent - use guest agent
-	ShutdownGuestAgent
-
-	// ShutdownInitctl - use initctl
-	ShutdownInitctl
-
-	// ShutdownSignal - use signal
-	ShutdownSignal
-
-	// ShutdownParavirt - use paravirt guest control
-	ShutdownParavirt
-)
-
-// DomainState specifies state of the domain
-type DomainState uint32
-
-const (
-	// DomainStateNoState No state
-	DomainStateNoState DomainState = iota
-	// DomainStateRunning The domain is running
-	DomainStateRunning
-	// DomainStateBlocked The domain is blocked on resource
-	DomainStateBlocked
-	// DomainStatePaused The domain is paused by user
-	DomainStatePaused
-	// DomainStateShutdown The domain is being shut down
-	DomainStateShutdown
-	// DomainStateShutoff The domain is shut off
-	DomainStateShutoff
-	// DomainStateCrashed The domain is crashed
-	DomainStateCrashed
-	// DomainStatePMSuspended The domain is suspended by guest power management
-	DomainStatePMSuspended
-	// DomainStateLast This value will increase over time as new events are added to the libvirt
-	// API. It reflects the last state supported by this version of the libvirt API.
-	DomainStateLast
-)
-
-// SecretUsageType specifies the usage for a libvirt secret.
-type SecretUsageType uint32
-
-const (
-	// SecretUsageTypeNone specifies no usage.
-	SecretUsageTypeNone SecretUsageType = iota
-	// SecretUsageTypeVolume specifies a volume secret.
-	SecretUsageTypeVolume
-	// SecretUsageTypeCeph specifies secrets for ceph devices.
-	SecretUsageTypeCeph
-	// SecretUsageTypeISCSI specifies secrets for ISCSI devices.
-	SecretUsageTypeISCSI
-)
-
-// StoragePoolsFlags specifies storage pools to list.
-type StoragePoolsFlags uint32
-
-// These flags come in groups; if all bits from a group are 0,
-// then that group is not used to filter results.
-const (
-	StoragePoolsFlagInactive = 1 << iota
-	StoragePoolsFlagActive
-
-	StoragePoolsFlagPersistent
-	StoragePoolsFlagTransient
-
-	StoragePoolsFlagAutostart
-	StoragePoolsFlagNoAutostart
-
-	// pools by type
-	StoragePoolsFlagDir
-	StoragePoolsFlagFS
-	StoragePoolsFlagNETFS
-	StoragePoolsFlagLogical
-	StoragePoolsFlagDisk
-	StoragePoolsFlagISCSI
-	StoragePoolsFlagSCSI
-	StoragePoolsFlagMPATH
-	StoragePoolsFlagRBD
-	StoragePoolsFlagSheepdog
-	StoragePoolsFlagGluster
-	StoragePoolsFlagZFS
-)
-
-// DomainCreateFlags specify options for starting domains
-type DomainCreateFlags uint32
-
-const (
-	// DomainCreateFlagPaused creates paused domain.
-	DomainCreateFlagPaused = 1 << iota
-
-	// DomainCreateFlagAutoDestroy destoy domain after libvirt connection closed.
-	DomainCreateFlagAutoDestroy
-
-	// DomainCreateFlagBypassCache avoid file system cache pollution.
-	DomainCreateFlagBypassCache
-
-	// DomainCreateFlagStartForceBoot boot, discarding any managed save
-	DomainCreateFlagStartForceBoot
-
-	// DomainCreateFlagStartValidate validate the XML document against schema
-	DomainCreateFlagStartValidate
-)
-
-// RebootFlags specifies domain reboot methods
-type RebootFlags uint32
-
-const (
-	// RebootAcpiPowerBtn - send ACPI event
-	RebootAcpiPowerBtn RebootFlags = 1 << iota
-
-	// RebootGuestAgent - use guest agent
-	RebootGuestAgent
-
-	// RebootInitctl - use initctl
-	RebootInitctl
-
-	// RebootSignal - use signal
-	RebootSignal
-
-	// RebootParavirt - use paravirt guest control
-	RebootParavirt
-)
-
-// DomainMemoryStatTag specifies domain memory tags
-type DomainMemoryStatTag uint32
-
-const (
-	// DomainMemoryStatTagSwapIn - The total amount of data read from swap space (in kB).
-	DomainMemoryStatTagSwapIn DomainMemoryStatTag = iota
-
-	// DomainMemoryStatTagSwapOut - The total amount of memory written out to swap space (in kB).
-	DomainMemoryStatTagSwapOut
-
-	// DomainMemoryStatTagMajorFault - Page faults occur when a process makes a valid access to virtual memory
-	// that is not available.  When servicing the page fault, if disk IO is
-	// required, it is considered a major fault.
-	// These are expressed as the number of faults that have occurred.
-	DomainMemoryStatTagMajorFault
-
-	// DomainMemoryStatTagMinorFault - If the page fault not require disk IO, it is a minor fault.
-	DomainMemoryStatTagMinorFault
-
-	// DomainMemoryStatTagUnused - The amount of memory left completely unused by the system (in kB).
-	DomainMemoryStatTagUnused
-
-	// DomainMemoryStatTagAvailable - The total amount of usable memory as seen by the domain (in kB).
-	DomainMemoryStatTagAvailable
-
-	// DomainMemoryStatTagActualBalloon - Current balloon value (in KB).
-	DomainMemoryStatTagActualBalloon
-
-	// DomainMemoryStatTagRss - Resident Set Size of the process running the domain (in KB).
-	DomainMemoryStatTagRss
-
-	// DomainMemoryStatTagUsable - How much the balloon can be inflated without pushing the guest system
-	// to swap, corresponds to 'Available' in /proc/meminfo
-	DomainMemoryStatTagUsable
-
-	// DomainMemoryStatTagLastUpdate - Timestamp of the last update of statistics, in seconds.
-	DomainMemoryStatTagLastUpdate
-
-	// DomainMemoryStatTagNr - The number of statistics supported by this version of the interface.
-	DomainMemoryStatTagNr
-)
 
 // Capabilities returns an XML document describing the host's capabilties.
 func (l *Libvirt) Capabilities() ([]byte, error) {
@@ -407,7 +118,7 @@ func (l *Libvirt) Domains() ([]Domain, error) {
 func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 	d, err := l.lookup(dom)
 	if err != nil {
-		return DomainStateNoState, err
+		return DomainNostate, err
 	}
 
 	state, _, err := l.DomainGetState(d, 0)
@@ -481,7 +192,7 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 // 'qemu+tcp://example.com/system'. The flags argument determines the
 // type of migration and how it will be performed. For more information
 // on available migration flags and their meaning, see MigrateFlag*.
-func (l *Libvirt) Migrate(dom string, dest string, flags MigrateFlags) error {
+func (l *Libvirt) Migrate(dom string, dest string, flags DomainMigrateFlags) error {
 	_, err := url.Parse(dest)
 	if err != nil {
 		return err
@@ -499,7 +210,7 @@ func (l *Libvirt) Migrate(dom string, dest string, flags MigrateFlags) error {
 	destURI := []string{dest}
 	remoteParams := []TypedParam{}
 	cookieIn := []byte{}
-	_, err = l.DomainMigratePerform3Params(d, destURI, remoteParams, cookieIn, uint32(flags))
+	_, err = l.DomainMigratePerform3Params(d, destURI, remoteParams, cookieIn, flags)
 	return err
 }
 
@@ -581,35 +292,35 @@ func (l *Libvirt) StoragePool(name string) (StoragePool, error) {
 
 // StoragePools returns a list of defined storage pools. Pools are filtered by
 // the provided flags. See StoragePools*.
-func (l *Libvirt) StoragePools(flags StoragePoolsFlags) ([]StoragePool, error) {
-	pools, _, err := l.ConnectListAllStoragePools(1, uint32(flags))
+func (l *Libvirt) StoragePools(flags ConnectListAllStoragePoolsFlags) ([]StoragePool, error) {
+	pools, _, err := l.ConnectListAllStoragePools(1, flags)
 	return pools, err
 }
 
 // Undefine undefines the domain specified by dom, e.g., 'prod-lb-01'.
 // The flags argument allows additional options to be specified such as
 // cleaning up snapshot metadata. For more information on available
-// flags, see UndefineFlag*.
-func (l *Libvirt) Undefine(dom string, flags UndefineFlags) error {
+// flags, see DomainUndefine*.
+func (l *Libvirt) Undefine(dom string, flags DomainUndefineFlagsValues) error {
 	d, err := l.lookup(dom)
 	if err != nil {
 		return err
 	}
 
-	return l.DomainUndefineFlags(d, uint32(flags))
+	return l.DomainUndefineFlags(d, flags)
 }
 
 // Destroy destroys the domain specified by dom, e.g., 'prod-lb-01'.
 // The flags argument allows additional options to be specified such as
 // allowing a graceful shutdown with SIGTERM than SIGKILL.
-// For more information on available flags, see DestroyFlag*.
-func (l *Libvirt) Destroy(dom string, flags DestroyFlags) error {
+// For more information on available flags, see DomainDestroy*.
+func (l *Libvirt) Destroy(dom string, flags DomainDestroyFlagsValues) error {
 	d, err := l.lookup(dom)
 	if err != nil {
 		return err
 	}
 
-	return l.DomainDestroyFlags(d, uint32(flags))
+	return l.DomainDestroyFlags(d, flags)
 }
 
 // XML returns a domain's raw XML definition, akin to `virsh dumpxml <domain>`.
@@ -620,13 +331,13 @@ func (l *Libvirt) XML(dom string, flags DomainXMLFlags) ([]byte, error) {
 		return nil, err
 	}
 
-	xml, err := l.DomainGetXMLDesc(d, uint32(flags))
+	xml, err := l.DomainGetXMLDesc(d, flags)
 	return []byte(xml), err
 }
 
 // DefineXML defines a domain, but does not start it.
-func (l *Libvirt) DefineXML(x []byte, flags DomainDefineXMLFlags) error {
-	_, err := l.DomainDefineXMLFlags(string(x), uint32(flags))
+func (l *Libvirt) DefineXML(x []byte, flags DomainDefineFlags) error {
+	_, err := l.DomainDefineXMLFlags(string(x), flags)
 	return err
 }
 
@@ -652,24 +363,24 @@ func (l *Libvirt) Version() (string, error) {
 
 // Shutdown shuts down a domain. Note that the guest OS may ignore the request.
 // If flags is set to 0 then the hypervisor will choose the method of shutdown it considers best.
-func (l *Libvirt) Shutdown(dom string, flags ShutdownFlags) error {
+func (l *Libvirt) Shutdown(dom string, flags DomainShutdownFlagValues) error {
 	d, err := l.lookup(dom)
 	if err != nil {
 		return err
 	}
 
-	return l.DomainShutdownFlags(d, uint32(flags))
+	return l.DomainShutdownFlags(d, flags)
 }
 
 // Reboot reboots the domain. Note that the guest OS may ignore the request.
 // If flags is set to zero, then the hypervisor will choose the method of shutdown it considers best.
-func (l *Libvirt) Reboot(dom string, flags RebootFlags) error {
+func (l *Libvirt) Reboot(dom string, flags DomainRebootFlagValues) error {
 	d, err := l.lookup(dom)
 	if err != nil {
 		return err
 	}
 
-	return l.DomainReboot(d, uint32(flags))
+	return l.DomainReboot(d, flags)
 }
 
 // Reset resets domain immediately without any guest OS shutdown
@@ -691,33 +402,6 @@ type BlockLimit struct {
 	Name  string
 	Value uint64
 }
-
-// BlockIOTune-able values. These tunables are different for different
-// hypervisors; currently only the tunables for QEMU are defined here. These are
-// not necessarily the only possible values; different libvirt versions may add
-// or remove parameters from this list.
-const (
-	QEMUBlockIOGroupName              = "group_name"
-	QEMUBlockIOTotalBytesSec          = "total_bytes_sec"
-	QEMUBlockIOReadBytesSec           = "read_bytes_sec"
-	QEMUBlockIOWriteBytesSec          = "write_bytes_sec"
-	QEMUBlockIOTotalIOPSSec           = "total_iops_sec"
-	QEMUBlockIOReadIOPSSec            = "read_iops_sec"
-	QEMUBlockIOWriteIOPSSec           = "write_iops_sec"
-	QEMUBlockIOTotalBytesSecMax       = "total_bytes_sec_max"
-	QEMUBlockIOReadBytesSecMax        = "read_bytes_sec_max"
-	QEMUBlockIOWriteBytesSecMax       = "write_bytes_sec_max"
-	QEMUBlockIOTotalIOPSSecMax        = "total_iops_sec_max"
-	QEMUBlockIOReadIOPSSecMax         = "read_iops_sec_max"
-	QEMUBlockIOWriteIOPSSecMax        = "write_iops_sec_max"
-	QEMUBlockIOSizeIOPSSec            = "size_iops_sec"
-	QEMUBlockIOTotalBytesSecMaxLength = "total_bytes_sec_max_length"
-	QEMUBlockIOReadBytesSecMaxLength  = "read_bytes_sec_max_length"
-	QEMUBlockIOWriteBytesSecMaxLength = "write_bytes_sec_max_length"
-	QEMUBlockIOTotalIOPSSecMaxLength  = "total_iops_sec_max_length"
-	QEMUBlockIOReadIOPSSecMaxLength   = "read_iops_sec_max_length"
-	QEMUBlockIOWriteIOPSSecMaxLength  = "write_iops_sec_max_length"
-)
 
 // SetBlockIOTune changes the per-device block I/O tunables within a guest.
 // Parameters are the name of the VM, the name of the disk device to which the
@@ -742,7 +426,7 @@ func (l *Libvirt) SetBlockIOTune(dom string, disk string, limits ...BlockLimit) 
 		params[ix] = TypedParam{Field: limit.Name, Value: tpval}
 	}
 
-	return l.DomainSetBlockIOTune(d, disk, params, FlagDomainAffectLive)
+	return l.DomainSetBlockIOTune(d, disk, params, uint32(DomainAffectLive))
 }
 
 // GetBlockIOTune returns a slice containing the current block I/O tunables for
@@ -753,7 +437,7 @@ func (l *Libvirt) GetBlockIOTune(dom string, disk string) ([]BlockLimit, error) 
 		return nil, err
 	}
 
-	lims, _, err := l.DomainGetBlockIOTune(d, []string{disk}, 32, FlagTypedParamStringOkay)
+	lims, _, err := l.DomainGetBlockIOTune(d, []string{disk}, 32, uint32(TypedParamStringOkay))
 	if err != nil {
 		return nil, err
 	}
