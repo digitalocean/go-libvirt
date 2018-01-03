@@ -412,12 +412,12 @@ func mapFlagTypes() map[string]ast.Expr {
 	pconf := loader.Config{}
 	f, err := pconf.ParseFile("../../const.gen.go", nil)
 	if err != nil {
-		fmt.Println("failed to read constants file: ", err)
+		panic(fmt.Sprintln("failed to read constants file: ", err))
 	}
 	pconf.CreateFromFiles("const", f)
 	prog, err := pconf.Load()
 	if err != nil {
-		fmt.Println("failed to load package: ", err)
+		panic(fmt.Sprintln("failed to load package: ", err))
 	}
 	cpkg := prog.Package("const")
 
