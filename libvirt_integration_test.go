@@ -156,7 +156,7 @@ func TestStoragePoolsIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pools, err := l.StoragePools(StoragePoolsFlagActive)
+	pools, err := l.StoragePools(ConnectListStoragePoolsActive)
 	if err != nil {
 		t.Error(err)
 	}
@@ -182,7 +182,7 @@ func TestStoragePoolsAutostartIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	pools, err := l.StoragePools(StoragePoolsFlagAutostart)
+	pools, err := l.StoragePools(ConnectListStoragePoolsAutostart)
 	if err != nil {
 		t.Error(err)
 	}

@@ -18,7 +18,6 @@ read -r -d '' EXPECTED <<EndOfLicense
 // limitations under the License.
 EndOfLicense
 
-# Scan each Go source file for license.
 EXIT=0
 GOFILES=$(find . -name "*.go")
 

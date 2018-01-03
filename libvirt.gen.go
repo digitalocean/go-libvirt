@@ -171,7 +171,7 @@ type DomainDiskError struct {
 // ConnectOpenArgs is libvirt's remote_connect_open_args
 type ConnectOpenArgs struct {
 	Name OptString
-	Flags uint32
+	Flags ConnectFlags
 }
 
 // ConnectSupportsFeatureArgs is libvirt's remote_connect_supports_feature_args
@@ -394,7 +394,7 @@ type DomainBlockResizeArgs struct {
 	Dom Domain
 	Disk string
 	Size uint64
-	Flags uint32
+	Flags DomainBlockResizeFlags
 }
 
 // DomainSetNumaParametersArgs is libvirt's remote_domain_set_numa_parameters_args
@@ -421,13 +421,13 @@ type DomainGetNumaParametersRet struct {
 type DomainSetPerfEventsArgs struct {
 	Dom Domain
 	Params []TypedParam
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 // DomainGetPerfEventsArgs is libvirt's remote_domain_get_perf_events_args
 type DomainGetPerfEventsArgs struct {
 	Dom Domain
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 // DomainGetPerfEventsRet is libvirt's remote_domain_get_perf_events_ret
@@ -495,7 +495,7 @@ type DomainGetInterfaceParametersArgs struct {
 	Dom Domain
 	Device string
 	Nparams int32
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 // DomainGetInterfaceParametersRet is libvirt's remote_domain_get_interface_parameters_ret
@@ -541,7 +541,7 @@ type DomainMemoryPeekArgs struct {
 	Dom Domain
 	Offset uint64
 	Size uint32
-	Flags uint32
+	Flags DomainMemoryFlags
 }
 
 // DomainMemoryPeekRet is libvirt's remote_domain_memory_peek_ret
@@ -581,7 +581,7 @@ type ConnectNumOfDomainsRet struct {
 // DomainCreateXMLArgs is libvirt's remote_domain_create_xml_args
 type DomainCreateXMLArgs struct {
 	XMLDesc string
-	Flags uint32
+	Flags DomainCreateFlags
 }
 
 // DomainCreateXMLRet is libvirt's remote_domain_create_xml_ret
@@ -592,7 +592,7 @@ type DomainCreateXMLRet struct {
 // DomainCreateXMLWithFilesArgs is libvirt's remote_domain_create_xml_with_files_args
 type DomainCreateXMLWithFilesArgs struct {
 	XMLDesc string
-	Flags uint32
+	Flags DomainCreateFlags
 }
 
 // DomainCreateXMLWithFilesRet is libvirt's remote_domain_create_xml_with_files_ret
@@ -662,7 +662,7 @@ type DomainShutdownArgs struct {
 // DomainRebootArgs is libvirt's remote_domain_reboot_args
 type DomainRebootArgs struct {
 	Dom Domain
-	Flags uint32
+	Flags DomainRebootFlagValues
 }
 
 // DomainResetArgs is libvirt's remote_domain_reset_args
@@ -679,7 +679,7 @@ type DomainDestroyArgs struct {
 // DomainDestroyFlagsArgs is libvirt's remote_domain_destroy_flags_args
 type DomainDestroyFlagsArgs struct {
 	Dom Domain
-	Flags uint32
+	Flags DomainDestroyFlagsValues
 }
 
 // DomainGetOsTypeArgs is libvirt's remote_domain_get_os_type_args
@@ -725,7 +725,7 @@ type DomainSetMemoryFlagsArgs struct {
 type DomainSetMemoryStatsPeriodArgs struct {
 	Dom Domain
 	Period int32
-	Flags uint32
+	Flags DomainMemoryModFlags
 }
 
 // DomainGetInfoArgs is libvirt's remote_domain_get_info_args
@@ -790,7 +790,7 @@ type DomainSaveImageDefineXMLArgs struct {
 type DomainCoreDumpArgs struct {
 	Dom Domain
 	To string
-	Flags uint32
+	Flags DomainCoreDumpFlags
 }
 
 // DomainCoreDumpWithFormatArgs is libvirt's remote_domain_core_dump_with_format_args
@@ -798,7 +798,7 @@ type DomainCoreDumpWithFormatArgs struct {
 	Dom Domain
 	To string
 	Dumpformat uint32
-	Flags uint32
+	Flags DomainCoreDumpFlags
 }
 
 // DomainScreenshotArgs is libvirt's remote_domain_screenshot_args
@@ -816,7 +816,7 @@ type DomainScreenshotRet struct {
 // DomainGetXMLDescArgs is libvirt's remote_domain_get_xml_desc_args
 type DomainGetXMLDescArgs struct {
 	Dom Domain
-	Flags uint32
+	Flags DomainXMLFlags
 }
 
 // DomainGetXMLDescRet is libvirt's remote_domain_get_xml_desc_ret
@@ -924,7 +924,7 @@ type DomainCreateWithFlagsRet struct {
 // DomainCreateWithFilesArgs is libvirt's remote_domain_create_with_files_args
 type DomainCreateWithFilesArgs struct {
 	Dom Domain
-	Flags uint32
+	Flags DomainCreateFlags
 }
 
 // DomainCreateWithFilesRet is libvirt's remote_domain_create_with_files_ret
@@ -945,7 +945,7 @@ type DomainDefineXMLRet struct {
 // DomainDefineXMLFlagsArgs is libvirt's remote_domain_define_xml_flags_args
 type DomainDefineXMLFlagsArgs struct {
 	XML string
-	Flags uint32
+	Flags DomainDefineFlags
 }
 
 // DomainDefineXMLFlagsRet is libvirt's remote_domain_define_xml_flags_ret
@@ -961,7 +961,7 @@ type DomainUndefineArgs struct {
 // DomainUndefineFlagsArgs is libvirt's remote_domain_undefine_flags_args
 type DomainUndefineFlagsArgs struct {
 	Dom Domain
-	Flags uint32
+	Flags DomainUndefineFlagsValues
 }
 
 // DomainInjectNmiArgs is libvirt's remote_domain_inject_nmi_args
@@ -1044,14 +1044,14 @@ type DomainGetVcpuPinInfoRet struct {
 type DomainPinEmulatorArgs struct {
 	Dom Domain
 	Cpumap []byte
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 // DomainGetEmulatorPinInfoArgs is libvirt's remote_domain_get_emulator_pin_info_args
 type DomainGetEmulatorPinInfoArgs struct {
 	Dom Domain
 	Maplen int32
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 // DomainGetEmulatorPinInfoRet is libvirt's remote_domain_get_emulator_pin_info_ret
@@ -1092,7 +1092,7 @@ type DomainIothreadInfo struct {
 // DomainGetIothreadInfoArgs is libvirt's remote_domain_get_iothread_info_args
 type DomainGetIothreadInfoArgs struct {
 	Dom Domain
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 // DomainGetIothreadInfoRet is libvirt's remote_domain_get_iothread_info_ret
@@ -1106,21 +1106,21 @@ type DomainPinIothreadArgs struct {
 	Dom Domain
 	IothreadsID uint32
 	Cpumap []byte
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 // DomainAddIothreadArgs is libvirt's remote_domain_add_iothread_args
 type DomainAddIothreadArgs struct {
 	Dom Domain
 	IothreadID uint32
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 // DomainDelIothreadArgs is libvirt's remote_domain_del_iothread_args
 type DomainDelIothreadArgs struct {
 	Dom Domain
 	IothreadID uint32
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 // DomainGetSecurityLabelArgs is libvirt's remote_domain_get_security_label_args
@@ -1207,7 +1207,7 @@ type DomainSetMetadataArgs struct {
 	Metadata OptString
 	Key OptString
 	Uri OptString
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 // DomainGetMetadataArgs is libvirt's remote_domain_get_metadata_args
@@ -1215,7 +1215,7 @@ type DomainGetMetadataArgs struct {
 	Dom Domain
 	Type int32
 	Uri OptString
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 // DomainGetMetadataRet is libvirt's remote_domain_get_metadata_ret
@@ -1227,7 +1227,7 @@ type DomainGetMetadataRet struct {
 type DomainBlockJobAbortArgs struct {
 	Dom Domain
 	Path string
-	Flags uint32
+	Flags DomainBlockJobAbortFlags
 }
 
 // DomainGetBlockJobInfoArgs is libvirt's remote_domain_get_block_job_info_args
@@ -1251,7 +1251,7 @@ type DomainBlockJobSetSpeedArgs struct {
 	Dom Domain
 	Path string
 	Bandwidth uint64
-	Flags uint32
+	Flags DomainBlockJobSetSpeedFlags
 }
 
 // DomainBlockPullArgs is libvirt's remote_domain_block_pull_args
@@ -1259,7 +1259,7 @@ type DomainBlockPullArgs struct {
 	Dom Domain
 	Path string
 	Bandwidth uint64
-	Flags uint32
+	Flags DomainBlockPullFlags
 }
 
 // DomainBlockRebaseArgs is libvirt's remote_domain_block_rebase_args
@@ -1268,7 +1268,7 @@ type DomainBlockRebaseArgs struct {
 	Path string
 	Base OptString
 	Bandwidth uint64
-	Flags uint32
+	Flags DomainBlockRebaseFlags
 }
 
 // DomainBlockCopyArgs is libvirt's remote_domain_block_copy_args
@@ -1277,7 +1277,7 @@ type DomainBlockCopyArgs struct {
 	Path string
 	Destxml string
 	Params []TypedParam
-	Flags uint32
+	Flags DomainBlockCopyFlags
 }
 
 // DomainBlockCommitArgs is libvirt's remote_domain_block_commit_args
@@ -1287,7 +1287,7 @@ type DomainBlockCommitArgs struct {
 	Base OptString
 	Top OptString
 	Bandwidth uint64
-	Flags uint32
+	Flags DomainBlockCommitFlags
 }
 
 // DomainSetBlockIOTuneArgs is libvirt's remote_domain_set_block_io_tune_args
@@ -1318,7 +1318,7 @@ type DomainGetCPUStatsArgs struct {
 	Nparams uint32
 	StartCPU int32
 	Ncpus uint32
-	Flags uint32
+	Flags TypedParameterFlags
 }
 
 // DomainGetCPUStatsRet is libvirt's remote_domain_get_cpu_stats_ret
@@ -1420,7 +1420,7 @@ type NetworkUpdateArgs struct {
 	Section uint32
 	ParentIndex int32
 	XML string
-	Flags uint32
+	Flags NetworkUpdateFlags
 }
 
 // NetworkCreateArgs is libvirt's remote_network_create_args
@@ -1752,7 +1752,7 @@ type StoragePoolLookupByVolumeRet struct {
 // StoragePoolCreateXMLArgs is libvirt's remote_storage_pool_create_xml_args
 type StoragePoolCreateXMLArgs struct {
 	XML string
-	Flags uint32
+	Flags StoragePoolCreateFlags
 }
 
 // StoragePoolCreateXMLRet is libvirt's remote_storage_pool_create_xml_ret
@@ -1774,7 +1774,7 @@ type StoragePoolDefineXMLRet struct {
 // StoragePoolBuildArgs is libvirt's remote_storage_pool_build_args
 type StoragePoolBuildArgs struct {
 	Pool StoragePool
-	Flags uint32
+	Flags StoragePoolBuildFlags
 }
 
 // StoragePoolUndefineArgs is libvirt's remote_storage_pool_undefine_args
@@ -1785,7 +1785,7 @@ type StoragePoolUndefineArgs struct {
 // StoragePoolCreateArgs is libvirt's remote_storage_pool_create_args
 type StoragePoolCreateArgs struct {
 	Pool StoragePool
-	Flags uint32
+	Flags StoragePoolCreateFlags
 }
 
 // StoragePoolDestroyArgs is libvirt's remote_storage_pool_destroy_args
@@ -1796,7 +1796,7 @@ type StoragePoolDestroyArgs struct {
 // StoragePoolDeleteArgs is libvirt's remote_storage_pool_delete_args
 type StoragePoolDeleteArgs struct {
 	Pool StoragePool
-	Flags uint32
+	Flags StoragePoolDeleteFlags
 }
 
 // StoragePoolRefreshArgs is libvirt's remote_storage_pool_refresh_args
@@ -1808,7 +1808,7 @@ type StoragePoolRefreshArgs struct {
 // StoragePoolGetXMLDescArgs is libvirt's remote_storage_pool_get_xml_desc_args
 type StoragePoolGetXMLDescArgs struct {
 	Pool StoragePool
-	Flags uint32
+	Flags StorageXMLFlags
 }
 
 // StoragePoolGetXMLDescRet is libvirt's remote_storage_pool_get_xml_desc_ret
@@ -1901,7 +1901,7 @@ type StorageVolLookupByPathRet struct {
 type StorageVolCreateXMLArgs struct {
 	Pool StoragePool
 	XML string
-	Flags uint32
+	Flags StorageVolCreateFlags
 }
 
 // StorageVolCreateXMLRet is libvirt's remote_storage_vol_create_xml_ret
@@ -1914,7 +1914,7 @@ type StorageVolCreateXMLFromArgs struct {
 	Pool StoragePool
 	XML string
 	Clonevol StorageVol
-	Flags uint32
+	Flags StorageVolCreateFlags
 }
 
 // StorageVolCreateXMLFromRet is libvirt's remote_storage_vol_create_xml_from_ret
@@ -1925,7 +1925,7 @@ type StorageVolCreateXMLFromRet struct {
 // StorageVolDeleteArgs is libvirt's remote_storage_vol_delete_args
 type StorageVolDeleteArgs struct {
 	Vol StorageVol
-	Flags uint32
+	Flags StorageVolDeleteFlags
 }
 
 // StorageVolWipeArgs is libvirt's remote_storage_vol_wipe_args
@@ -1991,7 +1991,7 @@ type StorageVolGetPathRet struct {
 type StorageVolResizeArgs struct {
 	Vol StorageVol
 	Capacity uint64
-	Flags uint32
+	Flags StorageVolResizeFlags
 }
 
 // NodeNumOfDevicesArgs is libvirt's remote_node_num_of_devices_args
@@ -2343,7 +2343,7 @@ type InterfaceIsActiveRet struct {
 // ConnectCompareCPUArgs is libvirt's remote_connect_compare_cpu_args
 type ConnectCompareCPUArgs struct {
 	XML string
-	Flags uint32
+	Flags ConnectCompareCPUFlags
 }
 
 // ConnectCompareCPURet is libvirt's remote_connect_compare_cpu_ret
@@ -2354,7 +2354,7 @@ type ConnectCompareCPURet struct {
 // ConnectBaselineCPUArgs is libvirt's remote_connect_baseline_cpu_args
 type ConnectBaselineCPUArgs struct {
 	XMLCPUs []string
-	Flags uint32
+	Flags ConnectBaselineCPUFlags
 }
 
 // ConnectBaselineCPURet is libvirt's remote_connect_baseline_cpu_ret
@@ -2386,7 +2386,7 @@ type DomainGetJobInfoRet struct {
 // DomainGetJobStatsArgs is libvirt's remote_domain_get_job_stats_args
 type DomainGetJobStatsArgs struct {
 	Dom Domain
-	Flags uint32
+	Flags DomainGetJobStatsFlags
 }
 
 // DomainGetJobStatsRet is libvirt's remote_domain_get_job_stats_ret
@@ -2689,7 +2689,7 @@ type DomainManagedSaveRemoveArgs struct {
 // DomainManagedSaveGetXMLDescArgs is libvirt's remote_domain_managed_save_get_xml_desc_args
 type DomainManagedSaveGetXMLDescArgs struct {
 	Dom Domain
-	Flags uint32
+	Flags DomainXMLFlags
 }
 
 // DomainManagedSaveGetXMLDescRet is libvirt's remote_domain_managed_save_get_xml_desc_ret
@@ -2701,7 +2701,7 @@ type DomainManagedSaveGetXMLDescRet struct {
 type DomainManagedSaveDefineXMLArgs struct {
 	Dom Domain
 	Dxml OptString
-	Flags uint32
+	Flags DomainSaveRestoreFlags
 }
 
 // DomainSnapshotCreateXMLArgs is libvirt's remote_domain_snapshot_create_xml_args
@@ -2875,7 +2875,7 @@ type DomainRevertToSnapshotArgs struct {
 // DomainSnapshotDeleteArgs is libvirt's remote_domain_snapshot_delete_args
 type DomainSnapshotDeleteArgs struct {
 	Snap DomainSnapshot
-	Flags uint32
+	Flags DomainSnapshotDeleteFlags
 }
 
 // DomainOpenConsoleArgs is libvirt's remote_domain_open_console_args
@@ -2889,7 +2889,7 @@ type DomainOpenConsoleArgs struct {
 type DomainOpenChannelArgs struct {
 	Dom Domain
 	Name OptString
-	Flags uint32
+	Flags DomainChannelFlags
 }
 
 // StorageVolUploadArgs is libvirt's remote_storage_vol_upload_args
@@ -2897,7 +2897,7 @@ type StorageVolUploadArgs struct {
 	Vol StorageVol
 	Offset uint64
 	Length uint64
-	Flags uint32
+	Flags StorageVolUploadFlags
 }
 
 // StorageVolDownloadArgs is libvirt's remote_storage_vol_download_args
@@ -2905,7 +2905,7 @@ type StorageVolDownloadArgs struct {
 	Vol StorageVol
 	Offset uint64
 	Length uint64
-	Flags uint32
+	Flags StorageVolDownloadFlags
 }
 
 // DomainGetStateArgs is libvirt's remote_domain_get_state_args
@@ -3034,14 +3034,14 @@ type DomainGetControlInfoRet struct {
 type DomainOpenGraphicsArgs struct {
 	Dom Domain
 	Idx uint32
-	Flags uint32
+	Flags DomainOpenGraphicsFlags
 }
 
 // DomainOpenGraphicsFdArgs is libvirt's remote_domain_open_graphics_fd_args
 type DomainOpenGraphicsFdArgs struct {
 	Dom Domain
 	Idx uint32
-	Flags uint32
+	Flags DomainOpenGraphicsFlags
 }
 
 // NodeSuspendForDurationArgs is libvirt's remote_node_suspend_for_duration_args
@@ -3054,7 +3054,7 @@ type NodeSuspendForDurationArgs struct {
 // DomainShutdownFlagsArgs is libvirt's remote_domain_shutdown_flags_args
 type DomainShutdownFlagsArgs struct {
 	Dom Domain
-	Flags uint32
+	Flags DomainShutdownFlagValues
 }
 
 // DomainGetDiskErrorsArgs is libvirt's remote_domain_get_disk_errors_args
@@ -3073,7 +3073,7 @@ type DomainGetDiskErrorsRet struct {
 // ConnectListAllDomainsArgs is libvirt's remote_connect_list_all_domains_args
 type ConnectListAllDomainsArgs struct {
 	NeedResults int32
-	Flags uint32
+	Flags ConnectListAllDomainsFlags
 }
 
 // ConnectListAllDomainsRet is libvirt's remote_connect_list_all_domains_ret
@@ -3085,7 +3085,7 @@ type ConnectListAllDomainsRet struct {
 // ConnectListAllStoragePoolsArgs is libvirt's remote_connect_list_all_storage_pools_args
 type ConnectListAllStoragePoolsArgs struct {
 	NeedResults int32
-	Flags uint32
+	Flags ConnectListAllStoragePoolsFlags
 }
 
 // ConnectListAllStoragePoolsRet is libvirt's remote_connect_list_all_storage_pools_ret
@@ -3110,7 +3110,7 @@ type StoragePoolListAllVolumesRet struct {
 // ConnectListAllNetworksArgs is libvirt's remote_connect_list_all_networks_args
 type ConnectListAllNetworksArgs struct {
 	NeedResults int32
-	Flags uint32
+	Flags ConnectListAllNetworksFlags
 }
 
 // ConnectListAllNetworksRet is libvirt's remote_connect_list_all_networks_ret
@@ -3122,7 +3122,7 @@ type ConnectListAllNetworksRet struct {
 // ConnectListAllInterfacesArgs is libvirt's remote_connect_list_all_interfaces_args
 type ConnectListAllInterfacesArgs struct {
 	NeedResults int32
-	Flags uint32
+	Flags ConnectListAllInterfacesFlags
 }
 
 // ConnectListAllInterfacesRet is libvirt's remote_connect_list_all_interfaces_ret
@@ -3158,7 +3158,7 @@ type ConnectListAllNwfiltersRet struct {
 // ConnectListAllSecretsArgs is libvirt's remote_connect_list_all_secrets_args
 type ConnectListAllSecretsArgs struct {
 	NeedResults int32
-	Flags uint32
+	Flags ConnectListAllSecretsFlags
 }
 
 // ConnectListAllSecretsRet is libvirt's remote_connect_list_all_secrets_ret
@@ -3224,7 +3224,7 @@ type DomainSetTimeArgs struct {
 	Dom Domain
 	Seconds int64
 	Nseconds uint32
-	Flags uint32
+	Flags DomainSetTimeFlags
 }
 
 // DomainMigrateBegin3ParamsArgs is libvirt's remote_domain_migrate_begin3_params_args
@@ -3271,7 +3271,7 @@ type DomainMigratePerform3ParamsArgs struct {
 	Dconnuri OptString
 	Params []TypedParam
 	CookieIn []byte
-	Flags uint32
+	Flags DomainMigrateFlags
 }
 
 // DomainMigratePerform3ParamsRet is libvirt's remote_domain_migrate_perform3_params_ret
@@ -3492,7 +3492,7 @@ type NodeAllocPagesArgs struct {
 	PageCounts []uint64
 	StartCell int32
 	CellCount uint32
-	Flags uint32
+	Flags NodeAllocPagesFlags
 }
 
 // NodeAllocPagesRet is libvirt's remote_node_alloc_pages_ret
@@ -3537,7 +3537,7 @@ type DomainStatsRecord struct {
 type ConnectGetAllDomainStatsArgs struct {
 	Doms []Domain
 	Stats uint32
-	Flags uint32
+	Flags ConnectGetAllDomainStatsFlags
 }
 
 // DomainEventCallbackAgentLifecycleMsg is libvirt's remote_domain_event_callback_agent_lifecycle_msg
@@ -3604,7 +3604,7 @@ type DomainSetUserPasswordArgs struct {
 	Dom Domain
 	User OptString
 	Password OptString
-	Flags uint32
+	Flags DomainSetUserPasswordFlags
 }
 
 // DomainRenameArgs is libvirt's remote_domain_rename_args
@@ -3670,7 +3670,7 @@ type DomainSetVcpuArgs struct {
 	Dom Domain
 	Cpumap string
 	State int32
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 // DomainEventCallbackMetadataChangeMsg is libvirt's remote_domain_event_callback_metadata_change_msg
@@ -3724,7 +3724,7 @@ type DomainSetLifecycleActionArgs struct {
 	Dom Domain
 	Type uint32
 	Action uint32
-	Flags uint32
+	Flags DomainModificationImpact
 }
 
 
@@ -3938,7 +3938,7 @@ func decodeTypedParams(dec *xdr.Decoder) ([]TypedParam, error) {
 
 
 // ConnectOpen is the go wrapper for REMOTE_PROC_CONNECT_OPEN.
-func (l *Libvirt) ConnectOpen(Name OptString, Flags uint32) (err error) {
+func (l *Libvirt) ConnectOpen(Name OptString, Flags ConnectFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := ConnectOpenArgs {
@@ -4227,7 +4227,7 @@ func (l *Libvirt) DomainCreate(Dom Domain) (err error) {
 }
 
 // DomainCreateXML is the go wrapper for REMOTE_PROC_DOMAIN_CREATE_XML.
-func (l *Libvirt) DomainCreateXML(XMLDesc string, Flags uint32) (rDom Domain, err error) {
+func (l *Libvirt) DomainCreateXML(XMLDesc string, Flags DomainCreateFlags) (rDom Domain, err error) {
 	var buf bytes.Buffer
 
 	args := DomainCreateXMLArgs {
@@ -4359,7 +4359,7 @@ func (l *Libvirt) DomainDetachDevice(Dom Domain, XML string) (err error) {
 }
 
 // DomainGetXMLDesc is the go wrapper for REMOTE_PROC_DOMAIN_GET_XML_DESC.
-func (l *Libvirt) DomainGetXMLDesc(Dom Domain, Flags uint32) (rXML string, err error) {
+func (l *Libvirt) DomainGetXMLDesc(Dom Domain, Flags DomainXMLFlags) (rXML string, err error) {
 	var buf bytes.Buffer
 
 	args := DomainGetXMLDescArgs {
@@ -4852,7 +4852,7 @@ func (l *Libvirt) DomainPinVcpu(Dom Domain, Vcpu uint32, Cpumap []byte) (err err
 }
 
 // DomainReboot is the go wrapper for REMOTE_PROC_DOMAIN_REBOOT.
-func (l *Libvirt) DomainReboot(Dom Domain, Flags uint32) (err error) {
+func (l *Libvirt) DomainReboot(Dom Domain, Flags DomainRebootFlagValues) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainRebootArgs {
@@ -5677,7 +5677,7 @@ func (l *Libvirt) ConnectNumOfNetworks() (rNum int32, err error) {
 }
 
 // DomainCoreDump is the go wrapper for REMOTE_PROC_DOMAIN_CORE_DUMP.
-func (l *Libvirt) DomainCoreDump(Dom Domain, To string, Flags uint32) (err error) {
+func (l *Libvirt) DomainCoreDump(Dom Domain, To string, Flags DomainCoreDumpFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainCoreDumpArgs {
@@ -6538,7 +6538,7 @@ func (l *Libvirt) ConnectFindStoragePoolSources(Type string, SrcSpec OptString, 
 }
 
 // StoragePoolCreateXML is the go wrapper for REMOTE_PROC_STORAGE_POOL_CREATE_XML.
-func (l *Libvirt) StoragePoolCreateXML(XML string, Flags uint32) (rPool StoragePool, err error) {
+func (l *Libvirt) StoragePoolCreateXML(XML string, Flags StoragePoolCreateFlags) (rPool StoragePool, err error) {
 	var buf bytes.Buffer
 
 	args := StoragePoolCreateXMLArgs {
@@ -6614,7 +6614,7 @@ func (l *Libvirt) StoragePoolDefineXML(XML string, Flags uint32) (rPool StorageP
 }
 
 // StoragePoolCreate is the go wrapper for REMOTE_PROC_STORAGE_POOL_CREATE.
-func (l *Libvirt) StoragePoolCreate(Pool StoragePool, Flags uint32) (err error) {
+func (l *Libvirt) StoragePoolCreate(Pool StoragePool, Flags StoragePoolCreateFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := StoragePoolCreateArgs {
@@ -6643,7 +6643,7 @@ func (l *Libvirt) StoragePoolCreate(Pool StoragePool, Flags uint32) (err error) 
 }
 
 // StoragePoolBuild is the go wrapper for REMOTE_PROC_STORAGE_POOL_BUILD.
-func (l *Libvirt) StoragePoolBuild(Pool StoragePool, Flags uint32) (err error) {
+func (l *Libvirt) StoragePoolBuild(Pool StoragePool, Flags StoragePoolBuildFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := StoragePoolBuildArgs {
@@ -6700,7 +6700,7 @@ func (l *Libvirt) StoragePoolDestroy(Pool StoragePool) (err error) {
 }
 
 // StoragePoolDelete is the go wrapper for REMOTE_PROC_STORAGE_POOL_DELETE.
-func (l *Libvirt) StoragePoolDelete(Pool StoragePool, Flags uint32) (err error) {
+func (l *Libvirt) StoragePoolDelete(Pool StoragePool, Flags StoragePoolDeleteFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := StoragePoolDeleteArgs {
@@ -6949,7 +6949,7 @@ func (l *Libvirt) StoragePoolGetInfo(Pool StoragePool) (rState uint8, rCapacity 
 }
 
 // StoragePoolGetXMLDesc is the go wrapper for REMOTE_PROC_STORAGE_POOL_GET_XML_DESC.
-func (l *Libvirt) StoragePoolGetXMLDesc(Pool StoragePool, Flags uint32) (rXML string, err error) {
+func (l *Libvirt) StoragePoolGetXMLDesc(Pool StoragePool, Flags StorageXMLFlags) (rXML string, err error) {
 	var buf bytes.Buffer
 
 	args := StoragePoolGetXMLDescArgs {
@@ -7128,7 +7128,7 @@ func (l *Libvirt) StoragePoolListVolumes(Pool StoragePool, Maxnames int32) (rNam
 }
 
 // StorageVolCreateXML is the go wrapper for REMOTE_PROC_STORAGE_VOL_CREATE_XML.
-func (l *Libvirt) StorageVolCreateXML(Pool StoragePool, XML string, Flags uint32) (rVol StorageVol, err error) {
+func (l *Libvirt) StorageVolCreateXML(Pool StoragePool, XML string, Flags StorageVolCreateFlags) (rVol StorageVol, err error) {
 	var buf bytes.Buffer
 
 	args := StorageVolCreateXMLArgs {
@@ -7167,7 +7167,7 @@ func (l *Libvirt) StorageVolCreateXML(Pool StoragePool, XML string, Flags uint32
 }
 
 // StorageVolDelete is the go wrapper for REMOTE_PROC_STORAGE_VOL_DELETE.
-func (l *Libvirt) StorageVolDelete(Vol StorageVol, Flags uint32) (err error) {
+func (l *Libvirt) StorageVolDelete(Vol StorageVol, Flags StorageVolDeleteFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := StorageVolDeleteArgs {
@@ -7537,7 +7537,7 @@ func (l *Libvirt) DomainBlockPeek(Dom Domain, Path string, Offset uint64, Size u
 }
 
 // DomainMemoryPeek is the go wrapper for REMOTE_PROC_DOMAIN_MEMORY_PEEK.
-func (l *Libvirt) DomainMemoryPeek(Dom Domain, Offset uint64, Size uint32, Flags uint32) (rBuffer []byte, err error) {
+func (l *Libvirt) DomainMemoryPeek(Dom Domain, Offset uint64, Size uint32, Flags DomainMemoryFlags) (rBuffer []byte, err error) {
 	var buf bytes.Buffer
 
 	args := DomainMemoryPeekArgs {
@@ -8256,7 +8256,7 @@ func (l *Libvirt) NodeDeviceDestroy(Name string) (err error) {
 }
 
 // StorageVolCreateXMLFrom is the go wrapper for REMOTE_PROC_STORAGE_VOL_CREATE_XML_FROM.
-func (l *Libvirt) StorageVolCreateXMLFrom(Pool StoragePool, XML string, Clonevol StorageVol, Flags uint32) (rVol StorageVol, err error) {
+func (l *Libvirt) StorageVolCreateXMLFrom(Pool StoragePool, XML string, Clonevol StorageVol, Flags StorageVolCreateFlags) (rVol StorageVol, err error) {
 	var buf bytes.Buffer
 
 	args := StorageVolCreateXMLFromArgs {
@@ -9398,7 +9398,7 @@ func (l *Libvirt) ConnectGetLibVersion() (rLibVer uint64, err error) {
 }
 
 // ConnectCompareCPU is the go wrapper for REMOTE_PROC_CONNECT_COMPARE_CPU.
-func (l *Libvirt) ConnectCompareCPU(XML string, Flags uint32) (rResult int32, err error) {
+func (l *Libvirt) ConnectCompareCPU(XML string, Flags ConnectCompareCPUFlags) (rResult int32, err error) {
 	var buf bytes.Buffer
 
 	args := ConnectCompareCPUArgs {
@@ -9535,7 +9535,7 @@ func (l *Libvirt) DomainDetachDeviceFlags(Dom Domain, XML string, Flags uint32) 
 }
 
 // ConnectBaselineCPU is the go wrapper for REMOTE_PROC_CONNECT_BASELINE_CPU.
-func (l *Libvirt) ConnectBaselineCPU(XMLCPUs []string, Flags uint32) (rCPU string, err error) {
+func (l *Libvirt) ConnectBaselineCPU(XMLCPUs []string, Flags ConnectBaselineCPUFlags) (rCPU string, err error) {
 	var buf bytes.Buffer
 
 	args := ConnectBaselineCPUArgs {
@@ -10569,7 +10569,7 @@ func (l *Libvirt) DomainRevertToSnapshot(Snap DomainSnapshot, Flags uint32) (err
 }
 
 // DomainSnapshotDelete is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_DELETE.
-func (l *Libvirt) DomainSnapshotDelete(Snap DomainSnapshot, Flags uint32) (err error) {
+func (l *Libvirt) DomainSnapshotDelete(Snap DomainSnapshot, Flags DomainSnapshotDeleteFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainSnapshotDeleteArgs {
@@ -11086,7 +11086,7 @@ func (l *Libvirt) DomainMigrateSetMaxSpeed(Dom Domain, Bandwidth uint64, Flags u
 }
 
 // StorageVolUpload is the go wrapper for REMOTE_PROC_STORAGE_VOL_UPLOAD.
-func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64, Flags uint32) (err error) {
+func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64, Flags StorageVolUploadFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := StorageVolUploadArgs {
@@ -11117,7 +11117,7 @@ func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64,
 }
 
 // StorageVolDownload is the go wrapper for REMOTE_PROC_STORAGE_VOL_DOWNLOAD.
-func (l *Libvirt) StorageVolDownload(Vol StorageVol, Offset uint64, Length uint64, Flags uint32) (err error) {
+func (l *Libvirt) StorageVolDownload(Vol StorageVol, Offset uint64, Length uint64, Flags StorageVolDownloadFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := StorageVolDownloadArgs {
@@ -11932,7 +11932,7 @@ func (l *Libvirt) DomainGetVcpuPinInfo(Dom Domain, Ncpumaps int32, Maplen int32,
 }
 
 // DomainUndefineFlags is the go wrapper for REMOTE_PROC_DOMAIN_UNDEFINE_FLAGS.
-func (l *Libvirt) DomainUndefineFlags(Dom Domain, Flags uint32) (err error) {
+func (l *Libvirt) DomainUndefineFlags(Dom Domain, Flags DomainUndefineFlagsValues) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainUndefineFlagsArgs {
@@ -12022,7 +12022,7 @@ func (l *Libvirt) DomainRestoreFlags(From string, Dxml OptString, Flags uint32) 
 }
 
 // DomainDestroyFlags is the go wrapper for REMOTE_PROC_DOMAIN_DESTROY_FLAGS.
-func (l *Libvirt) DomainDestroyFlags(Dom Domain, Flags uint32) (err error) {
+func (l *Libvirt) DomainDestroyFlags(Dom Domain, Flags DomainDestroyFlagsValues) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainDestroyFlagsArgs {
@@ -12119,7 +12119,7 @@ func (l *Libvirt) DomainSaveImageDefineXML(File string, Dxml string, Flags uint3
 }
 
 // DomainBlockJobAbort is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_JOB_ABORT.
-func (l *Libvirt) DomainBlockJobAbort(Dom Domain, Path string, Flags uint32) (err error) {
+func (l *Libvirt) DomainBlockJobAbort(Dom Domain, Path string, Flags DomainBlockJobAbortFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainBlockJobAbortArgs {
@@ -12208,7 +12208,7 @@ func (l *Libvirt) DomainGetBlockJobInfo(Dom Domain, Path string, Flags uint32) (
 }
 
 // DomainBlockJobSetSpeed is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_JOB_SET_SPEED.
-func (l *Libvirt) DomainBlockJobSetSpeed(Dom Domain, Path string, Bandwidth uint64, Flags uint32) (err error) {
+func (l *Libvirt) DomainBlockJobSetSpeed(Dom Domain, Path string, Bandwidth uint64, Flags DomainBlockJobSetSpeedFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainBlockJobSetSpeedArgs {
@@ -12239,7 +12239,7 @@ func (l *Libvirt) DomainBlockJobSetSpeed(Dom Domain, Path string, Bandwidth uint
 }
 
 // DomainBlockPull is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_PULL.
-func (l *Libvirt) DomainBlockPull(Dom Domain, Path string, Bandwidth uint64, Flags uint32) (err error) {
+func (l *Libvirt) DomainBlockPull(Dom Domain, Path string, Bandwidth uint64, Flags DomainBlockPullFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainBlockPullArgs {
@@ -12536,7 +12536,7 @@ func (l *Libvirt) DomainEventDiskChange() (err error) {
 }
 
 // DomainOpenGraphics is the go wrapper for REMOTE_PROC_DOMAIN_OPEN_GRAPHICS.
-func (l *Libvirt) DomainOpenGraphics(Dom Domain, Idx uint32, Flags uint32) (err error) {
+func (l *Libvirt) DomainOpenGraphics(Dom Domain, Idx uint32, Flags DomainOpenGraphicsFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainOpenGraphicsArgs {
@@ -12596,7 +12596,7 @@ func (l *Libvirt) NodeSuspendForDuration(Target uint32, Duration uint64, Flags u
 }
 
 // DomainBlockResize is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_RESIZE.
-func (l *Libvirt) DomainBlockResize(Dom Domain, Disk string, Size uint64, Flags uint32) (err error) {
+func (l *Libvirt) DomainBlockResize(Dom Domain, Disk string, Size uint64, Flags DomainBlockResizeFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainBlockResizeArgs {
@@ -12810,7 +12810,7 @@ func (l *Libvirt) DomainSetInterfaceParameters(Dom Domain, Device string, Params
 }
 
 // DomainGetInterfaceParameters is the go wrapper for REMOTE_PROC_DOMAIN_GET_INTERFACE_PARAMETERS.
-func (l *Libvirt) DomainGetInterfaceParameters(Dom Domain, Device string, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+func (l *Libvirt) DomainGetInterfaceParameters(Dom Domain, Device string, Nparams int32, Flags DomainModificationImpact) (rParams []TypedParam, rNparams int32, err error) {
 	var buf bytes.Buffer
 
 	args := DomainGetInterfaceParametersArgs {
@@ -12856,7 +12856,7 @@ func (l *Libvirt) DomainGetInterfaceParameters(Dom Domain, Device string, Nparam
 }
 
 // DomainShutdownFlags is the go wrapper for REMOTE_PROC_DOMAIN_SHUTDOWN_FLAGS.
-func (l *Libvirt) DomainShutdownFlags(Dom Domain, Flags uint32) (err error) {
+func (l *Libvirt) DomainShutdownFlags(Dom Domain, Flags DomainShutdownFlagValues) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainShutdownFlagsArgs {
@@ -12915,7 +12915,7 @@ func (l *Libvirt) StorageVolWipePattern(Vol StorageVol, Algorithm uint32, Flags 
 }
 
 // StorageVolResize is the go wrapper for REMOTE_PROC_STORAGE_VOL_RESIZE.
-func (l *Libvirt) StorageVolResize(Vol StorageVol, Capacity uint64, Flags uint32) (err error) {
+func (l *Libvirt) StorageVolResize(Vol StorageVol, Capacity uint64, Flags StorageVolResizeFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := StorageVolResizeArgs {
@@ -12976,7 +12976,7 @@ func (l *Libvirt) DomainPmSuspendForDuration(Dom Domain, Target uint32, Duration
 }
 
 // DomainGetCPUStats is the go wrapper for REMOTE_PROC_DOMAIN_GET_CPU_STATS.
-func (l *Libvirt) DomainGetCPUStats(Dom Domain, Nparams uint32, StartCPU int32, Ncpus uint32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+func (l *Libvirt) DomainGetCPUStats(Dom Domain, Nparams uint32, StartCPU int32, Ncpus uint32, Flags TypedParameterFlags) (rParams []TypedParam, rNparams int32, err error) {
 	var buf bytes.Buffer
 
 	args := DomainGetCPUStatsArgs {
@@ -13067,7 +13067,7 @@ func (l *Libvirt) DomainGetDiskErrors(Dom Domain, Maxerrors uint32, Flags uint32
 }
 
 // DomainSetMetadata is the go wrapper for REMOTE_PROC_DOMAIN_SET_METADATA.
-func (l *Libvirt) DomainSetMetadata(Dom Domain, Type int32, Metadata OptString, Key OptString, Uri OptString, Flags uint32) (err error) {
+func (l *Libvirt) DomainSetMetadata(Dom Domain, Type int32, Metadata OptString, Key OptString, Uri OptString, Flags DomainModificationImpact) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainSetMetadataArgs {
@@ -13100,7 +13100,7 @@ func (l *Libvirt) DomainSetMetadata(Dom Domain, Type int32, Metadata OptString, 
 }
 
 // DomainGetMetadata is the go wrapper for REMOTE_PROC_DOMAIN_GET_METADATA.
-func (l *Libvirt) DomainGetMetadata(Dom Domain, Type int32, Uri OptString, Flags uint32) (rMetadata string, err error) {
+func (l *Libvirt) DomainGetMetadata(Dom Domain, Type int32, Uri OptString, Flags DomainModificationImpact) (rMetadata string, err error) {
 	var buf bytes.Buffer
 
 	args := DomainGetMetadataArgs {
@@ -13140,7 +13140,7 @@ func (l *Libvirt) DomainGetMetadata(Dom Domain, Type int32, Uri OptString, Flags
 }
 
 // DomainBlockRebase is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_REBASE.
-func (l *Libvirt) DomainBlockRebase(Dom Domain, Path string, Base OptString, Bandwidth uint64, Flags uint32) (err error) {
+func (l *Libvirt) DomainBlockRebase(Dom Domain, Path string, Base OptString, Bandwidth uint64, Flags DomainBlockRebaseFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainBlockRebaseArgs {
@@ -13334,7 +13334,7 @@ func (l *Libvirt) DomainSnapshotHasMetadata(Snap DomainSnapshot, Flags uint32) (
 }
 
 // ConnectListAllDomains is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_DOMAINS.
-func (l *Libvirt) ConnectListAllDomains(NeedResults int32, Flags uint32) (rDomains []Domain, rRet uint32, err error) {
+func (l *Libvirt) ConnectListAllDomains(NeedResults int32, Flags ConnectListAllDomainsFlags) (rDomains []Domain, rRet uint32, err error) {
 	var buf bytes.Buffer
 
 	args := ConnectListAllDomainsArgs {
@@ -13564,7 +13564,7 @@ func (l *Libvirt) DomainGetSecurityLabelList(Dom Domain) (rLabels []DomainGetSec
 }
 
 // DomainPinEmulator is the go wrapper for REMOTE_PROC_DOMAIN_PIN_EMULATOR.
-func (l *Libvirt) DomainPinEmulator(Dom Domain, Cpumap []byte, Flags uint32) (err error) {
+func (l *Libvirt) DomainPinEmulator(Dom Domain, Cpumap []byte, Flags DomainModificationImpact) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainPinEmulatorArgs {
@@ -13594,7 +13594,7 @@ func (l *Libvirt) DomainPinEmulator(Dom Domain, Cpumap []byte, Flags uint32) (er
 }
 
 // DomainGetEmulatorPinInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_EMULATOR_PIN_INFO.
-func (l *Libvirt) DomainGetEmulatorPinInfo(Dom Domain, Maplen int32, Flags uint32) (rCpumaps []byte, rRet int32, err error) {
+func (l *Libvirt) DomainGetEmulatorPinInfo(Dom Domain, Maplen int32, Flags DomainModificationImpact) (rCpumaps []byte, rRet int32, err error) {
 	var buf bytes.Buffer
 
 	args := DomainGetEmulatorPinInfoArgs {
@@ -13638,7 +13638,7 @@ func (l *Libvirt) DomainGetEmulatorPinInfo(Dom Domain, Maplen int32, Flags uint3
 }
 
 // ConnectListAllStoragePools is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_STORAGE_POOLS.
-func (l *Libvirt) ConnectListAllStoragePools(NeedResults int32, Flags uint32) (rPools []StoragePool, rRet uint32, err error) {
+func (l *Libvirt) ConnectListAllStoragePools(NeedResults int32, Flags ConnectListAllStoragePoolsFlags) (rPools []StoragePool, rRet uint32, err error) {
 	var buf bytes.Buffer
 
 	args := ConnectListAllStoragePoolsArgs {
@@ -13725,7 +13725,7 @@ func (l *Libvirt) StoragePoolListAllVolumes(Pool StoragePool, NeedResults int32,
 }
 
 // ConnectListAllNetworks is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_NETWORKS.
-func (l *Libvirt) ConnectListAllNetworks(NeedResults int32, Flags uint32) (rNets []Network, rRet uint32, err error) {
+func (l *Libvirt) ConnectListAllNetworks(NeedResults int32, Flags ConnectListAllNetworksFlags) (rNets []Network, rRet uint32, err error) {
 	var buf bytes.Buffer
 
 	args := ConnectListAllNetworksArgs {
@@ -13768,7 +13768,7 @@ func (l *Libvirt) ConnectListAllNetworks(NeedResults int32, Flags uint32) (rNets
 }
 
 // ConnectListAllInterfaces is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_INTERFACES.
-func (l *Libvirt) ConnectListAllInterfaces(NeedResults int32, Flags uint32) (rIfaces []Interface, rRet uint32, err error) {
+func (l *Libvirt) ConnectListAllInterfaces(NeedResults int32, Flags ConnectListAllInterfacesFlags) (rIfaces []Interface, rRet uint32, err error) {
 	var buf bytes.Buffer
 
 	args := ConnectListAllInterfacesArgs {
@@ -13897,7 +13897,7 @@ func (l *Libvirt) ConnectListAllNwfilters(NeedResults int32, Flags uint32) (rFil
 }
 
 // ConnectListAllSecrets is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_SECRETS.
-func (l *Libvirt) ConnectListAllSecrets(NeedResults int32, Flags uint32) (rSecrets []Secret, rRet uint32, err error) {
+func (l *Libvirt) ConnectListAllSecrets(NeedResults int32, Flags ConnectListAllSecretsFlags) (rSecrets []Secret, rRet uint32, err error) {
 	var buf bytes.Buffer
 
 	args := ConnectListAllSecretsArgs {
@@ -14013,7 +14013,7 @@ func (l *Libvirt) NodeGetMemoryParameters(Nparams int32, Flags uint32) (rParams 
 }
 
 // DomainBlockCommit is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_COMMIT.
-func (l *Libvirt) DomainBlockCommit(Dom Domain, Disk string, Base OptString, Top OptString, Bandwidth uint64, Flags uint32) (err error) {
+func (l *Libvirt) DomainBlockCommit(Dom Domain, Disk string, Base OptString, Top OptString, Bandwidth uint64, Flags DomainBlockCommitFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainBlockCommitArgs {
@@ -14046,7 +14046,7 @@ func (l *Libvirt) DomainBlockCommit(Dom Domain, Disk string, Base OptString, Top
 }
 
 // NetworkUpdate is the go wrapper for REMOTE_PROC_NETWORK_UPDATE.
-func (l *Libvirt) NetworkUpdate(Net Network, Command uint32, Section uint32, ParentIndex int32, XML string, Flags uint32) (err error) {
+func (l *Libvirt) NetworkUpdate(Net Network, Command uint32, Section uint32, ParentIndex int32, XML string, Flags NetworkUpdateFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := NetworkUpdateArgs {
@@ -14209,7 +14209,7 @@ func (l *Libvirt) DomainSendProcessSignal(Dom Domain, PidValue int64, Signum uin
 }
 
 // DomainOpenChannel is the go wrapper for REMOTE_PROC_DOMAIN_OPEN_CHANNEL.
-func (l *Libvirt) DomainOpenChannel(Dom Domain, Name OptString, Flags uint32) (err error) {
+func (l *Libvirt) DomainOpenChannel(Dom Domain, Name OptString, Flags DomainChannelFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainOpenChannelArgs {
@@ -14278,7 +14278,7 @@ func (l *Libvirt) NodeDeviceLookupScsiHostByWwn(Wwnn string, Wwpn string, Flags 
 }
 
 // DomainGetJobStats is the go wrapper for REMOTE_PROC_DOMAIN_GET_JOB_STATS.
-func (l *Libvirt) DomainGetJobStats(Dom Domain, Flags uint32) (rType int32, rParams []TypedParam, err error) {
+func (l *Libvirt) DomainGetJobStats(Dom Domain, Flags DomainGetJobStatsFlags) (rType int32, rParams []TypedParam, err error) {
 	var buf bytes.Buffer
 
 	args := DomainGetJobStatsArgs {
@@ -14547,7 +14547,7 @@ func (l *Libvirt) DomainMigratePrepareTunnel3Params(Params []TypedParam, CookieI
 }
 
 // DomainMigratePerform3Params is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PERFORM3_PARAMS.
-func (l *Libvirt) DomainMigratePerform3Params(Dom Domain, Dconnuri OptString, Params []TypedParam, CookieIn []byte, Flags uint32) (rCookieOut []byte, err error) {
+func (l *Libvirt) DomainMigratePerform3Params(Dom Domain, Dconnuri OptString, Params []TypedParam, CookieIn []byte, Flags DomainMigrateFlags) (rCookieOut []byte, err error) {
 	var buf bytes.Buffer
 
 	args := DomainMigratePerform3ParamsArgs {
@@ -14665,7 +14665,7 @@ func (l *Libvirt) DomainMigrateConfirm3Params(Dom Domain, Params []TypedParam, C
 }
 
 // DomainSetMemoryStatsPeriod is the go wrapper for REMOTE_PROC_DOMAIN_SET_MEMORY_STATS_PERIOD.
-func (l *Libvirt) DomainSetMemoryStatsPeriod(Dom Domain, Period int32, Flags uint32) (err error) {
+func (l *Libvirt) DomainSetMemoryStatsPeriod(Dom Domain, Period int32, Flags DomainMemoryModFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainSetMemoryStatsPeriodArgs {
@@ -14695,7 +14695,7 @@ func (l *Libvirt) DomainSetMemoryStatsPeriod(Dom Domain, Period int32, Flags uin
 }
 
 // DomainCreateXMLWithFiles is the go wrapper for REMOTE_PROC_DOMAIN_CREATE_XML_WITH_FILES.
-func (l *Libvirt) DomainCreateXMLWithFiles(XMLDesc string, Flags uint32) (rDom Domain, err error) {
+func (l *Libvirt) DomainCreateXMLWithFiles(XMLDesc string, Flags DomainCreateFlags) (rDom Domain, err error) {
 	var buf bytes.Buffer
 
 	args := DomainCreateXMLWithFilesArgs {
@@ -14733,7 +14733,7 @@ func (l *Libvirt) DomainCreateXMLWithFiles(XMLDesc string, Flags uint32) (rDom D
 }
 
 // DomainCreateWithFiles is the go wrapper for REMOTE_PROC_DOMAIN_CREATE_WITH_FILES.
-func (l *Libvirt) DomainCreateWithFiles(Dom Domain, Flags uint32) (rDom Domain, err error) {
+func (l *Libvirt) DomainCreateWithFiles(Dom Domain, Flags DomainCreateFlags) (rDom Domain, err error) {
 	var buf bytes.Buffer
 
 	args := DomainCreateWithFilesArgs {
@@ -15289,7 +15289,7 @@ func (l *Libvirt) DomainEventCallbackDeviceRemoved() (err error) {
 }
 
 // DomainCoreDumpWithFormat is the go wrapper for REMOTE_PROC_DOMAIN_CORE_DUMP_WITH_FORMAT.
-func (l *Libvirt) DomainCoreDumpWithFormat(Dom Domain, To string, Dumpformat uint32, Flags uint32) (err error) {
+func (l *Libvirt) DomainCoreDumpWithFormat(Dom Domain, To string, Dumpformat uint32, Flags DomainCoreDumpFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainCoreDumpWithFormatArgs {
@@ -15441,7 +15441,7 @@ func (l *Libvirt) DomainGetTime(Dom Domain, Flags uint32) (rSeconds int64, rNsec
 }
 
 // DomainSetTime is the go wrapper for REMOTE_PROC_DOMAIN_SET_TIME.
-func (l *Libvirt) DomainSetTime(Dom Domain, Seconds int64, Nseconds uint32, Flags uint32) (err error) {
+func (l *Libvirt) DomainSetTime(Dom Domain, Seconds int64, Nseconds uint32, Flags DomainSetTimeFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainSetTimeArgs {
@@ -15617,7 +15617,7 @@ func (l *Libvirt) ConnectGetDomainCapabilities(Emulatorbin OptString, Arch OptSt
 }
 
 // DomainOpenGraphicsFd is the go wrapper for REMOTE_PROC_DOMAIN_OPEN_GRAPHICS_FD.
-func (l *Libvirt) DomainOpenGraphicsFd(Dom Domain, Idx uint32, Flags uint32) (err error) {
+func (l *Libvirt) DomainOpenGraphicsFd(Dom Domain, Idx uint32, Flags DomainOpenGraphicsFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainOpenGraphicsFdArgs {
@@ -15647,7 +15647,7 @@ func (l *Libvirt) DomainOpenGraphicsFd(Dom Domain, Idx uint32, Flags uint32) (er
 }
 
 // ConnectGetAllDomainStats is the go wrapper for REMOTE_PROC_CONNECT_GET_ALL_DOMAIN_STATS.
-func (l *Libvirt) ConnectGetAllDomainStats(Doms []Domain, Stats uint32, Flags uint32) (rRetStats []DomainStatsRecord, err error) {
+func (l *Libvirt) ConnectGetAllDomainStats(Doms []Domain, Stats uint32, Flags ConnectGetAllDomainStatsFlags) (rRetStats []DomainStatsRecord, err error) {
 	var buf bytes.Buffer
 
 	args := ConnectGetAllDomainStatsArgs {
@@ -15686,7 +15686,7 @@ func (l *Libvirt) ConnectGetAllDomainStats(Doms []Domain, Stats uint32, Flags ui
 }
 
 // DomainBlockCopy is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_COPY.
-func (l *Libvirt) DomainBlockCopy(Dom Domain, Path string, Destxml string, Params []TypedParam, Flags uint32) (err error) {
+func (l *Libvirt) DomainBlockCopy(Dom Domain, Path string, Destxml string, Params []TypedParam, Flags DomainBlockCopyFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainBlockCopyArgs {
@@ -15737,7 +15737,7 @@ func (l *Libvirt) DomainEventCallbackTunable() (err error) {
 }
 
 // NodeAllocPages is the go wrapper for REMOTE_PROC_NODE_ALLOC_PAGES.
-func (l *Libvirt) NodeAllocPages(PageSizes []uint32, PageCounts []uint64, StartCell int32, CellCount uint32, Flags uint32) (rRet int32, err error) {
+func (l *Libvirt) NodeAllocPages(PageSizes []uint32, PageCounts []uint64, StartCell int32, CellCount uint32, Flags NodeAllocPagesFlags) (rRet int32, err error) {
 	var buf bytes.Buffer
 
 	args := NodeAllocPagesArgs {
@@ -15840,7 +15840,7 @@ func (l *Libvirt) DomainGetFsinfo(Dom Domain, Flags uint32) (rInfo []DomainFsinf
 }
 
 // DomainDefineXMLFlags is the go wrapper for REMOTE_PROC_DOMAIN_DEFINE_XML_FLAGS.
-func (l *Libvirt) DomainDefineXMLFlags(XML string, Flags uint32) (rDom Domain, err error) {
+func (l *Libvirt) DomainDefineXMLFlags(XML string, Flags DomainDefineFlags) (rDom Domain, err error) {
 	var buf bytes.Buffer
 
 	args := DomainDefineXMLFlagsArgs {
@@ -15878,7 +15878,7 @@ func (l *Libvirt) DomainDefineXMLFlags(XML string, Flags uint32) (rDom Domain, e
 }
 
 // DomainGetIothreadInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_IOTHREAD_INFO.
-func (l *Libvirt) DomainGetIothreadInfo(Dom Domain, Flags uint32) (rInfo []DomainIothreadInfo, rRet uint32, err error) {
+func (l *Libvirt) DomainGetIothreadInfo(Dom Domain, Flags DomainModificationImpact) (rInfo []DomainIothreadInfo, rRet uint32, err error) {
 	var buf bytes.Buffer
 
 	args := DomainGetIothreadInfoArgs {
@@ -15921,7 +15921,7 @@ func (l *Libvirt) DomainGetIothreadInfo(Dom Domain, Flags uint32) (rInfo []Domai
 }
 
 // DomainPinIothread is the go wrapper for REMOTE_PROC_DOMAIN_PIN_IOTHREAD.
-func (l *Libvirt) DomainPinIothread(Dom Domain, IothreadsID uint32, Cpumap []byte, Flags uint32) (err error) {
+func (l *Libvirt) DomainPinIothread(Dom Domain, IothreadsID uint32, Cpumap []byte, Flags DomainModificationImpact) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainPinIothreadArgs {
@@ -16010,7 +16010,7 @@ func (l *Libvirt) DomainEventCallbackDeviceAdded() (err error) {
 }
 
 // DomainAddIothread is the go wrapper for REMOTE_PROC_DOMAIN_ADD_IOTHREAD.
-func (l *Libvirt) DomainAddIothread(Dom Domain, IothreadID uint32, Flags uint32) (err error) {
+func (l *Libvirt) DomainAddIothread(Dom Domain, IothreadID uint32, Flags DomainModificationImpact) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainAddIothreadArgs {
@@ -16040,7 +16040,7 @@ func (l *Libvirt) DomainAddIothread(Dom Domain, IothreadID uint32, Flags uint32)
 }
 
 // DomainDelIothread is the go wrapper for REMOTE_PROC_DOMAIN_DEL_IOTHREAD.
-func (l *Libvirt) DomainDelIothread(Dom Domain, IothreadID uint32, Flags uint32) (err error) {
+func (l *Libvirt) DomainDelIothread(Dom Domain, IothreadID uint32, Flags DomainModificationImpact) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainDelIothreadArgs {
@@ -16070,7 +16070,7 @@ func (l *Libvirt) DomainDelIothread(Dom Domain, IothreadID uint32, Flags uint32)
 }
 
 // DomainSetUserPassword is the go wrapper for REMOTE_PROC_DOMAIN_SET_USER_PASSWORD.
-func (l *Libvirt) DomainSetUserPassword(Dom Domain, User OptString, Password OptString, Flags uint32) (err error) {
+func (l *Libvirt) DomainSetUserPassword(Dom Domain, User OptString, Password OptString, Flags DomainSetUserPasswordFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainSetUserPasswordArgs {
@@ -16264,7 +16264,7 @@ func (l *Libvirt) DomainMigrateStartPostCopy(Dom Domain, Flags uint32) (err erro
 }
 
 // DomainGetPerfEvents is the go wrapper for REMOTE_PROC_DOMAIN_GET_PERF_EVENTS.
-func (l *Libvirt) DomainGetPerfEvents(Dom Domain, Flags uint32) (rParams []TypedParam, err error) {
+func (l *Libvirt) DomainGetPerfEvents(Dom Domain, Flags DomainModificationImpact) (rParams []TypedParam, err error) {
 	var buf bytes.Buffer
 
 	args := DomainGetPerfEventsArgs {
@@ -16303,7 +16303,7 @@ func (l *Libvirt) DomainGetPerfEvents(Dom Domain, Flags uint32) (rParams []Typed
 }
 
 // DomainSetPerfEvents is the go wrapper for REMOTE_PROC_DOMAIN_SET_PERF_EVENTS.
-func (l *Libvirt) DomainSetPerfEvents(Dom Domain, Params []TypedParam, Flags uint32) (err error) {
+func (l *Libvirt) DomainSetPerfEvents(Dom Domain, Params []TypedParam, Flags DomainModificationImpact) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainSetPerfEventsArgs {
@@ -16801,7 +16801,7 @@ func (l *Libvirt) SecretEventValueChanged() (err error) {
 }
 
 // DomainSetVcpu is the go wrapper for REMOTE_PROC_DOMAIN_SET_VCPU.
-func (l *Libvirt) DomainSetVcpu(Dom Domain, Cpumap string, State int32, Flags uint32) (err error) {
+func (l *Libvirt) DomainSetVcpu(Dom Domain, Cpumap string, State int32, Flags DomainModificationImpact) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainSetVcpuArgs {
@@ -16920,7 +16920,7 @@ func (l *Libvirt) DomainMigrateGetMaxDowntime(Dom Domain, Flags uint32) (rDownti
 }
 
 // DomainManagedSaveGetXMLDesc is the go wrapper for REMOTE_PROC_DOMAIN_MANAGED_SAVE_GET_XML_DESC.
-func (l *Libvirt) DomainManagedSaveGetXMLDesc(Dom Domain, Flags uint32) (rXML string, err error) {
+func (l *Libvirt) DomainManagedSaveGetXMLDesc(Dom Domain, Flags DomainXMLFlags) (rXML string, err error) {
 	var buf bytes.Buffer
 
 	args := DomainManagedSaveGetXMLDescArgs {
@@ -16958,7 +16958,7 @@ func (l *Libvirt) DomainManagedSaveGetXMLDesc(Dom Domain, Flags uint32) (rXML st
 }
 
 // DomainManagedSaveDefineXML is the go wrapper for REMOTE_PROC_DOMAIN_MANAGED_SAVE_DEFINE_XML.
-func (l *Libvirt) DomainManagedSaveDefineXML(Dom Domain, Dxml OptString, Flags uint32) (err error) {
+func (l *Libvirt) DomainManagedSaveDefineXML(Dom Domain, Dxml OptString, Flags DomainSaveRestoreFlags) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainManagedSaveDefineXMLArgs {
@@ -16988,7 +16988,7 @@ func (l *Libvirt) DomainManagedSaveDefineXML(Dom Domain, Dxml OptString, Flags u
 }
 
 // DomainSetLifecycleAction is the go wrapper for REMOTE_PROC_DOMAIN_SET_LIFECYCLE_ACTION.
-func (l *Libvirt) DomainSetLifecycleAction(Dom Domain, Type uint32, Action uint32, Flags uint32) (err error) {
+func (l *Libvirt) DomainSetLifecycleAction(Dom Domain, Type uint32, Action uint32, Flags DomainModificationImpact) (err error) {
 	var buf bytes.Buffer
 
 	args := DomainSetLifecycleActionArgs {

@@ -48,14 +48,14 @@ func TestMigrate(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	var flags MigrateFlags
-	flags = MigrateFlagLive |
-		MigrateFlagPeerToPeer |
-		MigrateFlagPersistDestination |
-		MigrateFlagChangeProtection |
-		MigrateFlagAbortOnError |
-		MigrateFlagAutoConverge |
-		MigrateFlagNonSharedDisk
+	var flags DomainMigrateFlags
+	flags = MigrateLive |
+		MigratePeer2peer |
+		MigratePersistDest |
+		MigrateChangeProtection |
+		MigrateAbortOnError |
+		MigrateAutoConverge |
+		MigrateNonSharedDisk
 
 	if err := l.Migrate("test", "qemu+tcp://foo/system", flags); err != nil {
 		t.Fatalf("unexpected live migration error: %v", err)
@@ -66,14 +66,14 @@ func TestMigrateInvalidDest(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	var flags MigrateFlags
-	flags = MigrateFlagLive |
-		MigrateFlagPeerToPeer |
-		MigrateFlagPersistDestination |
-		MigrateFlagChangeProtection |
-		MigrateFlagAbortOnError |
-		MigrateFlagAutoConverge |
-		MigrateFlagNonSharedDisk
+	var flags DomainMigrateFlags
+	flags = MigrateLive |
+		MigratePeer2peer |
+		MigratePersistDest |
+		MigrateChangeProtection |
+		MigrateAbortOnError |
+		MigrateAutoConverge |
+		MigrateNonSharedDisk
 
 	dest := ":$'"
 	if err := l.Migrate("test", dest, flags); err == nil {
@@ -122,7 +122,7 @@ func TestDomainState(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	wantState := DomainState(DomainStateRunning)
+	wantState := DomainState(DomainRunning)
 	gotState, err := l.DomainState("test")
 	if err != nil {
 		t.Error(err)
@@ -325,7 +325,7 @@ func TestStoragePools(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	pools, err := l.StoragePools(StoragePoolsFlagActive)
+	pools, err := l.StoragePools(ConnectListStoragePoolsTransient)
 	if err != nil {
 		t.Error(err)
 	}
@@ -371,7 +371,7 @@ func TestUndefine(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	var flags UndefineFlags
+	var flags DomainUndefineFlagsValues
 	if err := l.Undefine("test", flags); err != nil {
 		t.Fatalf("unexpected undefine error: %v", err)
 	}
@@ -381,7 +381,7 @@ func TestDestroy(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	var flags DestroyFlags
+	var flags DomainDestroyFlagsValues
 	if err := l.Destroy("test", flags); err != nil {
 		t.Fatalf("unexpected destroy error: %v", err)
 	}
@@ -406,7 +406,7 @@ func TestDefineXML(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	var flags DomainDefineXMLFlags
+	var flags DomainDefineFlags
 	var buf []byte
 	if err := l.DefineXML(buf, flags); err != nil {
 		t.Fatalf("unexpected define error: %v", err)
@@ -431,7 +431,7 @@ func TestShutdown(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	var flags ShutdownFlags
+	var flags DomainShutdownFlagValues
 	if err := l.Shutdown("test", flags); err != nil {
 		t.Fatalf("unexpected shutdown error: %v", err)
 	}
@@ -441,7 +441,7 @@ func TestReboot(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	var flags RebootFlags
+	var flags DomainRebootFlagValues
 	if err := l.Reboot("test", flags); err != nil {
 		t.Fatalf("unexpected reboot error: %v", err)
 	}
