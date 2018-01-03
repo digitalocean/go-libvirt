@@ -31,7 +31,7 @@ fi
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 LVDIR=lv_source
 ln -sF ${LIBVIRT_SOURCE} ${LVDIR}
-if ! c-for-go -nostamp -nocgo -ccincl -ccdefs libvirt.yml; then
+if ! c-for-go -nostamp -nocgo -ccincl libvirt.yml; then
     echo "c-for-go failed"
     exit 1
 fi
