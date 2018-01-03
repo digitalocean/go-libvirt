@@ -486,8 +486,10 @@ func findFlagType(procName string, flagTypes map[string]ast.Expr) (string, bool)
 	if ok {
 		// Verify the mapped name exists
 		if _, ok = flagTypes[flagName]; ok == false {
-			// If one of the manual flag mappings is wrong, panic here.
-			panic(fmt.Sprintf("manual flag type %v for %v not found!", flagName, procName))
+			// If one of the manual flag mappings is wrong, complain but
+			// continue. This happens with older versions of libvirt.
+			fmt.Printf("manual flag type %v for %v not found, continuing", flagName, procName)
+			return "", false
 		}
 		return flagName, true
 	}

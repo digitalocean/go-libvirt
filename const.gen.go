@@ -121,18 +121,18 @@ const (
 	DomainBlockStatsFlushTotalTimes = "flush_total_times"
 	// DomainBlockStatsErrs as defined in libvirt/libvirt-domain.h:550
 	DomainBlockStatsErrs = "errs"
-	// MigrateParamUri as defined in libvirt/libvirt-domain.h:842
-	MigrateParamUri = "migrate_uri"
+	// MigrateParamURI as defined in libvirt/libvirt-domain.h:842
+	MigrateParamURI = "migrate_uri"
 	// MigrateParamDestName as defined in libvirt/libvirt-domain.h:852
 	MigrateParamDestName = "destination_name"
-	// MigrateParamDestXml as defined in libvirt/libvirt-domain.h:871
-	MigrateParamDestXml = "destination_xml"
-	// MigrateParamPersistXml as defined in libvirt/libvirt-domain.h:886
-	MigrateParamPersistXml = "persistent_xml"
+	// MigrateParamDestXML as defined in libvirt/libvirt-domain.h:871
+	MigrateParamDestXML = "destination_xml"
+	// MigrateParamPersistXML as defined in libvirt/libvirt-domain.h:886
+	MigrateParamPersistXML = "persistent_xml"
 	// MigrateParamBandwidth as defined in libvirt/libvirt-domain.h:896
 	MigrateParamBandwidth = "bandwidth"
-	// MigrateParamGraphicsUri as defined in libvirt/libvirt-domain.h:917
-	MigrateParamGraphicsUri = "graphics_uri"
+	// MigrateParamGraphicsURI as defined in libvirt/libvirt-domain.h:917
+	MigrateParamGraphicsURI = "graphics_uri"
 	// MigrateParamListenAddress as defined in libvirt/libvirt-domain.h:928
 	MigrateParamListenAddress = "listen_address"
 	// MigrateParamMigrateDisks as defined in libvirt/libvirt-domain.h:937
@@ -431,7 +431,7 @@ type ConnectCloseReason int32
 // ConnectCloseReason enumeration from libvirt/libvirt-common.h:120
 const (
 	ConnectCloseReasonError     ConnectCloseReason = iota
-	ConnectCloseReasonEof       ConnectCloseReason = 1
+	ConnectCloseReasonEOF       ConnectCloseReason = 1
 	ConnectCloseReasonKeepalive ConnectCloseReason = 2
 	ConnectCloseReasonClient    ConnectCloseReason = 3
 )
@@ -772,7 +772,7 @@ const (
 	MigrateAutoConverge     DomainMigrateFlags = 8192
 	MigrateRdmaPinAll       DomainMigrateFlags = 16384
 	MigratePostcopy         DomainMigrateFlags = 32768
-	MigrateTls              DomainMigrateFlags = 65536
+	MigrateTLS              DomainMigrateFlags = 65536
 )
 
 // DomainShutdownFlagValues as declared in libvirt/libvirt-domain.h:1117
@@ -858,7 +858,7 @@ type DomainXMLFlags int32
 const (
 	DomainXMLSecure     DomainXMLFlags = 1
 	DomainXMLInactive   DomainXMLFlags = 2
-	DomainXMLUpdateCpu  DomainXMLFlags = 4
+	DomainXMLUpdateCPU  DomainXMLFlags = 4
 	DomainXMLMigratable DomainXMLFlags = 8
 )
 
@@ -961,7 +961,7 @@ const (
 	DomainStatsState     DomainStatsTypes = 1
 	DomainStatsCPUTotal  DomainStatsTypes = 2
 	DomainStatsBalloon   DomainStatsTypes = 4
-	DomainStatsVcpu      DomainStatsTypes = 8
+	DomainStatsVCPU      DomainStatsTypes = 8
 	DomainStatsInterface DomainStatsTypes = 16
 	DomainStatsBlock     DomainStatsTypes = 32
 	DomainStatsPerf      DomainStatsTypes = 64
@@ -1653,16 +1653,16 @@ const (
 	NetworkSectionNone             NetworkUpdateSection = iota
 	NetworkSectionBridge           NetworkUpdateSection = 1
 	NetworkSectionDomain           NetworkUpdateSection = 2
-	NetworkSectionIp               NetworkUpdateSection = 3
+	NetworkSectionIP               NetworkUpdateSection = 3
 	NetworkSectionIPDhcpHost       NetworkUpdateSection = 4
 	NetworkSectionIPDhcpRange      NetworkUpdateSection = 5
 	NetworkSectionForward          NetworkUpdateSection = 6
 	NetworkSectionForwardInterface NetworkUpdateSection = 7
 	NetworkSectionForwardPf        NetworkUpdateSection = 8
 	NetworkSectionPortgroup        NetworkUpdateSection = 9
-	NetworkSectionDnsHost          NetworkUpdateSection = 10
-	NetworkSectionDnsTxt           NetworkUpdateSection = 11
-	NetworkSectionDnsSrv           NetworkUpdateSection = 12
+	NetworkSectionDNSHost          NetworkUpdateSection = 10
+	NetworkSectionDNSTxt           NetworkUpdateSection = 11
+	NetworkSectionDNSSrv           NetworkUpdateSection = 12
 )
 
 // NetworkUpdateFlags as declared in libvirt/libvirt-network.h:172
@@ -1753,7 +1753,7 @@ const (
 	SecretUsageTypeVolume SecretUsageType = 1
 	SecretUsageTypeCeph   SecretUsageType = 2
 	SecretUsageTypeIscsi  SecretUsageType = 3
-	SecretUsageTypeTls    SecretUsageType = 4
+	SecretUsageTypeTLS    SecretUsageType = 4
 )
 
 // ConnectListAllSecretsFlags as declared in libvirt/libvirt-secret.h:79
