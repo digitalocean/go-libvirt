@@ -5,6 +5,20 @@
 ---
 GENERATOR:
     PackageName: libvirt
+    PackageLicense: |
+        Copyright 2017 The go-libvirt Authors.
+
+        Licensed under the Apache License, Version 2.0 (the "License");
+        you may not use this file except in compliance with the License.
+        You may obtain a copy of the License at
+
+          http://www.apache.org/licenses/LICENSE-2.0
+
+        Unless required by applicable law or agreed to in writing, software
+        distributed under the License is distributed on an "AS IS" BASIS,
+        WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+        See the License for the specific language governing permissions and
+        limitations under the License.
     Includes: []
 
 PARSER:
@@ -26,9 +40,17 @@ TRANSLATOR:
         post-global:
             - {action: replace, from: "^vir"}
             - {load: snakecase}
-            - {action: replace, from: "Xml", to: "XML"}
-            - {action: replace, from: "Cpu", to: "CPU"}
-            - {action: replace, from: "Vcpu", to: "VCPU"}
+            # Follow golint's capitalization conventions.
+            - {action: replace, from: "Api([A-Z$])", to: "API$1"}
+            - {action: replace, from: "Cpu([A-Z$])", to: "CPU$1"}
+            - {action: replace, from: "Eof([A-Z$])", to: "EOF$1"}
+            - {action: replace, from: "Id([A-Z$])", to: "ID$1"}
+            - {action: replace, from: "Ip([A-Z$])", to: "IP$1"}
+            - {action: replace, from: "Tls([A-Z$])", to: "TLS$1"}
+            - {action: replace, from: "Uuid([A-Z$])", to: "UUID$1"}
+            - {action: replace, from: "Uri([A-Z$])", to: "URI$1"}
+            - {action: replace, from: "Vcpu([A-Z$])", to: "VCPU$1"}
+            - {action: replace, from: "Xml([A-Z$])", to: "XML$1"}
         const:
             - {action: accept, from: "^VIR_"}
             # Special case to prevent a collision with a type:

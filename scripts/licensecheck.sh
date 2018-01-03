@@ -18,9 +18,8 @@ read -r -d '' EXPECTED <<EndOfLicense
 // limitations under the License.
 EndOfLicense
 
-# Scan each Go source file for license, but ignore generated files.
 EXIT=0
-GOFILES=$(find . -name "*.go" ! -name "*.gen.go")
+GOFILES=$(find . -name "*.go")
 
 for FILE in $GOFILES; do
 	BLOCK=$(head -n 20 $FILE)

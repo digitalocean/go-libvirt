@@ -1,3 +1,18 @@
+// Copyright 2017 The go-libvirt Authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
 // WARNING: This file has automatically been generated
 // by https://git.io/c-for-go. DO NOT EDIT.
 
@@ -54,10 +69,10 @@ const (
 	NodeMemorySharedFullScans = "shm_full_scans"
 	// NodeMemorySharedMergeAcrossNodes as defined in libvirt/libvirt-host.h:378
 	NodeMemorySharedMergeAcrossNodes = "shm_merge_across_nodes"
-	// UuidBuflen as defined in libvirt/libvirt-host.h:513
-	UuidBuflen = 16
-	// UuidStringBuflen as defined in libvirt/libvirt-host.h:522
-	UuidStringBuflen = 37
+	// UUIDBuflen as defined in libvirt/libvirt-host.h:513
+	UUIDBuflen = 16
+	// UUIDStringBuflen as defined in libvirt/libvirt-host.h:522
+	UUIDStringBuflen = 37
 	// DomainSchedulerCPUShares as defined in libvirt/libvirt-domain.h:315
 	DomainSchedulerCPUShares = "cpu_shares"
 	// DomainSchedulerGlobalPeriod as defined in libvirt/libvirt-domain.h:323
@@ -110,10 +125,10 @@ const (
 	MigrateParamUri = "migrate_uri"
 	// MigrateParamDestName as defined in libvirt/libvirt-domain.h:852
 	MigrateParamDestName = "destination_name"
-	// MigrateParamDestXML as defined in libvirt/libvirt-domain.h:871
-	MigrateParamDestXML = "destination_xml"
-	// MigrateParamPersistXML as defined in libvirt/libvirt-domain.h:886
-	MigrateParamPersistXML = "persistent_xml"
+	// MigrateParamDestXml as defined in libvirt/libvirt-domain.h:871
+	MigrateParamDestXml = "destination_xml"
+	// MigrateParamPersistXml as defined in libvirt/libvirt-domain.h:886
+	MigrateParamPersistXml = "persistent_xml"
 	// MigrateParamBandwidth as defined in libvirt/libvirt-domain.h:896
 	MigrateParamBandwidth = "bandwidth"
 	// MigrateParamGraphicsUri as defined in libvirt/libvirt-domain.h:917
@@ -138,14 +153,14 @@ const (
 	MigrateParamAutoConvergeInitial = "auto_converge.initial"
 	// MigrateParamAutoConvergeIncrement as defined in libvirt/libvirt-domain.h:1009
 	MigrateParamAutoConvergeIncrement = "auto_converge.increment"
-	// DomainCPUStatsCPUtime as defined in libvirt/libvirt-domain.h:1252
-	DomainCPUStatsCPUtime = "cpu_time"
+	// DomainCPUStatsCputime as defined in libvirt/libvirt-domain.h:1252
+	DomainCPUStatsCputime = "cpu_time"
 	// DomainCPUStatsUsertime as defined in libvirt/libvirt-domain.h:1258
 	DomainCPUStatsUsertime = "user_time"
 	// DomainCPUStatsSystemtime as defined in libvirt/libvirt-domain.h:1264
 	DomainCPUStatsSystemtime = "system_time"
-	// DomainCPUStatsVCPUtime as defined in libvirt/libvirt-domain.h:1271
-	DomainCPUStatsVCPUtime = "vcpu_time"
+	// DomainCPUStatsVcputime as defined in libvirt/libvirt-domain.h:1271
+	DomainCPUStatsVcputime = "vcpu_time"
 	// DomainBlkioWeight as defined in libvirt/libvirt-domain.h:1300
 	DomainBlkioWeight = "weight"
 	// DomainBlkioDeviceWeight as defined in libvirt/libvirt-domain.h:1310
@@ -336,14 +351,14 @@ const (
 	DomainJobCompressionOverflow = "compression_overflow"
 	// DomainJobAutoConvergeThrottle as defined in libvirt/libvirt-domain.h:3428
 	DomainJobAutoConvergeThrottle = "auto_converge_throttle"
-	// DomainTunableCPUVCPUpin as defined in libvirt/libvirt-domain.h:3981
-	DomainTunableCPUVCPUpin = "cputune.vcpupin%u"
+	// DomainTunableCPUVcpupin as defined in libvirt/libvirt-domain.h:3981
+	DomainTunableCPUVcpupin = "cputune.vcpupin%u"
 	// DomainTunableCPUEmulatorpin as defined in libvirt/libvirt-domain.h:3989
 	DomainTunableCPUEmulatorpin = "cputune.emulatorpin"
 	// DomainTunableCPUIothreadspin as defined in libvirt/libvirt-domain.h:3998
 	DomainTunableCPUIothreadspin = "cputune.iothreadpin%u"
-	// DomainTunableCPUCPUShares as defined in libvirt/libvirt-domain.h:4006
-	DomainTunableCPUCPUShares = "cputune.cpu_shares"
+	// DomainTunableCPUCpuShares as defined in libvirt/libvirt-domain.h:4006
+	DomainTunableCPUCpuShares = "cputune.cpu_shares"
 	// DomainTunableCPUGlobalPeriod as defined in libvirt/libvirt-domain.h:4014
 	DomainTunableCPUGlobalPeriod = "cputune.global_period"
 	// DomainTunableCPUGlobalQuota as defined in libvirt/libvirt-domain.h:4022
@@ -458,7 +473,7 @@ type NodeGetCPUStatsAllCPUs int32
 
 // NodeGetCPUStatsAllCPUs enumeration from libvirt/libvirt-host.h:186
 const (
-	NodeCPUStatsAllCPUs NodeGetCPUStatsAllCPUs = -1
+	NodeCPUStatsAllCpus NodeGetCPUStatsAllCPUs = -1
 )
 
 // NodeGetMemoryStatsAllCells as declared in libvirt/libvirt-host.h:264
@@ -843,7 +858,7 @@ type DomainXMLFlags int32
 const (
 	DomainXMLSecure     DomainXMLFlags = 1
 	DomainXMLInactive   DomainXMLFlags = 2
-	DomainXMLUpdateCPU  DomainXMLFlags = 4
+	DomainXMLUpdateCpu  DomainXMLFlags = 4
 	DomainXMLMigratable DomainXMLFlags = 8
 )
 
@@ -946,7 +961,7 @@ const (
 	DomainStatsState     DomainStatsTypes = 1
 	DomainStatsCPUTotal  DomainStatsTypes = 2
 	DomainStatsBalloon   DomainStatsTypes = 4
-	DomainStatsVCPU      DomainStatsTypes = 8
+	DomainStatsVcpu      DomainStatsTypes = 8
 	DomainStatsInterface DomainStatsTypes = 16
 	DomainStatsBlock     DomainStatsTypes = 32
 	DomainStatsPerf      DomainStatsTypes = 64
@@ -1208,7 +1223,7 @@ const (
 	DomainEventSuspendedWatchdog       DomainEventSuspendedDetailType = 3
 	DomainEventSuspendedRestored       DomainEventSuspendedDetailType = 4
 	DomainEventSuspendedFromSnapshot   DomainEventSuspendedDetailType = 5
-	DomainEventSuspendedApiError       DomainEventSuspendedDetailType = 6
+	DomainEventSuspendedAPIError       DomainEventSuspendedDetailType = 6
 	DomainEventSuspendedPostcopy       DomainEventSuspendedDetailType = 7
 	DomainEventSuspendedPostcopyFailed DomainEventSuspendedDetailType = 8
 )
@@ -1399,31 +1414,31 @@ type DomainEventID int32
 
 // DomainEventID enumeration from libvirt/libvirt-domain.h:4395
 const (
-	DomainEventIdLifecycle           DomainEventID = iota
-	DomainEventIdReboot              DomainEventID = 1
-	DomainEventIdRtcChange           DomainEventID = 2
-	DomainEventIdWatchdog            DomainEventID = 3
-	DomainEventIdIoError             DomainEventID = 4
-	DomainEventIdGraphics            DomainEventID = 5
-	DomainEventIdIoErrorReason       DomainEventID = 6
-	DomainEventIdControlError        DomainEventID = 7
-	DomainEventIdBlockJob            DomainEventID = 8
-	DomainEventIdDiskChange          DomainEventID = 9
-	DomainEventIdTrayChange          DomainEventID = 10
-	DomainEventIdPmwakeup            DomainEventID = 11
-	DomainEventIdPmsuspend           DomainEventID = 12
-	DomainEventIdBalloonChange       DomainEventID = 13
-	DomainEventIdPmsuspendDisk       DomainEventID = 14
-	DomainEventIdDeviceRemoved       DomainEventID = 15
-	DomainEventIdBlockJob2           DomainEventID = 16
-	DomainEventIdTunable             DomainEventID = 17
-	DomainEventIdAgentLifecycle      DomainEventID = 18
-	DomainEventIdDeviceAdded         DomainEventID = 19
-	DomainEventIdMigrationIteration  DomainEventID = 20
-	DomainEventIdJobCompleted        DomainEventID = 21
-	DomainEventIdDeviceRemovalFailed DomainEventID = 22
-	DomainEventIdMetadataChange      DomainEventID = 23
-	DomainEventIdBlockThreshold      DomainEventID = 24
+	DomainEventIDLifecycle           DomainEventID = iota
+	DomainEventIDReboot              DomainEventID = 1
+	DomainEventIDRtcChange           DomainEventID = 2
+	DomainEventIDWatchdog            DomainEventID = 3
+	DomainEventIDIoError             DomainEventID = 4
+	DomainEventIDGraphics            DomainEventID = 5
+	DomainEventIDIoErrorReason       DomainEventID = 6
+	DomainEventIDControlError        DomainEventID = 7
+	DomainEventIDBlockJob            DomainEventID = 8
+	DomainEventIDDiskChange          DomainEventID = 9
+	DomainEventIDTrayChange          DomainEventID = 10
+	DomainEventIDPmwakeup            DomainEventID = 11
+	DomainEventIDPmsuspend           DomainEventID = 12
+	DomainEventIDBalloonChange       DomainEventID = 13
+	DomainEventIDPmsuspendDisk       DomainEventID = 14
+	DomainEventIDDeviceRemoved       DomainEventID = 15
+	DomainEventIDBlockJob2           DomainEventID = 16
+	DomainEventIDTunable             DomainEventID = 17
+	DomainEventIDAgentLifecycle      DomainEventID = 18
+	DomainEventIDDeviceAdded         DomainEventID = 19
+	DomainEventIDMigrationIteration  DomainEventID = 20
+	DomainEventIDJobCompleted        DomainEventID = 21
+	DomainEventIDDeviceRemovalFailed DomainEventID = 22
+	DomainEventIDMetadataChange      DomainEventID = 23
+	DomainEventIDBlockThreshold      DomainEventID = 24
 )
 
 // DomainConsoleFlags as declared in libvirt/libvirt-domain.h:4422
@@ -1639,8 +1654,8 @@ const (
 	NetworkSectionBridge           NetworkUpdateSection = 1
 	NetworkSectionDomain           NetworkUpdateSection = 2
 	NetworkSectionIp               NetworkUpdateSection = 3
-	NetworkSectionIpDhcpHost       NetworkUpdateSection = 4
-	NetworkSectionIpDhcpRange      NetworkUpdateSection = 5
+	NetworkSectionIPDhcpHost       NetworkUpdateSection = 4
+	NetworkSectionIPDhcpRange      NetworkUpdateSection = 5
 	NetworkSectionForward          NetworkUpdateSection = 6
 	NetworkSectionForwardInterface NetworkUpdateSection = 7
 	NetworkSectionForwardPf        NetworkUpdateSection = 8
@@ -1676,7 +1691,7 @@ type NetworkEventID int32
 
 // NetworkEventID enumeration from libvirt/libvirt-network.h:278
 const (
-	NetworkEventIdLifecycle NetworkEventID = iota
+	NetworkEventIDLifecycle NetworkEventID = iota
 )
 
 // IPAddrType as declared in libvirt/libvirt-network.h:287
@@ -1684,8 +1699,8 @@ type IPAddrType int32
 
 // IPAddrType enumeration from libvirt/libvirt-network.h:287
 const (
-	IpAddrTypeIpv4 IPAddrType = iota
-	IpAddrTypeIpv6 IPAddrType = 1
+	IPAddrTypeIpv4 IPAddrType = iota
+	IPAddrTypeIpv6 IPAddrType = 1
 )
 
 // ConnectListAllNodeDeviceFlags as declared in libvirt/libvirt-nodedev.h:85
@@ -1716,8 +1731,8 @@ type NodeDeviceEventID int32
 
 // NodeDeviceEventID enumeration from libvirt/libvirt-nodedev.h:155
 const (
-	NodeDeviceEventIdLifecycle NodeDeviceEventID = iota
-	NodeDeviceEventIdUpdate    NodeDeviceEventID = 1
+	NodeDeviceEventIDLifecycle NodeDeviceEventID = iota
+	NodeDeviceEventIDUpdate    NodeDeviceEventID = 1
 )
 
 // NodeDeviceEventLifecycleType as declared in libvirt/libvirt-nodedev.h:197
@@ -1757,8 +1772,8 @@ type SecretEventID int32
 
 // SecretEventID enumeration from libvirt/libvirt-secret.h:140
 const (
-	SecretEventIdLifecycle    SecretEventID = iota
-	SecretEventIdValueChanged SecretEventID = 1
+	SecretEventIDLifecycle    SecretEventID = iota
+	SecretEventIDValueChanged SecretEventID = 1
 )
 
 // SecretEventLifecycleType as declared in libvirt/libvirt-secret.h:182
@@ -1937,8 +1952,8 @@ type StoragePoolEventID int32
 
 // StoragePoolEventID enumeration from libvirt/libvirt-storage.h:428
 const (
-	StoragePoolEventIdLifecycle StoragePoolEventID = iota
-	StoragePoolEventIdRefresh   StoragePoolEventID = 1
+	StoragePoolEventIDLifecycle StoragePoolEventID = iota
+	StoragePoolEventIDRefresh   StoragePoolEventID = 1
 )
 
 // StoragePoolEventLifecycleType as declared in libvirt/libvirt-storage.h:472
