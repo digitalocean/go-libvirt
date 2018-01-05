@@ -104,13 +104,17 @@ type response struct {
 	Status  uint32
 }
 
-// libvirt error response
-type libvirtError struct {
+// LibvirtError response
+type LibvirtError struct {
 	Code     uint32
 	DomainID uint32
 	Padding  uint8
 	Message  string
 	Level    uint32
+}
+
+func (e LibvirtError) Error() string {
+	return e.Message
 }
 
 func (l *Libvirt) connect() error {
@@ -372,7 +376,7 @@ func encode(data interface{}) (bytes.Buffer, error) {
 
 // decodeError extracts an error message from the provider buffer.
 func decodeError(buf []byte) error {
-	var e libvirtError
+	var e LibvirtError
 
 	dec := xdr.NewDecoder(bytes.NewReader(buf))
 	_, err := dec.Decode(&e)
@@ -384,7 +388,7 @@ func decodeError(buf []byte) error {
 		return ErrUnsupported
 	}
 
-	return errors.New(e.Message)
+	return e
 }
 
 // decodeEvent extracts an event from the given byte slice.

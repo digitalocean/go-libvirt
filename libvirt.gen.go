@@ -467,7 +467,7 @@ type DomainBlockStatsFlagsRet struct {
 // DomainInterfaceStatsArgs is libvirt's remote_domain_interface_stats_args
 type DomainInterfaceStatsArgs struct {
 	Dom Domain
-	Device string
+	Path string
 }
 
 // DomainInterfaceStatsRet is libvirt's remote_domain_interface_stats_ret
@@ -2400,17 +2400,6 @@ type DomainAbortJobArgs struct {
 	Dom Domain
 }
 
-// DomainMigrateGetMaxDowntimeArgs is libvirt's remote_domain_migrate_get_max_downtime_args
-type DomainMigrateGetMaxDowntimeArgs struct {
-	Dom Domain
-	Flags uint32
-}
-
-// DomainMigrateGetMaxDowntimeRet is libvirt's remote_domain_migrate_get_max_downtime_ret
-type DomainMigrateGetMaxDowntimeRet struct {
-	Downtime uint64
-}
-
 // DomainMigrateSetMaxDowntimeArgs is libvirt's remote_domain_migrate_set_max_downtime_args
 type DomainMigrateSetMaxDowntimeArgs struct {
 	Dom Domain
@@ -2686,24 +2675,6 @@ type DomainManagedSaveRemoveArgs struct {
 	Flags uint32
 }
 
-// DomainManagedSaveGetXMLDescArgs is libvirt's remote_domain_managed_save_get_xml_desc_args
-type DomainManagedSaveGetXMLDescArgs struct {
-	Dom Domain
-	Flags DomainXMLFlags
-}
-
-// DomainManagedSaveGetXMLDescRet is libvirt's remote_domain_managed_save_get_xml_desc_ret
-type DomainManagedSaveGetXMLDescRet struct {
-	XML string
-}
-
-// DomainManagedSaveDefineXMLArgs is libvirt's remote_domain_managed_save_define_xml_args
-type DomainManagedSaveDefineXMLArgs struct {
-	Dom Domain
-	Dxml OptString
-	Flags DomainSaveRestoreFlags
-}
-
 // DomainSnapshotCreateXMLArgs is libvirt's remote_domain_snapshot_create_xml_args
 type DomainSnapshotCreateXMLArgs struct {
 	Dom Domain
@@ -2897,7 +2868,7 @@ type StorageVolUploadArgs struct {
 	Vol StorageVol
 	Offset uint64
 	Length uint64
-	Flags StorageVolUploadFlags
+	Flags uint32
 }
 
 // StorageVolDownloadArgs is libvirt's remote_storage_vol_download_args
@@ -2905,7 +2876,7 @@ type StorageVolDownloadArgs struct {
 	Vol StorageVol
 	Offset uint64
 	Length uint64
-	Flags StorageVolDownloadFlags
+	Flags uint32
 }
 
 // DomainGetStateArgs is libvirt's remote_domain_get_state_args
@@ -3323,16 +3294,6 @@ type DomainEventBlockJob2Msg struct {
 	Status int32
 }
 
-// DomainEventBlockThresholdMsg is libvirt's remote_domain_event_block_threshold_msg
-type DomainEventBlockThresholdMsg struct {
-	CallbackID int32
-	Dom Domain
-	Dev string
-	Path OptString
-	Threshold uint64
-	Excess uint64
-}
-
 // DomainEventCallbackTunableMsg is libvirt's remote_domain_event_callback_tunable_msg
 type DomainEventCallbackTunableMsg struct {
 	CallbackID int32
@@ -3709,22 +3670,6 @@ type SecretEventLifecycleMsg struct {
 type SecretEventValueChangedMsg struct {
 	CallbackID int32
 	OptSecret Secret
-}
-
-// DomainSetBlockThresholdArgs is libvirt's remote_domain_set_block_threshold_args
-type DomainSetBlockThresholdArgs struct {
-	Dom Domain
-	Dev string
-	Threshold uint64
-	Flags uint32
-}
-
-// DomainSetLifecycleActionArgs is libvirt's remote_domain_set_lifecycle_action_args
-type DomainSetLifecycleActionArgs struct {
-	Dom Domain
-	Type uint32
-	Action uint32
-	Flags DomainModificationImpact
 }
 
 
@@ -6115,12 +6060,12 @@ func (l *Libvirt) DomainBlockStats(Dom Domain, Path string) (rRdReq int64, rRdBy
 }
 
 // DomainInterfaceStats is the go wrapper for REMOTE_PROC_DOMAIN_INTERFACE_STATS.
-func (l *Libvirt) DomainInterfaceStats(Dom Domain, Device string) (rRxBytes int64, rRxPackets int64, rRxErrs int64, rRxDrop int64, rTxBytes int64, rTxPackets int64, rTxErrs int64, rTxDrop int64, err error) {
+func (l *Libvirt) DomainInterfaceStats(Dom Domain, Path string) (rRxBytes int64, rRxPackets int64, rRxErrs int64, rRxDrop int64, rTxBytes int64, rTxPackets int64, rTxErrs int64, rTxDrop int64, err error) {
 	var buf bytes.Buffer
 
 	args := DomainInterfaceStatsArgs {
 		Dom: Dom,
-		Device: Device,
+		Path: Path,
 	}
 
 	buf, err = encode(&args)
@@ -11086,7 +11031,7 @@ func (l *Libvirt) DomainMigrateSetMaxSpeed(Dom Domain, Bandwidth uint64, Flags u
 }
 
 // StorageVolUpload is the go wrapper for REMOTE_PROC_STORAGE_VOL_UPLOAD.
-func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64, Flags StorageVolUploadFlags) (err error) {
+func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := StorageVolUploadArgs {
@@ -11117,7 +11062,7 @@ func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64,
 }
 
 // StorageVolDownload is the go wrapper for REMOTE_PROC_STORAGE_VOL_DOWNLOAD.
-func (l *Libvirt) StorageVolDownload(Vol StorageVol, Offset uint64, Length uint64, Flags StorageVolDownloadFlags) (err error) {
+func (l *Libvirt) StorageVolDownload(Vol StorageVol, Offset uint64, Length uint64, Flags uint32) (err error) {
 	var buf bytes.Buffer
 
 	args := StorageVolDownloadArgs {
@@ -16818,193 +16763,6 @@ func (l *Libvirt) DomainSetVcpu(Dom Domain, Cpumap string, State int32, Flags Do
 
 	var resp <-chan response
 	resp, err = l.request(384, constants.Program, &buf)
-	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
-	return
-}
-
-// DomainEventBlockThreshold is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_BLOCK_THRESHOLD.
-func (l *Libvirt) DomainEventBlockThreshold() (err error) {
-	var buf bytes.Buffer
-
-	var resp <-chan response
-	resp, err = l.request(385, constants.Program, &buf)
-	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
-	return
-}
-
-// DomainSetBlockThreshold is the go wrapper for REMOTE_PROC_DOMAIN_SET_BLOCK_THRESHOLD.
-func (l *Libvirt) DomainSetBlockThreshold(Dom Domain, Dev string, Threshold uint64, Flags uint32) (err error) {
-	var buf bytes.Buffer
-
-	args := DomainSetBlockThresholdArgs {
-		Dom: Dom,
-		Dev: Dev,
-		Threshold: Threshold,
-		Flags: Flags,
-	}
-
-	buf, err = encode(&args)
-	if err != nil {
-		return
-	}
-
-	var resp <-chan response
-	resp, err = l.request(386, constants.Program, &buf)
-	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
-	return
-}
-
-// DomainMigrateGetMaxDowntime is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_GET_MAX_DOWNTIME.
-func (l *Libvirt) DomainMigrateGetMaxDowntime(Dom Domain, Flags uint32) (rDowntime uint64, err error) {
-	var buf bytes.Buffer
-
-	args := DomainMigrateGetMaxDowntimeArgs {
-		Dom: Dom,
-		Flags: Flags,
-	}
-
-	buf, err = encode(&args)
-	if err != nil {
-		return
-	}
-
-	var resp <-chan response
-	resp, err = l.request(387, constants.Program, &buf)
-	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
-	// Return value unmarshaling
-	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
-	// Downtime: uint64
-	_, err = dec.Decode(&rDowntime)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-// DomainManagedSaveGetXMLDesc is the go wrapper for REMOTE_PROC_DOMAIN_MANAGED_SAVE_GET_XML_DESC.
-func (l *Libvirt) DomainManagedSaveGetXMLDesc(Dom Domain, Flags DomainXMLFlags) (rXML string, err error) {
-	var buf bytes.Buffer
-
-	args := DomainManagedSaveGetXMLDescArgs {
-		Dom: Dom,
-		Flags: Flags,
-	}
-
-	buf, err = encode(&args)
-	if err != nil {
-		return
-	}
-
-	var resp <-chan response
-	resp, err = l.request(388, constants.Program, &buf)
-	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
-	// Return value unmarshaling
-	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
-	// XML: string
-	_, err = dec.Decode(&rXML)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-// DomainManagedSaveDefineXML is the go wrapper for REMOTE_PROC_DOMAIN_MANAGED_SAVE_DEFINE_XML.
-func (l *Libvirt) DomainManagedSaveDefineXML(Dom Domain, Dxml OptString, Flags DomainSaveRestoreFlags) (err error) {
-	var buf bytes.Buffer
-
-	args := DomainManagedSaveDefineXMLArgs {
-		Dom: Dom,
-		Dxml: Dxml,
-		Flags: Flags,
-	}
-
-	buf, err = encode(&args)
-	if err != nil {
-		return
-	}
-
-	var resp <-chan response
-	resp, err = l.request(389, constants.Program, &buf)
-	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
-	return
-}
-
-// DomainSetLifecycleAction is the go wrapper for REMOTE_PROC_DOMAIN_SET_LIFECYCLE_ACTION.
-func (l *Libvirt) DomainSetLifecycleAction(Dom Domain, Type uint32, Action uint32, Flags DomainModificationImpact) (err error) {
-	var buf bytes.Buffer
-
-	args := DomainSetLifecycleActionArgs {
-		Dom: Dom,
-		Type: Type,
-		Action: Action,
-		Flags: Flags,
-	}
-
-	buf, err = encode(&args)
-	if err != nil {
-		return
-	}
-
-	var resp <-chan response
-	resp, err = l.request(390, constants.Program, &buf)
 	if err != nil {
 		return
 	}
