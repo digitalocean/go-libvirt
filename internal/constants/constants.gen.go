@@ -807,18 +807,6 @@ const (
 	ProcSecretEventValueChanged = 383
 	// ProcDomainSetVcpu is libvirt's REMOTE_PROC_DOMAIN_SET_VCPU
 	ProcDomainSetVcpu = 384
-	// ProcDomainEventBlockThreshold is libvirt's REMOTE_PROC_DOMAIN_EVENT_BLOCK_THRESHOLD
-	ProcDomainEventBlockThreshold = 385
-	// ProcDomainSetBlockThreshold is libvirt's REMOTE_PROC_DOMAIN_SET_BLOCK_THRESHOLD
-	ProcDomainSetBlockThreshold = 386
-	// ProcDomainMigrateGetMaxDowntime is libvirt's REMOTE_PROC_DOMAIN_MIGRATE_GET_MAX_DOWNTIME
-	ProcDomainMigrateGetMaxDowntime = 387
-	// ProcDomainManagedSaveGetXMLDesc is libvirt's REMOTE_PROC_DOMAIN_MANAGED_SAVE_GET_XML_DESC
-	ProcDomainManagedSaveGetXMLDesc = 388
-	// ProcDomainManagedSaveDefineXML is libvirt's REMOTE_PROC_DOMAIN_MANAGED_SAVE_DEFINE_XML
-	ProcDomainManagedSaveDefineXML = 389
-	// ProcDomainSetLifecycleAction is libvirt's REMOTE_PROC_DOMAIN_SET_LIFECYCLE_ACTION
-	ProcDomainSetLifecycleAction = 390
 
 
 	// From consts:
@@ -841,7 +829,7 @@ const (
 	// InterfaceListMax is libvirt's REMOTE_INTERFACE_LIST_MAX
 	InterfaceListMax = 16384
 	// StoragePoolListMax is libvirt's REMOTE_STORAGE_POOL_LIST_MAX
-	StoragePoolListMax = 16384
+	StoragePoolListMax = 4096
 	// StorageVolListMax is libvirt's REMOTE_STORAGE_VOL_LIST_MAX
 	StorageVolListMax = 16384
 	// NodeDeviceListMax is libvirt's REMOTE_NODE_DEVICE_LIST_MAX
@@ -849,7 +837,7 @@ const (
 	// NodeDeviceCapsListMax is libvirt's REMOTE_NODE_DEVICE_CAPS_LIST_MAX
 	NodeDeviceCapsListMax = 65536
 	// NwfilterListMax is libvirt's REMOTE_NWFILTER_LIST_MAX
-	NwfilterListMax = 16384
+	NwfilterListMax = 1024
 	// DomainSchedulerParametersMax is libvirt's REMOTE_DOMAIN_SCHEDULER_PARAMETERS_MAX
 	DomainSchedulerParametersMax = 16
 	// DomainBlkioParametersMax is libvirt's REMOTE_DOMAIN_BLKIO_PARAMETERS_MAX
@@ -879,7 +867,7 @@ const (
 	// DomainMemoryStatsMax is libvirt's REMOTE_DOMAIN_MEMORY_STATS_MAX
 	DomainMemoryStatsMax = 1024
 	// DomainSnapshotListMax is libvirt's REMOTE_DOMAIN_SNAPSHOT_LIST_MAX
-	DomainSnapshotListMax = 16384
+	DomainSnapshotListMax = 1024
 	// DomainBlockPeekBufferMax is libvirt's REMOTE_DOMAIN_BLOCK_PEEK_BUFFER_MAX
 	DomainBlockPeekBufferMax = 4194304
 	// DomainMemoryPeekBufferMax is libvirt's REMOTE_DOMAIN_MEMORY_PEEK_BUFFER_MAX
@@ -915,7 +903,7 @@ const (
 	// NetworkDhcpLeasesMax is libvirt's REMOTE_NETWORK_DHCP_LEASES_MAX
 	NetworkDhcpLeasesMax = 65536
 	// ConnectGetAllDomainStatsMax is libvirt's REMOTE_CONNECT_GET_ALL_DOMAIN_STATS_MAX
-	ConnectGetAllDomainStatsMax = 262144
+	ConnectGetAllDomainStatsMax = 4096
 	// DomainEventTunableMax is libvirt's REMOTE_DOMAIN_EVENT_TUNABLE_MAX
 	DomainEventTunableMax = 2048
 	// DomainFsinfoMax is libvirt's REMOTE_DOMAIN_FSINFO_MAX
