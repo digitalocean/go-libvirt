@@ -152,19 +152,12 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(constants.QEMUConnectDomainMonitorEventRegister, constants.ProgramQEMU, &buf)
+	res, err := l.request(constants.QEMUConnectDomainMonitorEventRegister, constants.ProgramQEMU, &buf)
 	if err != nil {
-		return nil, err
-	}
-
-	res := <-resp
-	if res.Status != StatusOK {
-		err = decodeError(res.Payload)
 		if err == ErrUnsupported {
 			return nil, ErrEventsNotSupported
 		}
-
-		return nil, decodeError(res.Payload)
+		return nil, err
 	}
 
 	dec := xdr.NewDecoder(bytes.NewReader(res.Payload))
@@ -250,15 +243,9 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	resp, err := l.request(constants.QEMUDomainMonitor, constants.ProgramQEMU, &buf)
+	res, err := l.request(constants.QEMUDomainMonitor, constants.ProgramQEMU, &buf)
 	if err != nil {
 		return nil, err
-	}
-
-	res := <-resp
-	// check for libvirt errors
-	if res.Status != StatusOK {
-		return nil, decodeError(res.Payload)
 	}
 
 	// check for QEMU process errors

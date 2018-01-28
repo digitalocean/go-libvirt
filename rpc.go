@@ -131,41 +131,22 @@ func (l *Libvirt) connect() error {
 
 	// libvirt requires that we call auth-list prior to connecting,
 	// event when no authentication is used.
-	resp, err := l.request(constants.ProcAuthList, constants.Program, &buf)
+	_, err = l.request(constants.ProcAuthList, constants.Program, &buf)
 	if err != nil {
 		return err
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		return decodeError(r.Payload)
-	}
-
-	resp, err = l.request(constants.ProcConnectOpen, constants.Program, &buf)
+	_, err = l.request(constants.ProcConnectOpen, constants.Program, &buf)
 	if err != nil {
 		return err
-	}
-
-	r = <-resp
-	if r.Status != StatusOK {
-		return decodeError(r.Payload)
 	}
 
 	return nil
 }
 
 func (l *Libvirt) disconnect() error {
-	resp, err := l.request(constants.ProcConnectClose, constants.Program, nil)
-	if err != nil {
-		return err
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		return decodeError(r.Payload)
-	}
-
-	return nil
+	_, err := l.request(constants.ProcConnectClose, constants.Program, nil)
+	return err
 }
 
 // listen processes incoming data and routes
@@ -281,14 +262,9 @@ func (l *Libvirt) removeStream(id uint32) error {
 		return err
 	}
 
-	resp, err := l.request(constants.QEMUConnectDomainMonitorEventDeregister, constants.ProgramQEMU, &buf)
+	_, err = l.request(constants.QEMUConnectDomainMonitorEventDeregister, constants.ProgramQEMU, &buf)
 	if err != nil {
 		return err
-	}
-
-	res := <-resp
-	if res.Status != StatusOK {
-		return decodeError(res.Payload)
 	}
 
 	l.em.Lock()
@@ -314,9 +290,9 @@ func (l *Libvirt) deregister(id uint32) {
 }
 
 // request performs a libvirt RPC request.
-// The returned channel is used by the caller to receive the asynchronous
-// call response. The channel is closed once a response has been sent.
-func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (<-chan response, error) {
+// returns response returned by server.
+// if response is not OK, decodes error from it and returns it.
+func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (response, error) {
 	serial := l.serial()
 	c := make(chan response)
 
@@ -344,22 +320,27 @@ func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (<
 	defer l.mu.Unlock()
 	err := binary.Write(l.w, binary.BigEndian, p)
 	if err != nil {
-		return nil, err
+		return response{}, err
 	}
 
 	// write payload
 	if payload != nil {
 		err = binary.Write(l.w, binary.BigEndian, payload.Bytes())
 		if err != nil {
-			return nil, err
+			return response{}, err
 		}
 	}
 
 	if err := l.w.Flush(); err != nil {
-		return nil, err
+		return response{}, err
 	}
 
-	return c, nil
+	resp := <-c
+	if resp.Status != StatusOK {
+		return resp, decodeError(resp.Payload)
+	}
+
+	return resp, nil
 }
 
 // encode XDR encodes the provided data.
