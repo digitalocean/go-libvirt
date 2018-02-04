@@ -298,6 +298,20 @@ func (l *Libvirt) request(proc uint32, program uint32, payload []byte) (response
 
 	l.register(serial, c)
 
+	err := l.sendPacket(serial, proc, program, payload, Call, StatusOK)
+	if err != nil {
+		return response{}, err
+	}
+
+	resp, err := l.getResponse(c)
+	if err != nil {
+		return resp, err
+	}
+
+	return resp, nil
+}
+
+func (l *Libvirt) sendPacket(serial uint32, proc uint32, program uint32, payload []byte, typ uint32, status uint32) error {
 	size := constants.PacketLengthSize + constants.HeaderSize
 	if payload != nil {
 		size += len(payload)
@@ -309,9 +323,9 @@ func (l *Libvirt) request(proc uint32, program uint32, payload []byte) (response
 			Program:   program,
 			Version:   constants.ProtocolVersion,
 			Procedure: proc,
-			Type:      Call,
+			Type:      typ,
 			Serial:    serial,
-			Status:    StatusOK,
+			Status:    status,
 		},
 	}
 
@@ -320,21 +334,25 @@ func (l *Libvirt) request(proc uint32, program uint32, payload []byte) (response
 	defer l.mu.Unlock()
 	err := binary.Write(l.w, binary.BigEndian, p)
 	if err != nil {
-		return response{}, err
+		return err
 	}
 
 	// write payload
 	if payload != nil {
 		err = binary.Write(l.w, binary.BigEndian, payload)
 		if err != nil {
-			return response{}, err
+			return err
 		}
 	}
 
 	if err := l.w.Flush(); err != nil {
-		return response{}, err
+		return err
 	}
 
+	return nil
+}
+
+func (l *Libvirt) getResponse(c chan response) (response, error) {
 	resp := <-c
 	if resp.Status != StatusOK {
 		return resp, decodeError(resp.Payload)
