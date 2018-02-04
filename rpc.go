@@ -195,8 +195,6 @@ func (l *Libvirt) callback(id uint32, res response) {
 	if ok {
 		c <- res
 	}
-
-	l.deregister(id)
 }
 
 // route sends incoming packets to their listeners.
@@ -297,6 +295,7 @@ func (l *Libvirt) request(proc uint32, program uint32, payload []byte) (response
 	c := make(chan response)
 
 	l.register(serial, c)
+	defer l.deregister(serial)
 
 	err := l.sendPacket(serial, proc, program, payload, Call, StatusOK)
 	if err != nil {
