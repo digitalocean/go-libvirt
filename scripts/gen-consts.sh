@@ -19,6 +19,7 @@ if ! which c-for-go > /dev/null; then
     # __GNUC_PREREQ macro. Checkout an older version to avoid this.
     pushd $GOPATH/src/github.com/xlab/c-for-go
     git checkout a831fa1954c29f84f7bccab225c3c620d0e7f132
+    go install ./...
     popd
 fi
 
