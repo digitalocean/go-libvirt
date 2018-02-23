@@ -140,15 +140,9 @@ func (l *Libvirt) {{.Name}}({{range $ix, $arg := .Args}}{{if $ix}}, {{end}}{{.Na
 		return
 	}
 {{end}}
-	var resp <-chan response
-	resp, err = l.request({{.Num}}, constants.Program, &buf)
+{{if .RetStruct}}	var r response{{end}}
+	{{if .RetStruct}}r{{else}}_{{end}}, err = l.request({{.Num}}, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 {{if .RetStruct}}

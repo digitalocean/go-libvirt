@@ -3951,15 +3951,9 @@ func (l *Libvirt) ConnectOpen(Name OptString, Flags ConnectFlags) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(1, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(1, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -3970,15 +3964,9 @@ func (l *Libvirt) ConnectOpen(Name OptString, Flags ConnectFlags) (err error) {
 func (l *Libvirt) ConnectClose() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(2, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(2, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -3989,15 +3977,9 @@ func (l *Libvirt) ConnectClose() (err error) {
 func (l *Libvirt) ConnectGetType() (rType string, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(3, constants.Program, &buf)
+	var r response
+	r, err = l.request(3, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4017,15 +3999,9 @@ func (l *Libvirt) ConnectGetType() (rType string, err error) {
 func (l *Libvirt) ConnectGetVersion() (rHvVer uint64, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(4, constants.Program, &buf)
+	var r response
+	r, err = l.request(4, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4054,15 +4030,9 @@ func (l *Libvirt) ConnectGetMaxVcpus(Type OptString) (rMaxVcpus int32, err error
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(5, constants.Program, &buf)
+	var r response
+	r, err = l.request(5, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4082,15 +4052,9 @@ func (l *Libvirt) ConnectGetMaxVcpus(Type OptString) (rMaxVcpus int32, err error
 func (l *Libvirt) NodeGetInfo() (rModel [32]int8, rMemory uint64, rCpus int32, rMhz int32, rNodes int32, rSockets int32, rCores int32, rThreads int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(6, constants.Program, &buf)
+	var r response
+	r, err = l.request(6, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4145,15 +4109,9 @@ func (l *Libvirt) NodeGetInfo() (rModel [32]int8, rMemory uint64, rCpus int32, r
 func (l *Libvirt) ConnectGetCapabilities() (rCapabilities string, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(7, constants.Program, &buf)
+	var r response
+	r, err = l.request(7, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4183,15 +4141,9 @@ func (l *Libvirt) DomainAttachDevice(Dom Domain, XML string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(8, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(8, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -4211,15 +4163,9 @@ func (l *Libvirt) DomainCreate(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(9, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(9, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -4240,15 +4186,9 @@ func (l *Libvirt) DomainCreateXML(XMLDesc string, Flags DomainCreateFlags) (rDom
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(10, constants.Program, &buf)
+	var r response
+	r, err = l.request(10, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4277,15 +4217,9 @@ func (l *Libvirt) DomainDefineXML(XML string) (rDom Domain, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(11, constants.Program, &buf)
+	var r response
+	r, err = l.request(11, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4314,15 +4248,9 @@ func (l *Libvirt) DomainDestroy(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(12, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(12, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -4343,15 +4271,9 @@ func (l *Libvirt) DomainDetachDevice(Dom Domain, XML string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(13, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(13, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -4372,15 +4294,9 @@ func (l *Libvirt) DomainGetXMLDesc(Dom Domain, Flags DomainXMLFlags) (rXML strin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(14, constants.Program, &buf)
+	var r response
+	r, err = l.request(14, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4409,15 +4325,9 @@ func (l *Libvirt) DomainGetAutostart(Dom Domain) (rAutostart int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(15, constants.Program, &buf)
+	var r response
+	r, err = l.request(15, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4446,15 +4356,9 @@ func (l *Libvirt) DomainGetInfo(Dom Domain) (rState uint8, rMaxMem uint64, rMemo
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(16, constants.Program, &buf)
+	var r response
+	r, err = l.request(16, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4503,15 +4407,9 @@ func (l *Libvirt) DomainGetMaxMemory(Dom Domain) (rMemory uint64, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(17, constants.Program, &buf)
+	var r response
+	r, err = l.request(17, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4540,15 +4438,9 @@ func (l *Libvirt) DomainGetMaxVcpus(Dom Domain) (rNum int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(18, constants.Program, &buf)
+	var r response
+	r, err = l.request(18, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4577,15 +4469,9 @@ func (l *Libvirt) DomainGetOsType(Dom Domain) (rType string, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(19, constants.Program, &buf)
+	var r response
+	r, err = l.request(19, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4616,15 +4502,9 @@ func (l *Libvirt) DomainGetVcpus(Dom Domain, Maxinfo int32, Maplen int32) (rInfo
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(20, constants.Program, &buf)
+	var r response
+	r, err = l.request(20, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4658,15 +4538,9 @@ func (l *Libvirt) ConnectListDefinedDomains(Maxnames int32) (rNames []string, er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(21, constants.Program, &buf)
+	var r response
+	r, err = l.request(21, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4695,15 +4569,9 @@ func (l *Libvirt) DomainLookupByID(ID int32) (rDom Domain, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(22, constants.Program, &buf)
+	var r response
+	r, err = l.request(22, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4732,15 +4600,9 @@ func (l *Libvirt) DomainLookupByName(Name string) (rDom Domain, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(23, constants.Program, &buf)
+	var r response
+	r, err = l.request(23, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4769,15 +4631,9 @@ func (l *Libvirt) DomainLookupByUUID(UUID UUID) (rDom Domain, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(24, constants.Program, &buf)
+	var r response
+	r, err = l.request(24, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4797,15 +4653,9 @@ func (l *Libvirt) DomainLookupByUUID(UUID UUID) (rDom Domain, err error) {
 func (l *Libvirt) ConnectNumOfDefinedDomains() (rNum int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(25, constants.Program, &buf)
+	var r response
+	r, err = l.request(25, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -4836,15 +4686,9 @@ func (l *Libvirt) DomainPinVcpu(Dom Domain, Vcpu uint32, Cpumap []byte) (err err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(26, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(26, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -4865,15 +4709,9 @@ func (l *Libvirt) DomainReboot(Dom Domain, Flags DomainRebootFlagValues) (err er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(27, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(27, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -4893,15 +4731,9 @@ func (l *Libvirt) DomainResume(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(28, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(28, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -4922,15 +4754,9 @@ func (l *Libvirt) DomainSetAutostart(Dom Domain, Autostart int32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(29, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(29, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -4951,15 +4777,9 @@ func (l *Libvirt) DomainSetMaxMemory(Dom Domain, Memory uint64) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(30, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(30, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -4980,15 +4800,9 @@ func (l *Libvirt) DomainSetMemory(Dom Domain, Memory uint64) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(31, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(31, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5009,15 +4823,9 @@ func (l *Libvirt) DomainSetVcpus(Dom Domain, Nvcpus uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(32, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(32, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5037,15 +4845,9 @@ func (l *Libvirt) DomainShutdown(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(33, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(33, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5065,15 +4867,9 @@ func (l *Libvirt) DomainSuspend(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(34, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(34, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5093,15 +4889,9 @@ func (l *Libvirt) DomainUndefine(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(35, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(35, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5121,15 +4911,9 @@ func (l *Libvirt) ConnectListDefinedNetworks(Maxnames int32) (rNames []string, e
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(36, constants.Program, &buf)
+	var r response
+	r, err = l.request(36, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5158,15 +4942,9 @@ func (l *Libvirt) ConnectListDomains(Maxids int32) (rIds []int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(37, constants.Program, &buf)
+	var r response
+	r, err = l.request(37, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5195,15 +4973,9 @@ func (l *Libvirt) ConnectListNetworks(Maxnames int32) (rNames []string, err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(38, constants.Program, &buf)
+	var r response
+	r, err = l.request(38, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5232,15 +5004,9 @@ func (l *Libvirt) NetworkCreate(Net Network) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(39, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(39, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5260,15 +5026,9 @@ func (l *Libvirt) NetworkCreateXML(XML string) (rNet Network, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(40, constants.Program, &buf)
+	var r response
+	r, err = l.request(40, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5297,15 +5057,9 @@ func (l *Libvirt) NetworkDefineXML(XML string) (rNet Network, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(41, constants.Program, &buf)
+	var r response
+	r, err = l.request(41, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5334,15 +5088,9 @@ func (l *Libvirt) NetworkDestroy(Net Network) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(42, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(42, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5363,15 +5111,9 @@ func (l *Libvirt) NetworkGetXMLDesc(Net Network, Flags uint32) (rXML string, err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(43, constants.Program, &buf)
+	var r response
+	r, err = l.request(43, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5400,15 +5142,9 @@ func (l *Libvirt) NetworkGetAutostart(Net Network) (rAutostart int32, err error)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(44, constants.Program, &buf)
+	var r response
+	r, err = l.request(44, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5437,15 +5173,9 @@ func (l *Libvirt) NetworkGetBridgeName(Net Network) (rName string, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(45, constants.Program, &buf)
+	var r response
+	r, err = l.request(45, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5474,15 +5204,9 @@ func (l *Libvirt) NetworkLookupByName(Name string) (rNet Network, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(46, constants.Program, &buf)
+	var r response
+	r, err = l.request(46, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5511,15 +5235,9 @@ func (l *Libvirt) NetworkLookupByUUID(UUID UUID) (rNet Network, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(47, constants.Program, &buf)
+	var r response
+	r, err = l.request(47, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5549,15 +5267,9 @@ func (l *Libvirt) NetworkSetAutostart(Net Network, Autostart int32) (err error) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(48, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(48, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5577,15 +5289,9 @@ func (l *Libvirt) NetworkUndefine(Net Network) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(49, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(49, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5596,15 +5302,9 @@ func (l *Libvirt) NetworkUndefine(Net Network) (err error) {
 func (l *Libvirt) ConnectNumOfDefinedNetworks() (rNum int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(50, constants.Program, &buf)
+	var r response
+	r, err = l.request(50, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5624,15 +5324,9 @@ func (l *Libvirt) ConnectNumOfDefinedNetworks() (rNum int32, err error) {
 func (l *Libvirt) ConnectNumOfDomains() (rNum int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(51, constants.Program, &buf)
+	var r response
+	r, err = l.request(51, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5652,15 +5346,9 @@ func (l *Libvirt) ConnectNumOfDomains() (rNum int32, err error) {
 func (l *Libvirt) ConnectNumOfNetworks() (rNum int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(52, constants.Program, &buf)
+	var r response
+	r, err = l.request(52, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5691,15 +5379,9 @@ func (l *Libvirt) DomainCoreDump(Dom Domain, To string, Flags DomainCoreDumpFlag
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(53, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(53, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5719,15 +5401,9 @@ func (l *Libvirt) DomainRestore(From string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(54, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(54, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5748,15 +5424,9 @@ func (l *Libvirt) DomainSave(Dom Domain, To string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(55, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(55, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5776,15 +5446,9 @@ func (l *Libvirt) DomainGetSchedulerType(Dom Domain) (rType string, rNparams int
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(56, constants.Program, &buf)
+	var r response
+	r, err = l.request(56, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5819,15 +5483,9 @@ func (l *Libvirt) DomainGetSchedulerParameters(Dom Domain, Nparams int32) (rPara
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(57, constants.Program, &buf)
+	var r response
+	r, err = l.request(57, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5858,15 +5516,9 @@ func (l *Libvirt) DomainSetSchedulerParameters(Dom Domain, Params []TypedParam) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(58, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(58, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -5877,15 +5529,9 @@ func (l *Libvirt) DomainSetSchedulerParameters(Dom Domain, Params []TypedParam) 
 func (l *Libvirt) ConnectGetHostname() (rHostname string, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(59, constants.Program, &buf)
+	var r response
+	r, err = l.request(59, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5914,15 +5560,9 @@ func (l *Libvirt) ConnectSupportsFeature(Feature int32) (rSupported int32, err e
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(60, constants.Program, &buf)
+	var r response
+	r, err = l.request(60, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -5954,15 +5594,9 @@ func (l *Libvirt) DomainMigratePrepare(UriIn OptString, Flags uint64, Dname OptS
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(61, constants.Program, &buf)
+	var r response
+	r, err = l.request(61, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6001,15 +5635,9 @@ func (l *Libvirt) DomainMigratePerform(Dom Domain, Cookie []byte, Uri string, Fl
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(62, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(62, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -6032,15 +5660,9 @@ func (l *Libvirt) DomainMigrateFinish(Dname string, Cookie []byte, Uri string, F
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(63, constants.Program, &buf)
+	var r response
+	r, err = l.request(63, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6070,15 +5692,9 @@ func (l *Libvirt) DomainBlockStats(Dom Domain, Path string) (rRdReq int64, rRdBy
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(64, constants.Program, &buf)
+	var r response
+	r, err = l.request(64, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6128,15 +5744,9 @@ func (l *Libvirt) DomainInterfaceStats(Dom Domain, Device string) (rRxBytes int6
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(65, constants.Program, &buf)
+	var r response
+	r, err = l.request(65, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6191,15 +5801,9 @@ func (l *Libvirt) DomainInterfaceStats(Dom Domain, Device string) (rRxBytes int6
 func (l *Libvirt) AuthList() (rTypes []AuthType, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(66, constants.Program, &buf)
+	var r response
+	r, err = l.request(66, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6219,15 +5823,9 @@ func (l *Libvirt) AuthList() (rTypes []AuthType, err error) {
 func (l *Libvirt) AuthSaslInit() (rMechlist string, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(67, constants.Program, &buf)
+	var r response
+	r, err = l.request(67, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6258,15 +5856,9 @@ func (l *Libvirt) AuthSaslStart(Mech string, Nil int32, Data []int8) (rComplete 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(68, constants.Program, &buf)
+	var r response
+	r, err = l.request(68, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6306,15 +5898,9 @@ func (l *Libvirt) AuthSaslStep(Nil int32, Data []int8) (rComplete int32, rNil in
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(69, constants.Program, &buf)
+	var r response
+	r, err = l.request(69, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6344,15 +5930,9 @@ func (l *Libvirt) AuthSaslStep(Nil int32, Data []int8) (rComplete int32, rNil in
 func (l *Libvirt) AuthPolkit() (rComplete int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(70, constants.Program, &buf)
+	var r response
+	r, err = l.request(70, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6372,15 +5952,9 @@ func (l *Libvirt) AuthPolkit() (rComplete int32, err error) {
 func (l *Libvirt) ConnectNumOfStoragePools() (rNum int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(71, constants.Program, &buf)
+	var r response
+	r, err = l.request(71, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6409,15 +5983,9 @@ func (l *Libvirt) ConnectListStoragePools(Maxnames int32) (rNames []string, err 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(72, constants.Program, &buf)
+	var r response
+	r, err = l.request(72, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6437,15 +6005,9 @@ func (l *Libvirt) ConnectListStoragePools(Maxnames int32) (rNames []string, err 
 func (l *Libvirt) ConnectNumOfDefinedStoragePools() (rNum int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(73, constants.Program, &buf)
+	var r response
+	r, err = l.request(73, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6474,15 +6036,9 @@ func (l *Libvirt) ConnectListDefinedStoragePools(Maxnames int32) (rNames []strin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(74, constants.Program, &buf)
+	var r response
+	r, err = l.request(74, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6513,15 +6069,9 @@ func (l *Libvirt) ConnectFindStoragePoolSources(Type string, SrcSpec OptString, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(75, constants.Program, &buf)
+	var r response
+	r, err = l.request(75, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6551,15 +6101,9 @@ func (l *Libvirt) StoragePoolCreateXML(XML string, Flags StoragePoolCreateFlags)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(76, constants.Program, &buf)
+	var r response
+	r, err = l.request(76, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6589,15 +6133,9 @@ func (l *Libvirt) StoragePoolDefineXML(XML string, Flags uint32) (rPool StorageP
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(77, constants.Program, &buf)
+	var r response
+	r, err = l.request(77, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6627,15 +6165,9 @@ func (l *Libvirt) StoragePoolCreate(Pool StoragePool, Flags StoragePoolCreateFla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(78, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(78, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -6656,15 +6188,9 @@ func (l *Libvirt) StoragePoolBuild(Pool StoragePool, Flags StoragePoolBuildFlags
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(79, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(79, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -6684,15 +6210,9 @@ func (l *Libvirt) StoragePoolDestroy(Pool StoragePool) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(80, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(80, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -6713,15 +6233,9 @@ func (l *Libvirt) StoragePoolDelete(Pool StoragePool, Flags StoragePoolDeleteFla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(81, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(81, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -6741,15 +6255,9 @@ func (l *Libvirt) StoragePoolUndefine(Pool StoragePool) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(82, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(82, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -6770,15 +6278,9 @@ func (l *Libvirt) StoragePoolRefresh(Pool StoragePool, Flags uint32) (err error)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(83, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(83, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -6798,15 +6300,9 @@ func (l *Libvirt) StoragePoolLookupByName(Name string) (rPool StoragePool, err e
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(84, constants.Program, &buf)
+	var r response
+	r, err = l.request(84, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6835,15 +6331,9 @@ func (l *Libvirt) StoragePoolLookupByUUID(UUID UUID) (rPool StoragePool, err err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(85, constants.Program, &buf)
+	var r response
+	r, err = l.request(85, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6872,15 +6362,9 @@ func (l *Libvirt) StoragePoolLookupByVolume(Vol StorageVol) (rPool StoragePool, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(86, constants.Program, &buf)
+	var r response
+	r, err = l.request(86, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6909,15 +6393,9 @@ func (l *Libvirt) StoragePoolGetInfo(Pool StoragePool) (rState uint8, rCapacity 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(87, constants.Program, &buf)
+	var r response
+	r, err = l.request(87, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6962,15 +6440,9 @@ func (l *Libvirt) StoragePoolGetXMLDesc(Pool StoragePool, Flags StorageXMLFlags)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(88, constants.Program, &buf)
+	var r response
+	r, err = l.request(88, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -6999,15 +6471,9 @@ func (l *Libvirt) StoragePoolGetAutostart(Pool StoragePool) (rAutostart int32, e
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(89, constants.Program, &buf)
+	var r response
+	r, err = l.request(89, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7037,15 +6503,9 @@ func (l *Libvirt) StoragePoolSetAutostart(Pool StoragePool, Autostart int32) (er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(90, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(90, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -7065,15 +6525,9 @@ func (l *Libvirt) StoragePoolNumOfVolumes(Pool StoragePool) (rNum int32, err err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(91, constants.Program, &buf)
+	var r response
+	r, err = l.request(91, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7103,15 +6557,9 @@ func (l *Libvirt) StoragePoolListVolumes(Pool StoragePool, Maxnames int32) (rNam
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(92, constants.Program, &buf)
+	var r response
+	r, err = l.request(92, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7142,15 +6590,9 @@ func (l *Libvirt) StorageVolCreateXML(Pool StoragePool, XML string, Flags Storag
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(93, constants.Program, &buf)
+	var r response
+	r, err = l.request(93, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7180,15 +6622,9 @@ func (l *Libvirt) StorageVolDelete(Vol StorageVol, Flags StorageVolDeleteFlags) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(94, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(94, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -7209,15 +6645,9 @@ func (l *Libvirt) StorageVolLookupByName(Pool StoragePool, Name string) (rVol St
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(95, constants.Program, &buf)
+	var r response
+	r, err = l.request(95, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7246,15 +6676,9 @@ func (l *Libvirt) StorageVolLookupByKey(Key string) (rVol StorageVol, err error)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(96, constants.Program, &buf)
+	var r response
+	r, err = l.request(96, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7283,15 +6707,9 @@ func (l *Libvirt) StorageVolLookupByPath(Path string) (rVol StorageVol, err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(97, constants.Program, &buf)
+	var r response
+	r, err = l.request(97, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7320,15 +6738,9 @@ func (l *Libvirt) StorageVolGetInfo(Vol StorageVol) (rType int8, rCapacity uint6
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(98, constants.Program, &buf)
+	var r response
+	r, err = l.request(98, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7368,15 +6780,9 @@ func (l *Libvirt) StorageVolGetXMLDesc(Vol StorageVol, Flags uint32) (rXML strin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(99, constants.Program, &buf)
+	var r response
+	r, err = l.request(99, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7405,15 +6811,9 @@ func (l *Libvirt) StorageVolGetPath(Vol StorageVol) (rName string, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(100, constants.Program, &buf)
+	var r response
+	r, err = l.request(100, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7443,15 +6843,9 @@ func (l *Libvirt) NodeGetCellsFreeMemory(StartCell int32, Maxcells int32) (rCell
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(101, constants.Program, &buf)
+	var r response
+	r, err = l.request(101, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7471,15 +6865,9 @@ func (l *Libvirt) NodeGetCellsFreeMemory(StartCell int32, Maxcells int32) (rCell
 func (l *Libvirt) NodeGetFreeMemory() (rFreeMem uint64, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(102, constants.Program, &buf)
+	var r response
+	r, err = l.request(102, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7512,15 +6900,9 @@ func (l *Libvirt) DomainBlockPeek(Dom Domain, Path string, Offset uint64, Size u
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(103, constants.Program, &buf)
+	var r response
+	r, err = l.request(103, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7552,15 +6934,9 @@ func (l *Libvirt) DomainMemoryPeek(Dom Domain, Offset uint64, Size uint32, Flags
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(104, constants.Program, &buf)
+	var r response
+	r, err = l.request(104, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7580,15 +6956,9 @@ func (l *Libvirt) DomainMemoryPeek(Dom Domain, Offset uint64, Size uint32, Flags
 func (l *Libvirt) ConnectDomainEventRegister() (rCbRegistered int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(105, constants.Program, &buf)
+	var r response
+	r, err = l.request(105, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7608,15 +6978,9 @@ func (l *Libvirt) ConnectDomainEventRegister() (rCbRegistered int32, err error) 
 func (l *Libvirt) ConnectDomainEventDeregister() (rCbRegistered int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(106, constants.Program, &buf)
+	var r response
+	r, err = l.request(106, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7636,15 +7000,9 @@ func (l *Libvirt) ConnectDomainEventDeregister() (rCbRegistered int32, err error
 func (l *Libvirt) DomainEventLifecycle() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(107, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(107, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -7668,15 +7026,9 @@ func (l *Libvirt) DomainMigratePrepare2(UriIn OptString, Flags uint64, Dname Opt
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(108, constants.Program, &buf)
+	var r response
+	r, err = l.request(108, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7714,15 +7066,9 @@ func (l *Libvirt) DomainMigrateFinish2(Dname string, Cookie []byte, Uri string, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(109, constants.Program, &buf)
+	var r response
+	r, err = l.request(109, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7742,15 +7088,9 @@ func (l *Libvirt) DomainMigrateFinish2(Dname string, Cookie []byte, Uri string, 
 func (l *Libvirt) ConnectGetUri() (rUri string, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(110, constants.Program, &buf)
+	var r response
+	r, err = l.request(110, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7780,15 +7120,9 @@ func (l *Libvirt) NodeNumOfDevices(Cap OptString, Flags uint32) (rNum int32, err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(111, constants.Program, &buf)
+	var r response
+	r, err = l.request(111, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7819,15 +7153,9 @@ func (l *Libvirt) NodeListDevices(Cap OptString, Maxnames int32, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(112, constants.Program, &buf)
+	var r response
+	r, err = l.request(112, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7856,15 +7184,9 @@ func (l *Libvirt) NodeDeviceLookupByName(Name string) (rDev NodeDevice, err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(113, constants.Program, &buf)
+	var r response
+	r, err = l.request(113, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7894,15 +7216,9 @@ func (l *Libvirt) NodeDeviceGetXMLDesc(Name string, Flags uint32) (rXML string, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(114, constants.Program, &buf)
+	var r response
+	r, err = l.request(114, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7931,15 +7247,9 @@ func (l *Libvirt) NodeDeviceGetParent(Name string) (rParent OptString, err error
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(115, constants.Program, &buf)
+	var r response
+	r, err = l.request(115, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7968,15 +7278,9 @@ func (l *Libvirt) NodeDeviceNumOfCaps(Name string) (rNum int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(116, constants.Program, &buf)
+	var r response
+	r, err = l.request(116, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8006,15 +7310,9 @@ func (l *Libvirt) NodeDeviceListCaps(Name string, Maxnames int32) (rNames []stri
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(117, constants.Program, &buf)
+	var r response
+	r, err = l.request(117, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8043,15 +7341,9 @@ func (l *Libvirt) NodeDeviceDettach(Name string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(118, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(118, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -8071,15 +7363,9 @@ func (l *Libvirt) NodeDeviceReAttach(Name string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(119, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(119, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -8099,15 +7385,9 @@ func (l *Libvirt) NodeDeviceReset(Name string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(120, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(120, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -8127,15 +7407,9 @@ func (l *Libvirt) DomainGetSecurityLabel(Dom Domain) (rLabel []int8, rEnforcing 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(121, constants.Program, &buf)
+	var r response
+	r, err = l.request(121, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8160,15 +7434,9 @@ func (l *Libvirt) DomainGetSecurityLabel(Dom Domain) (rLabel []int8, rEnforcing 
 func (l *Libvirt) NodeGetSecurityModel() (rModel []int8, rDoi []int8, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(122, constants.Program, &buf)
+	var r response
+	r, err = l.request(122, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8203,15 +7471,9 @@ func (l *Libvirt) NodeDeviceCreateXML(XMLDesc string, Flags uint32) (rDev NodeDe
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(123, constants.Program, &buf)
+	var r response
+	r, err = l.request(123, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8240,15 +7502,9 @@ func (l *Libvirt) NodeDeviceDestroy(Name string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(124, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(124, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -8271,15 +7527,9 @@ func (l *Libvirt) StorageVolCreateXMLFrom(Pool StoragePool, XML string, Clonevol
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(125, constants.Program, &buf)
+	var r response
+	r, err = l.request(125, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8299,15 +7549,9 @@ func (l *Libvirt) StorageVolCreateXMLFrom(Pool StoragePool, XML string, Clonevol
 func (l *Libvirt) ConnectNumOfInterfaces() (rNum int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(126, constants.Program, &buf)
+	var r response
+	r, err = l.request(126, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8336,15 +7580,9 @@ func (l *Libvirt) ConnectListInterfaces(Maxnames int32) (rNames []string, err er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(127, constants.Program, &buf)
+	var r response
+	r, err = l.request(127, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8373,15 +7611,9 @@ func (l *Libvirt) InterfaceLookupByName(Name string) (rIface Interface, err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(128, constants.Program, &buf)
+	var r response
+	r, err = l.request(128, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8410,15 +7642,9 @@ func (l *Libvirt) InterfaceLookupByMacString(Mac string) (rIface Interface, err 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(129, constants.Program, &buf)
+	var r response
+	r, err = l.request(129, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8448,15 +7674,9 @@ func (l *Libvirt) InterfaceGetXMLDesc(Iface Interface, Flags uint32) (rXML strin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(130, constants.Program, &buf)
+	var r response
+	r, err = l.request(130, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8486,15 +7706,9 @@ func (l *Libvirt) InterfaceDefineXML(XML string, Flags uint32) (rIface Interface
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(131, constants.Program, &buf)
+	var r response
+	r, err = l.request(131, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8523,15 +7737,9 @@ func (l *Libvirt) InterfaceUndefine(Iface Interface) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(132, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(132, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -8552,15 +7760,9 @@ func (l *Libvirt) InterfaceCreate(Iface Interface, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(133, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(133, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -8581,15 +7783,9 @@ func (l *Libvirt) InterfaceDestroy(Iface Interface, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(134, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(134, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -8611,15 +7807,9 @@ func (l *Libvirt) ConnectDomainXMLFromNative(NativeFormat string, NativeConfig s
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(135, constants.Program, &buf)
+	var r response
+	r, err = l.request(135, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8650,15 +7840,9 @@ func (l *Libvirt) ConnectDomainXMLToNative(NativeFormat string, DomainXML string
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(136, constants.Program, &buf)
+	var r response
+	r, err = l.request(136, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8678,15 +7862,9 @@ func (l *Libvirt) ConnectDomainXMLToNative(NativeFormat string, DomainXML string
 func (l *Libvirt) ConnectNumOfDefinedInterfaces() (rNum int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(137, constants.Program, &buf)
+	var r response
+	r, err = l.request(137, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8715,15 +7893,9 @@ func (l *Libvirt) ConnectListDefinedInterfaces(Maxnames int32) (rNames []string,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(138, constants.Program, &buf)
+	var r response
+	r, err = l.request(138, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8743,15 +7915,9 @@ func (l *Libvirt) ConnectListDefinedInterfaces(Maxnames int32) (rNames []string,
 func (l *Libvirt) ConnectNumOfSecrets() (rNum int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(139, constants.Program, &buf)
+	var r response
+	r, err = l.request(139, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8780,15 +7946,9 @@ func (l *Libvirt) ConnectListSecrets(Maxuuids int32) (rUuids []string, err error
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(140, constants.Program, &buf)
+	var r response
+	r, err = l.request(140, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8817,15 +7977,9 @@ func (l *Libvirt) SecretLookupByUUID(UUID UUID) (rOptSecret Secret, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(141, constants.Program, &buf)
+	var r response
+	r, err = l.request(141, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8855,15 +8009,9 @@ func (l *Libvirt) SecretDefineXML(XML string, Flags uint32) (rOptSecret Secret, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(142, constants.Program, &buf)
+	var r response
+	r, err = l.request(142, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8893,15 +8041,9 @@ func (l *Libvirt) SecretGetXMLDesc(OptSecret Secret, Flags uint32) (rXML string,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(143, constants.Program, &buf)
+	var r response
+	r, err = l.request(143, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8932,15 +8074,9 @@ func (l *Libvirt) SecretSetValue(OptSecret Secret, Value []byte, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(144, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(144, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -8961,15 +8097,9 @@ func (l *Libvirt) SecretGetValue(OptSecret Secret, Flags uint32) (rValue []byte,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(145, constants.Program, &buf)
+	var r response
+	r, err = l.request(145, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -8998,15 +8128,9 @@ func (l *Libvirt) SecretUndefine(OptSecret Secret) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(146, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(146, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9027,15 +8151,9 @@ func (l *Libvirt) SecretLookupByUsage(UsageType int32, UsageID string) (rOptSecr
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(147, constants.Program, &buf)
+	var r response
+	r, err = l.request(147, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9067,15 +8185,9 @@ func (l *Libvirt) DomainMigratePrepareTunnel(Flags uint64, Dname OptString, Reso
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(148, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(148, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9086,15 +8198,9 @@ func (l *Libvirt) DomainMigratePrepareTunnel(Flags uint64, Dname OptString, Reso
 func (l *Libvirt) ConnectIsSecure() (rSecure int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(149, constants.Program, &buf)
+	var r response
+	r, err = l.request(149, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9123,15 +8229,9 @@ func (l *Libvirt) DomainIsActive(Dom Domain) (rActive int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(150, constants.Program, &buf)
+	var r response
+	r, err = l.request(150, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9160,15 +8260,9 @@ func (l *Libvirt) DomainIsPersistent(Dom Domain) (rPersistent int32, err error) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(151, constants.Program, &buf)
+	var r response
+	r, err = l.request(151, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9197,15 +8291,9 @@ func (l *Libvirt) NetworkIsActive(Net Network) (rActive int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(152, constants.Program, &buf)
+	var r response
+	r, err = l.request(152, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9234,15 +8322,9 @@ func (l *Libvirt) NetworkIsPersistent(Net Network) (rPersistent int32, err error
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(153, constants.Program, &buf)
+	var r response
+	r, err = l.request(153, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9271,15 +8353,9 @@ func (l *Libvirt) StoragePoolIsActive(Pool StoragePool) (rActive int32, err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(154, constants.Program, &buf)
+	var r response
+	r, err = l.request(154, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9308,15 +8384,9 @@ func (l *Libvirt) StoragePoolIsPersistent(Pool StoragePool) (rPersistent int32, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(155, constants.Program, &buf)
+	var r response
+	r, err = l.request(155, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9345,15 +8415,9 @@ func (l *Libvirt) InterfaceIsActive(Iface Interface) (rActive int32, err error) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(156, constants.Program, &buf)
+	var r response
+	r, err = l.request(156, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9373,15 +8437,9 @@ func (l *Libvirt) InterfaceIsActive(Iface Interface) (rActive int32, err error) 
 func (l *Libvirt) ConnectGetLibVersion() (rLibVer uint64, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(157, constants.Program, &buf)
+	var r response
+	r, err = l.request(157, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9411,15 +8469,9 @@ func (l *Libvirt) ConnectCompareCPU(XML string, Flags ConnectCompareCPUFlags) (r
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(158, constants.Program, &buf)
+	var r response
+	r, err = l.request(158, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9450,15 +8502,9 @@ func (l *Libvirt) DomainMemoryStats(Dom Domain, MaxStats uint32, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(159, constants.Program, &buf)
+	var r response
+	r, err = l.request(159, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9489,15 +8535,9 @@ func (l *Libvirt) DomainAttachDeviceFlags(Dom Domain, XML string, Flags uint32) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(160, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(160, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9519,15 +8559,9 @@ func (l *Libvirt) DomainDetachDeviceFlags(Dom Domain, XML string, Flags uint32) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(161, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(161, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9548,15 +8582,9 @@ func (l *Libvirt) ConnectBaselineCPU(XMLCPUs []string, Flags ConnectBaselineCPUF
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(162, constants.Program, &buf)
+	var r response
+	r, err = l.request(162, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9585,15 +8613,9 @@ func (l *Libvirt) DomainGetJobInfo(Dom Domain) (rType int32, rTimeElapsed uint64
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(163, constants.Program, &buf)
+	var r response
+	r, err = l.request(163, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9677,15 +8699,9 @@ func (l *Libvirt) DomainAbortJob(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(164, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(164, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9706,15 +8722,9 @@ func (l *Libvirt) StorageVolWipe(Vol StorageVol, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(165, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(165, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9736,15 +8746,9 @@ func (l *Libvirt) DomainMigrateSetMaxDowntime(Dom Domain, Downtime uint64, Flags
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(166, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(166, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9764,15 +8768,9 @@ func (l *Libvirt) ConnectDomainEventRegisterAny(EventID int32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(167, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(167, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9792,15 +8790,9 @@ func (l *Libvirt) ConnectDomainEventDeregisterAny(EventID int32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(168, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(168, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9811,15 +8803,9 @@ func (l *Libvirt) ConnectDomainEventDeregisterAny(EventID int32) (err error) {
 func (l *Libvirt) DomainEventReboot() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(169, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(169, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9830,15 +8816,9 @@ func (l *Libvirt) DomainEventReboot() (err error) {
 func (l *Libvirt) DomainEventRtcChange() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(170, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(170, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9849,15 +8829,9 @@ func (l *Libvirt) DomainEventRtcChange() (err error) {
 func (l *Libvirt) DomainEventWatchdog() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(171, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(171, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9868,15 +8842,9 @@ func (l *Libvirt) DomainEventWatchdog() (err error) {
 func (l *Libvirt) DomainEventIOError() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(172, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(172, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9887,15 +8855,9 @@ func (l *Libvirt) DomainEventIOError() (err error) {
 func (l *Libvirt) DomainEventGraphics() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(173, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(173, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9917,15 +8879,9 @@ func (l *Libvirt) DomainUpdateDeviceFlags(Dom Domain, XML string, Flags uint32) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(174, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(174, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -9945,15 +8901,9 @@ func (l *Libvirt) NwfilterLookupByName(Name string) (rOptNwfilter Nwfilter, err 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(175, constants.Program, &buf)
+	var r response
+	r, err = l.request(175, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9982,15 +8932,9 @@ func (l *Libvirt) NwfilterLookupByUUID(UUID UUID) (rOptNwfilter Nwfilter, err er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(176, constants.Program, &buf)
+	var r response
+	r, err = l.request(176, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10020,15 +8964,9 @@ func (l *Libvirt) NwfilterGetXMLDesc(OptNwfilter Nwfilter, Flags uint32) (rXML s
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(177, constants.Program, &buf)
+	var r response
+	r, err = l.request(177, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10048,15 +8986,9 @@ func (l *Libvirt) NwfilterGetXMLDesc(OptNwfilter Nwfilter, Flags uint32) (rXML s
 func (l *Libvirt) ConnectNumOfNwfilters() (rNum int32, err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(178, constants.Program, &buf)
+	var r response
+	r, err = l.request(178, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10085,15 +9017,9 @@ func (l *Libvirt) ConnectListNwfilters(Maxnames int32) (rNames []string, err err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(179, constants.Program, &buf)
+	var r response
+	r, err = l.request(179, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10122,15 +9048,9 @@ func (l *Libvirt) NwfilterDefineXML(XML string) (rOptNwfilter Nwfilter, err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(180, constants.Program, &buf)
+	var r response
+	r, err = l.request(180, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10159,15 +9079,9 @@ func (l *Libvirt) NwfilterUndefine(OptNwfilter Nwfilter) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(181, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(181, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -10188,15 +9102,9 @@ func (l *Libvirt) DomainManagedSave(Dom Domain, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(182, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(182, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -10217,15 +9125,9 @@ func (l *Libvirt) DomainHasManagedSaveImage(Dom Domain, Flags uint32) (rResult i
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(183, constants.Program, &buf)
+	var r response
+	r, err = l.request(183, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10255,15 +9157,9 @@ func (l *Libvirt) DomainManagedSaveRemove(Dom Domain, Flags uint32) (err error) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(184, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(184, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -10285,15 +9181,9 @@ func (l *Libvirt) DomainSnapshotCreateXML(Dom Domain, XMLDesc string, Flags uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(185, constants.Program, &buf)
+	var r response
+	r, err = l.request(185, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10323,15 +9213,9 @@ func (l *Libvirt) DomainSnapshotGetXMLDesc(Snap DomainSnapshot, Flags uint32) (r
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(186, constants.Program, &buf)
+	var r response
+	r, err = l.request(186, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10361,15 +9245,9 @@ func (l *Libvirt) DomainSnapshotNum(Dom Domain, Flags uint32) (rNum int32, err e
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(187, constants.Program, &buf)
+	var r response
+	r, err = l.request(187, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10400,15 +9278,9 @@ func (l *Libvirt) DomainSnapshotListNames(Dom Domain, Maxnames int32, Flags uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(188, constants.Program, &buf)
+	var r response
+	r, err = l.request(188, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10439,15 +9311,9 @@ func (l *Libvirt) DomainSnapshotLookupByName(Dom Domain, Name string, Flags uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(189, constants.Program, &buf)
+	var r response
+	r, err = l.request(189, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10477,15 +9343,9 @@ func (l *Libvirt) DomainHasCurrentSnapshot(Dom Domain, Flags uint32) (rResult in
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(190, constants.Program, &buf)
+	var r response
+	r, err = l.request(190, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10515,15 +9375,9 @@ func (l *Libvirt) DomainSnapshotCurrent(Dom Domain, Flags uint32) (rSnap DomainS
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(191, constants.Program, &buf)
+	var r response
+	r, err = l.request(191, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10553,15 +9407,9 @@ func (l *Libvirt) DomainRevertToSnapshot(Snap DomainSnapshot, Flags uint32) (err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(192, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(192, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -10582,15 +9430,9 @@ func (l *Libvirt) DomainSnapshotDelete(Snap DomainSnapshot, Flags DomainSnapshot
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(193, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(193, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -10612,15 +9454,9 @@ func (l *Libvirt) DomainGetBlockInfo(Dom Domain, Path string, Flags uint32) (rAl
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(194, constants.Program, &buf)
+	var r response
+	r, err = l.request(194, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10650,15 +9486,9 @@ func (l *Libvirt) DomainGetBlockInfo(Dom Domain, Path string, Flags uint32) (rAl
 func (l *Libvirt) DomainEventIOErrorReason() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(195, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(195, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -10679,15 +9509,9 @@ func (l *Libvirt) DomainCreateWithFlags(Dom Domain, Flags uint32) (rDom Domain, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(196, constants.Program, &buf)
+	var r response
+	r, err = l.request(196, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10718,15 +9542,9 @@ func (l *Libvirt) DomainSetMemoryParameters(Dom Domain, Params []TypedParam, Fla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(197, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(197, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -10748,15 +9566,9 @@ func (l *Libvirt) DomainGetMemoryParameters(Dom Domain, Nparams int32, Flags uin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(198, constants.Program, &buf)
+	var r response
+	r, err = l.request(198, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10793,15 +9605,9 @@ func (l *Libvirt) DomainSetVcpusFlags(Dom Domain, Nvcpus uint32, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(199, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(199, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -10822,15 +9628,9 @@ func (l *Libvirt) DomainGetVcpusFlags(Dom Domain, Flags uint32) (rNum int32, err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(200, constants.Program, &buf)
+	var r response
+	r, err = l.request(200, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10861,15 +9661,9 @@ func (l *Libvirt) DomainOpenConsole(Dom Domain, DevName OptString, Flags uint32)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(201, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(201, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -10889,15 +9683,9 @@ func (l *Libvirt) DomainIsUpdated(Dom Domain) (rUpdated int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(202, constants.Program, &buf)
+	var r response
+	r, err = l.request(202, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10926,15 +9714,9 @@ func (l *Libvirt) ConnectGetSysinfo(Flags uint32) (rSysinfo string, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(203, constants.Program, &buf)
+	var r response
+	r, err = l.request(203, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10965,15 +9747,9 @@ func (l *Libvirt) DomainSetMemoryFlags(Dom Domain, Memory uint64, Flags uint32) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(204, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(204, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -10995,15 +9771,9 @@ func (l *Libvirt) DomainSetBlkioParameters(Dom Domain, Params []TypedParam, Flag
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(205, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(205, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11025,15 +9795,9 @@ func (l *Libvirt) DomainGetBlkioParameters(Dom Domain, Nparams int32, Flags uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(206, constants.Program, &buf)
+	var r response
+	r, err = l.request(206, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11070,15 +9834,9 @@ func (l *Libvirt) DomainMigrateSetMaxSpeed(Dom Domain, Bandwidth uint64, Flags u
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(207, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(207, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11101,15 +9859,9 @@ func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(208, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(208, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11132,15 +9884,9 @@ func (l *Libvirt) StorageVolDownload(Vol StorageVol, Offset uint64, Length uint6
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(209, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(209, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11161,15 +9907,9 @@ func (l *Libvirt) DomainInjectNmi(Dom Domain, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(210, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(210, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11191,15 +9931,9 @@ func (l *Libvirt) DomainScreenshot(Dom Domain, Screen uint32, Flags uint32) (rMi
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(211, constants.Program, &buf)
+	var r response
+	r, err = l.request(211, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11229,15 +9963,9 @@ func (l *Libvirt) DomainGetState(Dom Domain, Flags uint32) (rState int32, rReaso
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(212, constants.Program, &buf)
+	var r response
+	r, err = l.request(212, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11275,15 +10003,9 @@ func (l *Libvirt) DomainMigrateBegin3(Dom Domain, Xmlin OptString, Flags uint64,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(213, constants.Program, &buf)
+	var r response
+	r, err = l.request(213, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11322,15 +10044,9 @@ func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn OptString, Flags 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(214, constants.Program, &buf)
+	var r response
+	r, err = l.request(214, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11368,15 +10084,9 @@ func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, Flags uint64, Dna
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(215, constants.Program, &buf)
+	var r response
+	r, err = l.request(215, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11412,15 +10122,9 @@ func (l *Libvirt) DomainMigratePerform3(Dom Domain, Xmlin OptString, CookieIn []
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(216, constants.Program, &buf)
+	var r response
+	r, err = l.request(216, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11454,15 +10158,9 @@ func (l *Libvirt) DomainMigrateFinish3(Dname string, CookieIn []byte, Dconnuri O
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(217, constants.Program, &buf)
+	var r response
+	r, err = l.request(217, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11499,15 +10197,9 @@ func (l *Libvirt) DomainMigrateConfirm3(Dom Domain, CookieIn []byte, Flags uint6
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(218, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(218, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11529,15 +10221,9 @@ func (l *Libvirt) DomainSetSchedulerParametersFlags(Dom Domain, Params []TypedPa
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(219, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(219, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11557,15 +10243,9 @@ func (l *Libvirt) InterfaceChangeBegin(Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(220, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(220, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11585,15 +10265,9 @@ func (l *Libvirt) InterfaceChangeCommit(Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(221, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(221, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11613,15 +10287,9 @@ func (l *Libvirt) InterfaceChangeRollback(Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(222, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(222, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11643,15 +10311,9 @@ func (l *Libvirt) DomainGetSchedulerParametersFlags(Dom Domain, Nparams int32, F
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(223, constants.Program, &buf)
+	var r response
+	r, err = l.request(223, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11672,15 +10334,9 @@ func (l *Libvirt) DomainGetSchedulerParametersFlags(Dom Domain, Nparams int32, F
 func (l *Libvirt) DomainEventControlError() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(224, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(224, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11703,15 +10359,9 @@ func (l *Libvirt) DomainPinVcpuFlags(Dom Domain, Vcpu uint32, Cpumap []byte, Fla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(225, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(225, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11735,15 +10385,9 @@ func (l *Libvirt) DomainSendKey(Dom Domain, Codeset uint32, Holdtime uint32, Key
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(226, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(226, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11765,15 +10409,9 @@ func (l *Libvirt) NodeGetCPUStats(CPUNum int32, Nparams int32, Flags uint32) (rP
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(227, constants.Program, &buf)
+	var r response
+	r, err = l.request(227, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11809,15 +10447,9 @@ func (l *Libvirt) NodeGetMemoryStats(Nparams int32, CellNum int32, Flags uint32)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(228, constants.Program, &buf)
+	var r response
+	r, err = l.request(228, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11852,15 +10484,9 @@ func (l *Libvirt) DomainGetControlInfo(Dom Domain, Flags uint32) (rState uint32,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(229, constants.Program, &buf)
+	var r response
+	r, err = l.request(229, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11902,15 +10528,9 @@ func (l *Libvirt) DomainGetVcpuPinInfo(Dom Domain, Ncpumaps int32, Maplen int32,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(230, constants.Program, &buf)
+	var r response
+	r, err = l.request(230, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11945,15 +10565,9 @@ func (l *Libvirt) DomainUndefineFlags(Dom Domain, Flags DomainUndefineFlagsValue
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(231, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(231, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -11976,15 +10590,9 @@ func (l *Libvirt) DomainSaveFlags(Dom Domain, To string, Dxml OptString, Flags u
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(232, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(232, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12006,15 +10614,9 @@ func (l *Libvirt) DomainRestoreFlags(From string, Dxml OptString, Flags uint32) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(233, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(233, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12035,15 +10637,9 @@ func (l *Libvirt) DomainDestroyFlags(Dom Domain, Flags DomainDestroyFlagsValues)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(234, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(234, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12064,15 +10660,9 @@ func (l *Libvirt) DomainSaveImageGetXMLDesc(File string, Flags uint32) (rXML str
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(235, constants.Program, &buf)
+	var r response
+	r, err = l.request(235, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -12103,15 +10693,9 @@ func (l *Libvirt) DomainSaveImageDefineXML(File string, Dxml string, Flags uint3
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(236, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(236, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12133,15 +10717,9 @@ func (l *Libvirt) DomainBlockJobAbort(Dom Domain, Path string, Flags DomainBlock
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(237, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(237, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12163,15 +10741,9 @@ func (l *Libvirt) DomainGetBlockJobInfo(Dom Domain, Path string, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(238, constants.Program, &buf)
+	var r response
+	r, err = l.request(238, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -12223,15 +10795,9 @@ func (l *Libvirt) DomainBlockJobSetSpeed(Dom Domain, Path string, Bandwidth uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(239, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(239, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12254,15 +10820,9 @@ func (l *Libvirt) DomainBlockPull(Dom Domain, Path string, Bandwidth uint64, Fla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(240, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(240, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12273,15 +10833,9 @@ func (l *Libvirt) DomainBlockPull(Dom Domain, Path string, Bandwidth uint64, Fla
 func (l *Libvirt) DomainEventBlockJob() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(241, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(241, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12302,15 +10856,9 @@ func (l *Libvirt) DomainMigrateGetMaxSpeed(Dom Domain, Flags uint32) (rBandwidth
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(242, constants.Program, &buf)
+	var r response
+	r, err = l.request(242, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -12342,15 +10890,9 @@ func (l *Libvirt) DomainBlockStatsFlags(Dom Domain, Path string, Nparams int32, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(243, constants.Program, &buf)
+	var r response
+	r, err = l.request(243, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -12386,15 +10928,9 @@ func (l *Libvirt) DomainSnapshotGetParent(Snap DomainSnapshot, Flags uint32) (rS
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(244, constants.Program, &buf)
+	var r response
+	r, err = l.request(244, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -12424,15 +10960,9 @@ func (l *Libvirt) DomainReset(Dom Domain, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(245, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(245, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12453,15 +10983,9 @@ func (l *Libvirt) DomainSnapshotNumChildren(Snap DomainSnapshot, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(246, constants.Program, &buf)
+	var r response
+	r, err = l.request(246, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -12492,15 +11016,9 @@ func (l *Libvirt) DomainSnapshotListChildrenNames(Snap DomainSnapshot, Maxnames 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(247, constants.Program, &buf)
+	var r response
+	r, err = l.request(247, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -12520,15 +11038,9 @@ func (l *Libvirt) DomainSnapshotListChildrenNames(Snap DomainSnapshot, Maxnames 
 func (l *Libvirt) DomainEventDiskChange() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(248, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(248, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12550,15 +11062,9 @@ func (l *Libvirt) DomainOpenGraphics(Dom Domain, Idx uint32, Flags DomainOpenGra
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(249, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(249, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12580,15 +11086,9 @@ func (l *Libvirt) NodeSuspendForDuration(Target uint32, Duration uint64, Flags u
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(250, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(250, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12611,15 +11111,9 @@ func (l *Libvirt) DomainBlockResize(Dom Domain, Disk string, Size uint64, Flags 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(251, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(251, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12642,15 +11136,9 @@ func (l *Libvirt) DomainSetBlockIOTune(Dom Domain, Disk string, Params []TypedPa
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(252, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(252, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12673,15 +11161,9 @@ func (l *Libvirt) DomainGetBlockIOTune(Dom Domain, Disk OptString, Nparams int32
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(253, constants.Program, &buf)
+	var r response
+	r, err = l.request(253, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -12718,15 +11200,9 @@ func (l *Libvirt) DomainSetNumaParameters(Dom Domain, Params []TypedParam, Flags
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(254, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(254, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12748,15 +11224,9 @@ func (l *Libvirt) DomainGetNumaParameters(Dom Domain, Nparams int32, Flags uint3
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(255, constants.Program, &buf)
+	var r response
+	r, err = l.request(255, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -12794,15 +11264,9 @@ func (l *Libvirt) DomainSetInterfaceParameters(Dom Domain, Device string, Params
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(256, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(256, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12825,15 +11289,9 @@ func (l *Libvirt) DomainGetInterfaceParameters(Dom Domain, Device string, Nparam
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(257, constants.Program, &buf)
+	var r response
+	r, err = l.request(257, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -12869,15 +11327,9 @@ func (l *Libvirt) DomainShutdownFlags(Dom Domain, Flags DomainShutdownFlagValues
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(258, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(258, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12899,15 +11351,9 @@ func (l *Libvirt) StorageVolWipePattern(Vol StorageVol, Algorithm uint32, Flags 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(259, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(259, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12929,15 +11375,9 @@ func (l *Libvirt) StorageVolResize(Vol StorageVol, Capacity uint64, Flags Storag
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(260, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(260, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12960,15 +11400,9 @@ func (l *Libvirt) DomainPmSuspendForDuration(Dom Domain, Target uint32, Duration
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(261, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(261, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -12992,15 +11426,9 @@ func (l *Libvirt) DomainGetCPUStats(Dom Domain, Nparams uint32, StartCPU int32, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(262, constants.Program, &buf)
+	var r response
+	r, err = l.request(262, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13037,15 +11465,9 @@ func (l *Libvirt) DomainGetDiskErrors(Dom Domain, Maxerrors uint32, Flags uint32
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(263, constants.Program, &buf)
+	var r response
+	r, err = l.request(263, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13084,15 +11506,9 @@ func (l *Libvirt) DomainSetMetadata(Dom Domain, Type int32, Metadata OptString, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(264, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(264, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -13115,15 +11531,9 @@ func (l *Libvirt) DomainGetMetadata(Dom Domain, Type int32, Uri OptString, Flags
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(265, constants.Program, &buf)
+	var r response
+	r, err = l.request(265, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13156,15 +11566,9 @@ func (l *Libvirt) DomainBlockRebase(Dom Domain, Path string, Base OptString, Ban
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(266, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(266, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -13185,15 +11589,9 @@ func (l *Libvirt) DomainPmWakeup(Dom Domain, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(267, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(267, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -13204,15 +11602,9 @@ func (l *Libvirt) DomainPmWakeup(Dom Domain, Flags uint32) (err error) {
 func (l *Libvirt) DomainEventTrayChange() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(268, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(268, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -13223,15 +11615,9 @@ func (l *Libvirt) DomainEventTrayChange() (err error) {
 func (l *Libvirt) DomainEventPmwakeup() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(269, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(269, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -13242,15 +11628,9 @@ func (l *Libvirt) DomainEventPmwakeup() (err error) {
 func (l *Libvirt) DomainEventPmsuspend() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(270, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(270, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -13271,15 +11651,9 @@ func (l *Libvirt) DomainSnapshotIsCurrent(Snap DomainSnapshot, Flags uint32) (rC
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(271, constants.Program, &buf)
+	var r response
+	r, err = l.request(271, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13309,15 +11683,9 @@ func (l *Libvirt) DomainSnapshotHasMetadata(Snap DomainSnapshot, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(272, constants.Program, &buf)
+	var r response
+	r, err = l.request(272, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13347,15 +11715,9 @@ func (l *Libvirt) ConnectListAllDomains(NeedResults int32, Flags ConnectListAllD
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(273, constants.Program, &buf)
+	var r response
+	r, err = l.request(273, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13391,15 +11753,9 @@ func (l *Libvirt) DomainListAllSnapshots(Dom Domain, NeedResults int32, Flags ui
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(274, constants.Program, &buf)
+	var r response
+	r, err = l.request(274, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13435,15 +11791,9 @@ func (l *Libvirt) DomainSnapshotListAllChildren(Snapshot DomainSnapshot, NeedRes
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(275, constants.Program, &buf)
+	var r response
+	r, err = l.request(275, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13468,15 +11818,9 @@ func (l *Libvirt) DomainSnapshotListAllChildren(Snapshot DomainSnapshot, NeedRes
 func (l *Libvirt) DomainEventBalloonChange() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(276, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(276, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -13497,15 +11841,9 @@ func (l *Libvirt) DomainGetHostname(Dom Domain, Flags uint32) (rHostname string,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(277, constants.Program, &buf)
+	var r response
+	r, err = l.request(277, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13534,15 +11872,9 @@ func (l *Libvirt) DomainGetSecurityLabelList(Dom Domain) (rLabels []DomainGetSec
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(278, constants.Program, &buf)
+	var r response
+	r, err = l.request(278, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13578,15 +11910,9 @@ func (l *Libvirt) DomainPinEmulator(Dom Domain, Cpumap []byte, Flags DomainModif
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(279, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(279, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -13608,15 +11934,9 @@ func (l *Libvirt) DomainGetEmulatorPinInfo(Dom Domain, Maplen int32, Flags Domai
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(280, constants.Program, &buf)
+	var r response
+	r, err = l.request(280, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13651,15 +11971,9 @@ func (l *Libvirt) ConnectListAllStoragePools(NeedResults int32, Flags ConnectLis
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(281, constants.Program, &buf)
+	var r response
+	r, err = l.request(281, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13695,15 +12009,9 @@ func (l *Libvirt) StoragePoolListAllVolumes(Pool StoragePool, NeedResults int32,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(282, constants.Program, &buf)
+	var r response
+	r, err = l.request(282, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13738,15 +12046,9 @@ func (l *Libvirt) ConnectListAllNetworks(NeedResults int32, Flags ConnectListAll
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(283, constants.Program, &buf)
+	var r response
+	r, err = l.request(283, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13781,15 +12083,9 @@ func (l *Libvirt) ConnectListAllInterfaces(NeedResults int32, Flags ConnectListA
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(284, constants.Program, &buf)
+	var r response
+	r, err = l.request(284, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13824,15 +12120,9 @@ func (l *Libvirt) ConnectListAllNodeDevices(NeedResults int32, Flags uint32) (rD
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(285, constants.Program, &buf)
+	var r response
+	r, err = l.request(285, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13867,15 +12157,9 @@ func (l *Libvirt) ConnectListAllNwfilters(NeedResults int32, Flags uint32) (rFil
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(286, constants.Program, &buf)
+	var r response
+	r, err = l.request(286, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13910,15 +12194,9 @@ func (l *Libvirt) ConnectListAllSecrets(NeedResults int32, Flags ConnectListAllS
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(287, constants.Program, &buf)
+	var r response
+	r, err = l.request(287, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13953,15 +12231,9 @@ func (l *Libvirt) NodeSetMemoryParameters(Params []TypedParam, Flags uint32) (er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(288, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(288, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -13982,15 +12254,9 @@ func (l *Libvirt) NodeGetMemoryParameters(Nparams int32, Flags uint32) (rParams 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(289, constants.Program, &buf)
+	var r response
+	r, err = l.request(289, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14030,15 +12296,9 @@ func (l *Libvirt) DomainBlockCommit(Dom Domain, Disk string, Base OptString, Top
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(290, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(290, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14063,15 +12323,9 @@ func (l *Libvirt) NetworkUpdate(Net Network, Command uint32, Section uint32, Par
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(291, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(291, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14082,15 +12336,9 @@ func (l *Libvirt) NetworkUpdate(Net Network, Command uint32, Section uint32, Par
 func (l *Libvirt) DomainEventPmsuspendDisk() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(292, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(292, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14112,15 +12360,9 @@ func (l *Libvirt) NodeGetCPUMap(NeedMap int32, NeedOnline int32, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(293, constants.Program, &buf)
+	var r response
+	r, err = l.request(293, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14162,15 +12404,9 @@ func (l *Libvirt) DomainFstrim(Dom Domain, MountPoint OptString, Minimum uint64,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(294, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(294, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14193,15 +12429,9 @@ func (l *Libvirt) DomainSendProcessSignal(Dom Domain, PidValue int64, Signum uin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(295, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(295, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14223,15 +12453,9 @@ func (l *Libvirt) DomainOpenChannel(Dom Domain, Name OptString, Flags DomainChan
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(296, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(296, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14253,15 +12477,9 @@ func (l *Libvirt) NodeDeviceLookupScsiHostByWwn(Wwnn string, Wwpn string, Flags 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(297, constants.Program, &buf)
+	var r response
+	r, err = l.request(297, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14291,15 +12509,9 @@ func (l *Libvirt) DomainGetJobStats(Dom Domain, Flags DomainGetJobStatsFlags) (r
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(298, constants.Program, &buf)
+	var r response
+	r, err = l.request(298, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14335,15 +12547,9 @@ func (l *Libvirt) DomainMigrateGetCompressionCache(Dom Domain, Flags uint32) (rC
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(299, constants.Program, &buf)
+	var r response
+	r, err = l.request(299, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14374,15 +12580,9 @@ func (l *Libvirt) DomainMigrateSetCompressionCache(Dom Domain, CacheSize uint64,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(300, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(300, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14404,15 +12604,9 @@ func (l *Libvirt) NodeDeviceDetachFlags(Name string, DriverName OptString, Flags
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(301, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(301, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14434,15 +12628,9 @@ func (l *Libvirt) DomainMigrateBegin3Params(Dom Domain, Params []TypedParam, Fla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(302, constants.Program, &buf)
+	var r response
+	r, err = l.request(302, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14478,15 +12666,9 @@ func (l *Libvirt) DomainMigratePrepare3Params(Params []TypedParam, CookieIn []by
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(303, constants.Program, &buf)
+	var r response
+	r, err = l.request(303, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14522,15 +12704,9 @@ func (l *Libvirt) DomainMigratePrepareTunnel3Params(Params []TypedParam, CookieI
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(304, constants.Program, &buf)
+	var r response
+	r, err = l.request(304, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14563,15 +12739,9 @@ func (l *Libvirt) DomainMigratePerform3Params(Dom Domain, Dconnuri OptString, Pa
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(305, constants.Program, &buf)
+	var r response
+	r, err = l.request(305, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14603,15 +12773,9 @@ func (l *Libvirt) DomainMigrateFinish3Params(Params []TypedParam, CookieIn []byt
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(306, constants.Program, &buf)
+	var r response
+	r, err = l.request(306, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14649,15 +12813,9 @@ func (l *Libvirt) DomainMigrateConfirm3Params(Dom Domain, Params []TypedParam, C
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(307, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(307, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14679,15 +12837,9 @@ func (l *Libvirt) DomainSetMemoryStatsPeriod(Dom Domain, Period int32, Flags Dom
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(308, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(308, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14708,15 +12860,9 @@ func (l *Libvirt) DomainCreateXMLWithFiles(XMLDesc string, Flags DomainCreateFla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(309, constants.Program, &buf)
+	var r response
+	r, err = l.request(309, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14746,15 +12892,9 @@ func (l *Libvirt) DomainCreateWithFiles(Dom Domain, Flags DomainCreateFlags) (rD
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(310, constants.Program, &buf)
+	var r response
+	r, err = l.request(310, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14774,15 +12914,9 @@ func (l *Libvirt) DomainCreateWithFiles(Dom Domain, Flags DomainCreateFlags) (rD
 func (l *Libvirt) DomainEventDeviceRemoved() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(311, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(311, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14804,15 +12938,9 @@ func (l *Libvirt) ConnectGetCPUModelNames(Arch string, NeedResults int32, Flags 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(312, constants.Program, &buf)
+	var r response
+	r, err = l.request(312, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14847,15 +12975,9 @@ func (l *Libvirt) ConnectNetworkEventRegisterAny(EventID int32, Net OptNetwork) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(313, constants.Program, &buf)
+	var r response
+	r, err = l.request(313, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14884,15 +13006,9 @@ func (l *Libvirt) ConnectNetworkEventDeregisterAny(CallbackID int32) (err error)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(314, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(314, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14903,15 +13019,9 @@ func (l *Libvirt) ConnectNetworkEventDeregisterAny(CallbackID int32) (err error)
 func (l *Libvirt) NetworkEventLifecycle() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(315, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(315, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14932,15 +13042,9 @@ func (l *Libvirt) ConnectDomainEventCallbackRegisterAny(EventID int32, Dom OptDo
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(316, constants.Program, &buf)
+	var r response
+	r, err = l.request(316, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14969,15 +13073,9 @@ func (l *Libvirt) ConnectDomainEventCallbackDeregisterAny(CallbackID int32) (err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(317, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(317, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -14988,15 +13086,9 @@ func (l *Libvirt) ConnectDomainEventCallbackDeregisterAny(CallbackID int32) (err
 func (l *Libvirt) DomainEventCallbackLifecycle() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(318, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(318, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15007,15 +13099,9 @@ func (l *Libvirt) DomainEventCallbackLifecycle() (err error) {
 func (l *Libvirt) DomainEventCallbackReboot() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(319, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(319, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15026,15 +13112,9 @@ func (l *Libvirt) DomainEventCallbackReboot() (err error) {
 func (l *Libvirt) DomainEventCallbackRtcChange() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(320, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(320, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15045,15 +13125,9 @@ func (l *Libvirt) DomainEventCallbackRtcChange() (err error) {
 func (l *Libvirt) DomainEventCallbackWatchdog() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(321, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(321, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15064,15 +13138,9 @@ func (l *Libvirt) DomainEventCallbackWatchdog() (err error) {
 func (l *Libvirt) DomainEventCallbackIOError() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(322, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(322, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15083,15 +13151,9 @@ func (l *Libvirt) DomainEventCallbackIOError() (err error) {
 func (l *Libvirt) DomainEventCallbackGraphics() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(323, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(323, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15102,15 +13164,9 @@ func (l *Libvirt) DomainEventCallbackGraphics() (err error) {
 func (l *Libvirt) DomainEventCallbackIOErrorReason() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(324, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(324, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15121,15 +13177,9 @@ func (l *Libvirt) DomainEventCallbackIOErrorReason() (err error) {
 func (l *Libvirt) DomainEventCallbackControlError() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(325, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(325, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15140,15 +13190,9 @@ func (l *Libvirt) DomainEventCallbackControlError() (err error) {
 func (l *Libvirt) DomainEventCallbackBlockJob() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(326, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(326, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15159,15 +13203,9 @@ func (l *Libvirt) DomainEventCallbackBlockJob() (err error) {
 func (l *Libvirt) DomainEventCallbackDiskChange() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(327, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(327, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15178,15 +13216,9 @@ func (l *Libvirt) DomainEventCallbackDiskChange() (err error) {
 func (l *Libvirt) DomainEventCallbackTrayChange() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(328, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(328, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15197,15 +13229,9 @@ func (l *Libvirt) DomainEventCallbackTrayChange() (err error) {
 func (l *Libvirt) DomainEventCallbackPmwakeup() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(329, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(329, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15216,15 +13242,9 @@ func (l *Libvirt) DomainEventCallbackPmwakeup() (err error) {
 func (l *Libvirt) DomainEventCallbackPmsuspend() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(330, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(330, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15235,15 +13255,9 @@ func (l *Libvirt) DomainEventCallbackPmsuspend() (err error) {
 func (l *Libvirt) DomainEventCallbackBalloonChange() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(331, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(331, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15254,15 +13268,9 @@ func (l *Libvirt) DomainEventCallbackBalloonChange() (err error) {
 func (l *Libvirt) DomainEventCallbackPmsuspendDisk() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(332, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(332, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15273,15 +13281,9 @@ func (l *Libvirt) DomainEventCallbackPmsuspendDisk() (err error) {
 func (l *Libvirt) DomainEventCallbackDeviceRemoved() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(333, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(333, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15304,15 +13306,9 @@ func (l *Libvirt) DomainCoreDumpWithFormat(Dom Domain, To string, Dumpformat uin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(334, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(334, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15334,15 +13330,9 @@ func (l *Libvirt) DomainFsfreeze(Dom Domain, Mountpoints []string, Flags uint32)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(335, constants.Program, &buf)
+	var r response
+	r, err = l.request(335, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15373,15 +13363,9 @@ func (l *Libvirt) DomainFsthaw(Dom Domain, Mountpoints []string, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(336, constants.Program, &buf)
+	var r response
+	r, err = l.request(336, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15411,15 +13395,9 @@ func (l *Libvirt) DomainGetTime(Dom Domain, Flags uint32) (rSeconds int64, rNsec
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(337, constants.Program, &buf)
+	var r response
+	r, err = l.request(337, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15456,15 +13434,9 @@ func (l *Libvirt) DomainSetTime(Dom Domain, Seconds int64, Nseconds uint32, Flag
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(338, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(338, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15475,15 +13447,9 @@ func (l *Libvirt) DomainSetTime(Dom Domain, Seconds int64, Nseconds uint32, Flag
 func (l *Libvirt) DomainEventBlockJob2() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(339, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(339, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15506,15 +13472,9 @@ func (l *Libvirt) NodeGetFreePages(Pages []uint32, StartCell int32, CellCount ui
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(340, constants.Program, &buf)
+	var r response
+	r, err = l.request(340, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15546,15 +13506,9 @@ func (l *Libvirt) NetworkGetDhcpLeases(Net Network, Mac OptString, NeedResults i
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(341, constants.Program, &buf)
+	var r response
+	r, err = l.request(341, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15592,15 +13546,9 @@ func (l *Libvirt) ConnectGetDomainCapabilities(Emulatorbin OptString, Arch OptSt
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(342, constants.Program, &buf)
+	var r response
+	r, err = l.request(342, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15631,15 +13579,9 @@ func (l *Libvirt) DomainOpenGraphicsFd(Dom Domain, Idx uint32, Flags DomainOpenG
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(343, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(343, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15661,15 +13603,9 @@ func (l *Libvirt) ConnectGetAllDomainStats(Doms []Domain, Stats uint32, Flags Co
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(344, constants.Program, &buf)
+	var r response
+	r, err = l.request(344, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15702,15 +13638,9 @@ func (l *Libvirt) DomainBlockCopy(Dom Domain, Path string, Destxml string, Param
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(345, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(345, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15721,15 +13651,9 @@ func (l *Libvirt) DomainBlockCopy(Dom Domain, Path string, Destxml string, Param
 func (l *Libvirt) DomainEventCallbackTunable() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(346, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(346, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15753,15 +13677,9 @@ func (l *Libvirt) NodeAllocPages(PageSizes []uint32, PageCounts []uint64, StartC
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(347, constants.Program, &buf)
+	var r response
+	r, err = l.request(347, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15781,15 +13699,9 @@ func (l *Libvirt) NodeAllocPages(PageSizes []uint32, PageCounts []uint64, StartC
 func (l *Libvirt) DomainEventCallbackAgentLifecycle() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(348, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(348, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15810,15 +13722,9 @@ func (l *Libvirt) DomainGetFsinfo(Dom Domain, Flags uint32) (rInfo []DomainFsinf
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(349, constants.Program, &buf)
+	var r response
+	r, err = l.request(349, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15853,15 +13759,9 @@ func (l *Libvirt) DomainDefineXMLFlags(XML string, Flags DomainDefineFlags) (rDo
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(350, constants.Program, &buf)
+	var r response
+	r, err = l.request(350, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15891,15 +13791,9 @@ func (l *Libvirt) DomainGetIothreadInfo(Dom Domain, Flags DomainModificationImpa
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(351, constants.Program, &buf)
+	var r response
+	r, err = l.request(351, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15936,15 +13830,9 @@ func (l *Libvirt) DomainPinIothread(Dom Domain, IothreadsID uint32, Cpumap []byt
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(352, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(352, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -15966,15 +13854,9 @@ func (l *Libvirt) DomainInterfaceAddresses(Dom Domain, Source uint32, Flags uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(353, constants.Program, &buf)
+	var r response
+	r, err = l.request(353, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15994,15 +13876,9 @@ func (l *Libvirt) DomainInterfaceAddresses(Dom Domain, Source uint32, Flags uint
 func (l *Libvirt) DomainEventCallbackDeviceAdded() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(354, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(354, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16024,15 +13900,9 @@ func (l *Libvirt) DomainAddIothread(Dom Domain, IothreadID uint32, Flags DomainM
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(355, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(355, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16054,15 +13924,9 @@ func (l *Libvirt) DomainDelIothread(Dom Domain, IothreadID uint32, Flags DomainM
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(356, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(356, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16085,15 +13949,9 @@ func (l *Libvirt) DomainSetUserPassword(Dom Domain, User OptString, Password Opt
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(357, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(357, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16115,15 +13973,9 @@ func (l *Libvirt) DomainRename(Dom Domain, NewName OptString, Flags uint32) (rRe
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(358, constants.Program, &buf)
+	var r response
+	r, err = l.request(358, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16143,15 +13995,9 @@ func (l *Libvirt) DomainRename(Dom Domain, NewName OptString, Flags uint32) (rRe
 func (l *Libvirt) DomainEventCallbackMigrationIteration() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(359, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(359, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16162,15 +14008,9 @@ func (l *Libvirt) DomainEventCallbackMigrationIteration() (err error) {
 func (l *Libvirt) ConnectRegisterCloseCallback() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(360, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(360, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16181,15 +14021,9 @@ func (l *Libvirt) ConnectRegisterCloseCallback() (err error) {
 func (l *Libvirt) ConnectUnregisterCloseCallback() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(361, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(361, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16200,15 +14034,9 @@ func (l *Libvirt) ConnectUnregisterCloseCallback() (err error) {
 func (l *Libvirt) ConnectEventConnectionClosed() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(362, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(362, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16219,15 +14047,9 @@ func (l *Libvirt) ConnectEventConnectionClosed() (err error) {
 func (l *Libvirt) DomainEventCallbackJobCompleted() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(363, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(363, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16248,15 +14070,9 @@ func (l *Libvirt) DomainMigrateStartPostCopy(Dom Domain, Flags uint32) (err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(364, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(364, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16277,15 +14093,9 @@ func (l *Libvirt) DomainGetPerfEvents(Dom Domain, Flags DomainModificationImpact
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(365, constants.Program, &buf)
+	var r response
+	r, err = l.request(365, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16317,15 +14127,9 @@ func (l *Libvirt) DomainSetPerfEvents(Dom Domain, Params []TypedParam, Flags Dom
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(366, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(366, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16336,15 +14140,9 @@ func (l *Libvirt) DomainSetPerfEvents(Dom Domain, Params []TypedParam, Flags Dom
 func (l *Libvirt) DomainEventCallbackDeviceRemovalFailed() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(367, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(367, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16365,15 +14163,9 @@ func (l *Libvirt) ConnectStoragePoolEventRegisterAny(EventID int32, Pool OptStor
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(368, constants.Program, &buf)
+	var r response
+	r, err = l.request(368, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16402,15 +14194,9 @@ func (l *Libvirt) ConnectStoragePoolEventDeregisterAny(CallbackID int32) (err er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(369, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(369, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16421,15 +14207,9 @@ func (l *Libvirt) ConnectStoragePoolEventDeregisterAny(CallbackID int32) (err er
 func (l *Libvirt) StoragePoolEventLifecycle() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(370, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(370, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16450,15 +14230,9 @@ func (l *Libvirt) DomainGetGuestVcpus(Dom Domain, Flags uint32) (rParams []Typed
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(371, constants.Program, &buf)
+	var r response
+	r, err = l.request(371, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16491,15 +14265,9 @@ func (l *Libvirt) DomainSetGuestVcpus(Dom Domain, Cpumap string, State int32, Fl
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(372, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(372, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16510,15 +14278,9 @@ func (l *Libvirt) DomainSetGuestVcpus(Dom Domain, Cpumap string, State int32, Fl
 func (l *Libvirt) StoragePoolEventRefresh() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(373, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(373, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16539,15 +14301,9 @@ func (l *Libvirt) ConnectNodeDeviceEventRegisterAny(EventID int32, Dev OptNodeDe
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(374, constants.Program, &buf)
+	var r response
+	r, err = l.request(374, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16576,15 +14332,9 @@ func (l *Libvirt) ConnectNodeDeviceEventDeregisterAny(CallbackID int32) (err err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(375, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(375, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16595,15 +14345,9 @@ func (l *Libvirt) ConnectNodeDeviceEventDeregisterAny(CallbackID int32) (err err
 func (l *Libvirt) NodeDeviceEventLifecycle() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(376, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(376, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16614,15 +14358,9 @@ func (l *Libvirt) NodeDeviceEventLifecycle() (err error) {
 func (l *Libvirt) NodeDeviceEventUpdate() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(377, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(377, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16643,15 +14381,9 @@ func (l *Libvirt) StorageVolGetInfoFlags(Vol StorageVol, Flags uint32) (rType in
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(378, constants.Program, &buf)
+	var r response
+	r, err = l.request(378, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16681,15 +14413,9 @@ func (l *Libvirt) StorageVolGetInfoFlags(Vol StorageVol, Flags uint32) (rType in
 func (l *Libvirt) DomainEventCallbackMetadataChange() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(379, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(379, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16710,15 +14436,9 @@ func (l *Libvirt) ConnectSecretEventRegisterAny(EventID int32, OptSecret OptSecr
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(380, constants.Program, &buf)
+	var r response
+	r, err = l.request(380, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16747,15 +14467,9 @@ func (l *Libvirt) ConnectSecretEventDeregisterAny(CallbackID int32) (err error) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(381, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(381, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16766,15 +14480,9 @@ func (l *Libvirt) ConnectSecretEventDeregisterAny(CallbackID int32) (err error) 
 func (l *Libvirt) SecretEventLifecycle() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(382, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(382, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16785,15 +14493,9 @@ func (l *Libvirt) SecretEventLifecycle() (err error) {
 func (l *Libvirt) SecretEventValueChanged() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(383, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(383, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16816,15 +14518,9 @@ func (l *Libvirt) DomainSetVcpu(Dom Domain, Cpumap string, State int32, Flags Do
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(384, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(384, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16835,15 +14531,9 @@ func (l *Libvirt) DomainSetVcpu(Dom Domain, Cpumap string, State int32, Flags Do
 func (l *Libvirt) DomainEventBlockThreshold() (err error) {
 	var buf bytes.Buffer
 
-	var resp <-chan response
-	resp, err = l.request(385, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(385, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16866,15 +14556,9 @@ func (l *Libvirt) DomainSetBlockThreshold(Dom Domain, Dev string, Threshold uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(386, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(386, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -16895,15 +14579,9 @@ func (l *Libvirt) DomainMigrateGetMaxDowntime(Dom Domain, Flags uint32) (rDownti
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(387, constants.Program, &buf)
+	var r response
+	r, err = l.request(387, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16933,15 +14611,9 @@ func (l *Libvirt) DomainManagedSaveGetXMLDesc(Dom Domain, Flags DomainXMLFlags) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(388, constants.Program, &buf)
+	var r response
+	r, err = l.request(388, constants.Program, &buf)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16972,15 +14644,9 @@ func (l *Libvirt) DomainManagedSaveDefineXML(Dom Domain, Dxml OptString, Flags D
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(389, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(389, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
@@ -17003,15 +14669,9 @@ func (l *Libvirt) DomainSetLifecycleAction(Dom Domain, Type uint32, Action uint3
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(390, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.request(390, constants.Program, &buf)
+	if err != nil {
 		return
 	}
 
