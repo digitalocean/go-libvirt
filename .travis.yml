@@ -4,7 +4,7 @@ dist: trusty
 sudo: require
 
 go:
-  - 1.9
+  - 1.10
 
 env:
   - LIBVIRT=1.2.12 EXT=gz
