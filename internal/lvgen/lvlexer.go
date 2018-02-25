@@ -259,12 +259,17 @@ func lexText(l *Lexer) stateFn {
 
 // lexBlockComment is used when we find a comment marker '/*' in the input.
 func lexBlockComment(l *Lexer) stateFn {
+	metadataComment := strings.HasPrefix(l.input[l.pos:], "/**")
 	for {
 		if strings.HasPrefix(l.input[l.pos:], "*/") {
 			// Found the end. Advance past the '*/' and discard the comment body.
 			l.next()
 			l.next()
-			l.ignore()
+			if metadataComment {
+				l.emit(METADATACOMMENT)
+			} else {
+				l.ignore()
+			}
 			return lexText
 		}
 		if l.next() == eof {

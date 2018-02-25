@@ -56,6 +56,7 @@ import (
 %token IDENTIFIER CONSTANT ERROR
 // RPCL additional tokens:
 %token PROGRAM VERSION
+%token METADATACOMMENT
 
 %%
 
@@ -94,6 +95,13 @@ enum_value_list
 enum_value
     : enum_value_ident {
         err := AddEnumAutoVal($1.val)
+        if err != nil {
+            yylex.Error(err.Error())
+            return 1
+        }
+    }
+    | METADATACOMMENT enum_value_ident '=' value {
+        err := AddEnumVal($2.val, $4.val)
         if err != nil {
             yylex.Error(err.Error())
             return 1
