@@ -606,7 +606,7 @@ yydefault:
 		yyDollar = yyS[yypt-4 : yypt+1]
 		//line sunrpc.y:103
 		{
-			err := AddEnumVal(yyDollar[2].val, yyDollar[4].val)
+			err := AddEnumValMeta(yyDollar[2].val, yyDollar[4].val, yyDollar[1].val)
 			if err != nil {
 				yylex.Error(err.Error())
 				return 1

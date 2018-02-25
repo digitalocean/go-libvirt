@@ -159,13 +159,41 @@ type Case struct {
 
 // Proc holds information about a libvirt procedure the parser has found.
 type Proc struct {
-	Num        int64  // The libvirt procedure number.
-	Name       string // The name of the go func.
-	LVName     string // The name of the libvirt proc this wraps.
-	Args       []Decl // The contents of the args struct for this procedure.
-	Ret        []Decl // The contents of the ret struct for this procedure.
-	ArgsStruct string // The name of the args struct for this procedure.
-	RetStruct  string // The name of the ret struct for this procedure.
+	Num            int64  // The libvirt procedure number.
+	Name           string // The name of the go func.
+	LVName         string // The name of the libvirt proc this wraps.
+	Args           []Decl // The contents of the args struct for this procedure.
+	Ret            []Decl // The contents of the ret struct for this procedure.
+	ArgsStruct     string // The name of the args struct for this procedure.
+	RetStruct      string // The name of the ret struct for this procedure.
+	ReadStreamIdx  int    // The index of read stream in function argument list
+	WriteStreamIdx int    // The index of read stream in function argument list
+}
+
+type ProcMetaGenerate int
+
+const (
+	ProcMetaGenerateNone ProcMetaGenerate = iota
+	ProcMetaGenerateClient
+	ProcMetaGenerateServer
+	ProcMetaGenerateBoth
+)
+
+type ProcMetaPriority int
+
+const (
+	ProcMetaPriorityLow ProcMetaPriority = iota
+	ProcMetaPriorityHigh
+)
+
+// ProcMeta holds information from annotations attached to a libvirt procedure
+type ProcMeta struct {
+	Generate    ProcMetaGenerate
+	ReadStream  int
+	WriteStream int
+	Priority    ProcMetaPriority
+	Acls        []string
+	Aclfilter   string
 }
 
 type structStack []*Structure
@@ -552,7 +580,20 @@ func AddEnumVal(name, val string) error {
 	if err != nil {
 		return fmt.Errorf("invalid enum value %v = %v", name, val)
 	}
-	return addEnumVal(name, ev)
+	return addEnumVal(name, ev, nil)
+}
+
+// AddEnumValMeta will add a new enum value with attached metadata to the list.
+func AddEnumValMeta(name, val, meta string) error {
+	ev, err := parseNumber(val)
+	if err != nil {
+		return fmt.Errorf("invalid enum value %v = %v", name, val)
+	}
+	metaObj, err := parseMeta(meta)
+	if err != nil {
+		return fmt.Errorf("invalid metadata for enum value %v: %v", name, err)
+	}
+	return addEnumVal(name, ev, metaObj)
 }
 
 // AddEnumAutoVal adds an enum to the list, using the automatically-incremented
@@ -560,14 +601,14 @@ func AddEnumVal(name, val string) error {
 // explicit value.
 func AddEnumAutoVal(name string) error {
 	CurrentEnumVal++
-	return addEnumVal(name, CurrentEnumVal)
+	return addEnumVal(name, CurrentEnumVal, nil)
 }
 
-func addEnumVal(name string, val int64) error {
+func addEnumVal(name string, val int64, meta *ProcMeta) error {
 	goname := constNameTransform(name)
 	Gen.EnumVals = append(Gen.EnumVals, ConstItem{goname, name, fmt.Sprintf("%d", val)})
 	CurrentEnumVal = val
-	addProc(goname, name, val)
+	addProc(goname, name, val, meta)
 	return nil
 }
 
@@ -584,12 +625,16 @@ func AddConst(name, val string) error {
 
 // addProc checks an enum value to see if it's a procedure number. If so, we
 // add the procedure to our list for later generation.
-func addProc(goname, lvname string, val int64) {
+func addProc(goname, lvname string, val int64, meta *ProcMeta) {
 	if !strings.HasPrefix(goname, "Proc") {
 		return
 	}
 	goname = goname[4:]
-	proc := &Proc{Num: val, Name: goname, LVName: lvname}
+	proc := &Proc{Num: val, Name: goname, LVName: lvname, ReadStreamIdx: -1, WriteStreamIdx: -1}
+	if meta != nil {
+		proc.ReadStreamIdx = meta.ReadStream
+		proc.WriteStreamIdx = meta.WriteStream
+	}
 	Gen.Procs = append(Gen.Procs, *proc)
 }
 
@@ -603,6 +648,64 @@ func parseNumber(val string) (int64, error) {
 	}
 	n, err := strconv.ParseInt(val, base, 64)
 	return n, err
+}
+
+// parseMeta parses procedure metadata to simple string mapping
+func parseMeta(meta string) (*ProcMeta, error) {
+	res := &ProcMeta{
+		ReadStream:  -1,
+		WriteStream: -1,
+	}
+	for _, line := range strings.Split(meta, "\n") {
+		atInd := strings.Index(line, "@")
+		if atInd == -1 {
+			// Should be only first and last line of comment
+			continue
+		}
+		spl := strings.SplitN(line[atInd+1:], ":", 2)
+		if len(spl) != 2 {
+			return nil, fmt.Errorf("invalid annotation: %s", meta)
+		}
+		spl[1] = strings.Trim(spl[1], " ")
+		if spl[0] == "generate" {
+			if spl[1] == "none" {
+				res.Generate = ProcMetaGenerateNone
+			} else if spl[1] == "client" {
+				res.Generate = ProcMetaGenerateClient
+			} else if spl[1] == "server" {
+				res.Generate = ProcMetaGenerateServer
+			} else if spl[1] == "both" {
+				res.Generate = ProcMetaGenerateBoth
+			} else {
+				return nil, fmt.Errorf("invalid value for generate: %s", spl[1])
+			}
+		} else if spl[0] == "readstream" {
+			var err error
+			res.ReadStream, err = strconv.Atoi(spl[1])
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for readstread: %s", spl[1])
+			}
+		} else if spl[0] == "writestream" {
+			var err error
+			res.WriteStream, err = strconv.Atoi(spl[1])
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for readstread: %s", spl[1])
+			}
+		} else if spl[0] == "priority" {
+			if spl[1] == "low" {
+				res.Priority = ProcMetaPriorityLow
+			} else if spl[1] == "high" {
+				res.Priority = ProcMetaPriorityHigh
+			} else {
+				return nil, fmt.Errorf("invalid value for priority: %s", spl[1])
+			}
+		} else if spl[0] == "acl" {
+			res.Acls = append(res.Acls, spl[1])
+		} else if spl[0] == "aclfilter" {
+			res.Aclfilter = spl[1]
+		}
+	}
+	return res, nil
 }
 
 // StartStruct is called from the parser when a struct definition is found, but

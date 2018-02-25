@@ -101,7 +101,7 @@ enum_value
         }
     }
     | METADATACOMMENT enum_value_ident '=' value {
-        err := AddEnumVal($2.val, $4.val)
+        err := AddEnumValMeta($2.val, $4.val, $1.val)
         if err != nil {
             yylex.Error(err.Error())
             return 1
