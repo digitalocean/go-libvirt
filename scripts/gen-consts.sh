@@ -15,12 +15,6 @@ if ! which c-for-go > /dev/null; then
         echo "failed to install c-for-go. Please install it manually from https://github.com/xlab/c-for-go"
         exit 1
     fi
-    # HEAD is broken for us because of a failed attempt to redefine the
-    # __GNUC_PREREQ macro. Checkout an older version to avoid this.
-    pushd $GOPATH/src/github.com/xlab/c-for-go
-    git checkout a831fa1954c29f84f7bccab225c3c620d0e7f132
-    go install ./...
-    popd
 fi
 
 # Make sure goyacc is installed (needed for the lvgen/ generator)
