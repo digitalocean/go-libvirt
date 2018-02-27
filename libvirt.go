@@ -152,7 +152,7 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 		return nil, err
 	}
 
-	res, err := l.request(constants.QEMUConnectDomainMonitorEventRegister, constants.ProgramQEMU, &buf)
+	res, err := l.request(constants.QEMUConnectDomainMonitorEventRegister, constants.ProgramQEMU, buf)
 	if err != nil {
 		if err == ErrUnsupported {
 			return nil, ErrEventsNotSupported
@@ -243,7 +243,7 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	res, err := l.request(constants.QEMUDomainMonitor, constants.ProgramQEMU, &buf)
+	res, err := l.request(constants.QEMUDomainMonitor, constants.ProgramQEMU, buf)
 	if err != nil {
 		return nil, err
 	}

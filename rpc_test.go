@@ -219,7 +219,7 @@ func TestEncode(t *testing.T) {
 		t.Error(err)
 	}
 
-	dec := xdr.NewDecoder(bytes.NewReader(buf.Bytes()))
+	dec := xdr.NewDecoder(bytes.NewReader(buf))
 	res, _, err := dec.DecodeString()
 	if err != nil {
 		t.Error(err)

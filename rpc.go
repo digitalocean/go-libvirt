@@ -131,12 +131,12 @@ func (l *Libvirt) connect() error {
 
 	// libvirt requires that we call auth-list prior to connecting,
 	// event when no authentication is used.
-	_, err = l.request(constants.ProcAuthList, constants.Program, &buf)
+	_, err = l.request(constants.ProcAuthList, constants.Program, buf)
 	if err != nil {
 		return err
 	}
 
-	_, err = l.request(constants.ProcConnectOpen, constants.Program, &buf)
+	_, err = l.request(constants.ProcConnectOpen, constants.Program, buf)
 	if err != nil {
 		return err
 	}
@@ -262,7 +262,7 @@ func (l *Libvirt) removeStream(id uint32) error {
 		return err
 	}
 
-	_, err = l.request(constants.QEMUConnectDomainMonitorEventDeregister, constants.ProgramQEMU, &buf)
+	_, err = l.request(constants.QEMUConnectDomainMonitorEventDeregister, constants.ProgramQEMU, buf)
 	if err != nil {
 		return err
 	}
@@ -292,7 +292,7 @@ func (l *Libvirt) deregister(id uint32) {
 // request performs a libvirt RPC request.
 // returns response returned by server.
 // if response is not OK, decodes error from it and returns it.
-func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (response, error) {
+func (l *Libvirt) request(proc uint32, program uint32, payload []byte) (response, error) {
 	serial := l.serial()
 	c := make(chan response)
 
@@ -300,7 +300,7 @@ func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (r
 
 	size := constants.PacketLengthSize + constants.HeaderSize
 	if payload != nil {
-		size += payload.Len()
+		size += len(payload)
 	}
 
 	p := packet{
@@ -325,7 +325,7 @@ func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (r
 
 	// write payload
 	if payload != nil {
-		err = binary.Write(l.w, binary.BigEndian, payload.Bytes())
+		err = binary.Write(l.w, binary.BigEndian, payload)
 		if err != nil {
 			return response{}, err
 		}
@@ -344,11 +344,11 @@ func (l *Libvirt) request(proc uint32, program uint32, payload *bytes.Buffer) (r
 }
 
 // encode XDR encodes the provided data.
-func encode(data interface{}) (bytes.Buffer, error) {
+func encode(data interface{}) ([]byte, error) {
 	var buf bytes.Buffer
 	_, err := xdr.Marshal(&buf, data)
 
-	return buf, err
+	return buf.Bytes(), err
 }
 
 // decodeError extracts an error message from the provider buffer.
