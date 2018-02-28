@@ -473,6 +473,7 @@ var flagMap = map[string]string{
 	"DomainSetVcpu":                "DomainModificationImpact",
 	"DomainShutdownFlags":          "DomainShutdownFlagValues",
 	"DomainUndefineFlags":          "DomainUndefineFlagsValues",
+	"DomainUpdateDeviceFlags":      "DomainDeviceModifyFlags",
 	"StoragePoolCreateXML":         "StoragePoolCreateFlags",
 	"StoragePoolGetXMLDesc":        "StorageXMLFlags",
 	"StorageVolCreateXML":          "StorageVolCreateFlags",

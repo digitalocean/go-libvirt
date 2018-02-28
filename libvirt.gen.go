@@ -1181,7 +1181,7 @@ type DomainDetachDeviceFlagsArgs struct {
 type DomainUpdateDeviceFlagsArgs struct {
 	Dom Domain
 	XML string
-	Flags uint32
+	Flags DomainDeviceModifyFlags
 }
 
 // DomainGetAutostartArgs is libvirt's remote_domain_get_autostart_args
@@ -2897,7 +2897,7 @@ type StorageVolUploadArgs struct {
 	Vol StorageVol
 	Offset uint64
 	Length uint64
-	Flags StorageVolUploadFlags
+	Flags uint32
 }
 
 // StorageVolDownloadArgs is libvirt's remote_storage_vol_download_args
@@ -2905,7 +2905,7 @@ type StorageVolDownloadArgs struct {
 	Vol StorageVol
 	Offset uint64
 	Length uint64
-	Flags StorageVolDownloadFlags
+	Flags uint32
 }
 
 // DomainGetStateArgs is libvirt's remote_domain_get_state_args
@@ -8865,7 +8865,7 @@ func (l *Libvirt) DomainEventGraphics() (err error) {
 }
 
 // DomainUpdateDeviceFlags is the go wrapper for REMOTE_PROC_DOMAIN_UPDATE_DEVICE_FLAGS.
-func (l *Libvirt) DomainUpdateDeviceFlags(Dom Domain, XML string, Flags uint32) (err error) {
+func (l *Libvirt) DomainUpdateDeviceFlags(Dom Domain, XML string, Flags DomainDeviceModifyFlags) (err error) {
 	var buf []byte
 
 	args := DomainUpdateDeviceFlagsArgs {
@@ -9844,7 +9844,7 @@ func (l *Libvirt) DomainMigrateSetMaxSpeed(Dom Domain, Bandwidth uint64, Flags u
 }
 
 // StorageVolUpload is the go wrapper for REMOTE_PROC_STORAGE_VOL_UPLOAD.
-func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64, Flags StorageVolUploadFlags) (err error) {
+func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64, Flags uint32) (err error) {
 	var buf []byte
 
 	args := StorageVolUploadArgs {
@@ -9869,7 +9869,7 @@ func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64,
 }
 
 // StorageVolDownload is the go wrapper for REMOTE_PROC_STORAGE_VOL_DOWNLOAD.
-func (l *Libvirt) StorageVolDownload(Vol StorageVol, Offset uint64, Length uint64, Flags StorageVolDownloadFlags) (err error) {
+func (l *Libvirt) StorageVolDownload(Vol StorageVol, Offset uint64, Length uint64, Flags uint32) (err error) {
 	var buf []byte
 
 	args := StorageVolDownloadArgs {
