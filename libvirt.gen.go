@@ -8866,7 +8866,7 @@ func (l *Libvirt) DomainEventGraphics() (err error) {
 
 // DomainUpdateDeviceFlags is the go wrapper for REMOTE_PROC_DOMAIN_UPDATE_DEVICE_FLAGS.
 func (l *Libvirt) DomainUpdateDeviceFlags(Dom Domain, XML string, Flags DomainDeviceModifyFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainUpdateDeviceFlagsArgs {
 		Dom: Dom,
@@ -9845,7 +9845,7 @@ func (l *Libvirt) DomainMigrateSetMaxSpeed(Dom Domain, Bandwidth uint64, Flags u
 
 // StorageVolUpload is the go wrapper for REMOTE_PROC_STORAGE_VOL_UPLOAD.
 func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolUploadArgs {
 		Vol: Vol,
@@ -9870,7 +9870,7 @@ func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64,
 
 // StorageVolDownload is the go wrapper for REMOTE_PROC_STORAGE_VOL_DOWNLOAD.
 func (l *Libvirt) StorageVolDownload(Vol StorageVol, Offset uint64, Length uint64, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolDownloadArgs {
 		Vol: Vol,
