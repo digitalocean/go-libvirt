@@ -564,6 +564,17 @@ func AddEnumVal(name, val string) error {
 }
 
 // AddEnumValMeta will add a new enum value with attached metadata to the list.
+// Metadata is parsed from annotations in libvirt RPC description file that are
+// in block comment preceding every function in enum, it looks like this:
+// /**
+//  * @generate: both
+//  * @readstream: 1
+//  * @sparseflag: VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM
+//  * @acl: storage_vol:data_read
+//  */
+// See full description of possible annotations in libvirt's src/remote/remote_protocol.x
+// at the top of remote_procedure enum.
+// We're parsing only @readstream and @writestream annotations at the moment.
 func AddEnumValMeta(name, val, meta string) error {
 	ev, err := parseNumber(val)
 	if err != nil {
