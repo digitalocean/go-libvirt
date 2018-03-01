@@ -31,6 +31,7 @@ install:
   - curl -O -s https://libvirt.org/sources/libvirt-${LIBVIRT}.tar.${EXT}
   - tar -C /usr/src -xf libvirt-${LIBVIRT}.tar.${EXT}
   - pushd /usr/src/libvirt-${LIBVIRT}
+  - ccache --show-stats
   - |
         env PATH=/usr/lib/ccache:$PATH \
         ./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc \
@@ -39,6 +40,7 @@ install:
                     --with-qemu
   - make
   - sudo make install
+  - ccache --show-stats
   - popd
   - sudo libvirtd -d -l -f libvirtd.conf
   - sudo virtlogd -d || true
