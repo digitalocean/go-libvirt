@@ -191,10 +191,14 @@ func (l *Libvirt) listen() {
 func (l *Libvirt) callback(id uint32, res response) {
 	l.cm.Lock()
 	c, ok := l.callbacks[id]
+	l.cm.Unlock()
 	if ok {
+		// we close channel in deregister() so that we don't block here forever without receiver
+		defer func() {
+			recover()
+		}()
 		c <- res
 	}
-	l.cm.Unlock()
 }
 
 // route sends incoming packets to their listeners.
@@ -281,19 +285,7 @@ func (l *Libvirt) register(id uint32, c chan response) {
 
 // deregister destroys a method response callback
 func (l *Libvirt) deregister(id uint32) {
-	lockChan := make(chan bool)
-	go func() {
-		l.cm.Lock()
-		lockChan <- true
-	}()
-Loop:
-	for {
-		select {
-		case _ = <-l.callbacks[id]:
-		case _ = <-lockChan:
-			break Loop
-		}
-	}
+	l.cm.Lock()
 	close(l.callbacks[id])
 	delete(l.callbacks, id)
 	l.cm.Unlock()
