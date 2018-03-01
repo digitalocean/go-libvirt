@@ -170,8 +170,10 @@ type Proc struct {
 	WriteStreamIdx int    // The index of read stream in function argument list
 }
 
+// ProcMetaGenerate is a type for flags from @generate annotation
 type ProcMetaGenerate int
 
+// @generate annotation can be none, client, server or both
 const (
 	ProcMetaGenerateNone ProcMetaGenerate = iota
 	ProcMetaGenerateClient
@@ -179,8 +181,10 @@ const (
 	ProcMetaGenerateBoth
 )
 
+// ProcMetaPriority is a type for values from @priority annotation
 type ProcMetaPriority int
 
+// @priority annotation can be low or high
 const (
 	ProcMetaPriorityLow ProcMetaPriority = iota
 	ProcMetaPriorityHigh

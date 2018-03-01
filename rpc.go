@@ -343,17 +343,15 @@ func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte, out
 				if err != nil {
 					if err == io.EOF {
 						err = l.sendPacket(serial, proc, program, nil, Stream, StatusOK)
-						break
 					} else {
 						// keep original error
 						err := l.sendPacket(serial, proc, program, nil, Stream, StatusError)
 						if err != nil {
 							outStreamErr <- err
 							return
-						} else {
-							break
 						}
 					}
+                    break
 				}
 				if n > 0 {
 					err = l.sendPacket(serial, proc, program, buf[:n], Stream, StatusContinue)
@@ -438,11 +436,7 @@ func (l *Libvirt) sendPacket(serial uint32, proc uint32, program uint32, payload
 		}
 	}
 
-	if err := l.w.Flush(); err != nil {
-		return err
-	}
-
-	return nil
+	return l.w.Flush()
 }
 
 func (l *Libvirt) getResponse(c chan response) (response, error) {
