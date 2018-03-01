@@ -170,34 +170,10 @@ type Proc struct {
 	WriteStreamIdx int    // The index of read stream in function argument list
 }
 
-// ProcMetaGenerate is a type for flags from @generate annotation
-type ProcMetaGenerate int
-
-// @generate annotation can be none, client, server or both
-const (
-	ProcMetaGenerateNone ProcMetaGenerate = iota
-	ProcMetaGenerateClient
-	ProcMetaGenerateServer
-	ProcMetaGenerateBoth
-)
-
-// ProcMetaPriority is a type for values from @priority annotation
-type ProcMetaPriority int
-
-// @priority annotation can be low or high
-const (
-	ProcMetaPriorityLow ProcMetaPriority = iota
-	ProcMetaPriorityHigh
-)
-
 // ProcMeta holds information from annotations attached to a libvirt procedure
 type ProcMeta struct {
-	Generate    ProcMetaGenerate
 	ReadStream  int
 	WriteStream int
-	Priority    ProcMetaPriority
-	Acls        []string
-	Aclfilter   string
 }
 
 type structStack []*Structure
@@ -671,42 +647,19 @@ func parseMeta(meta string) (*ProcMeta, error) {
 			return nil, fmt.Errorf("invalid annotation: %s", meta)
 		}
 		spl[1] = strings.Trim(spl[1], " ")
-		if spl[0] == "generate" {
-			if spl[1] == "none" {
-				res.Generate = ProcMetaGenerateNone
-			} else if spl[1] == "client" {
-				res.Generate = ProcMetaGenerateClient
-			} else if spl[1] == "server" {
-				res.Generate = ProcMetaGenerateServer
-			} else if spl[1] == "both" {
-				res.Generate = ProcMetaGenerateBoth
-			} else {
-				return nil, fmt.Errorf("invalid value for generate: %s", spl[1])
-			}
-		} else if spl[0] == "readstream" {
+		switch spl[0] {
+		case "readstream":
 			var err error
 			res.ReadStream, err = strconv.Atoi(spl[1])
 			if err != nil {
-				return nil, fmt.Errorf("invalid value for readstread: %s", spl[1])
+				return nil, fmt.Errorf("invalid value for readstream: %s", spl[1])
 			}
-		} else if spl[0] == "writestream" {
+		case "writestream":
 			var err error
 			res.WriteStream, err = strconv.Atoi(spl[1])
 			if err != nil {
-				return nil, fmt.Errorf("invalid value for readstread: %s", spl[1])
+				return nil, fmt.Errorf("invalid value for writestream: %s", spl[1])
 			}
-		} else if spl[0] == "priority" {
-			if spl[1] == "low" {
-				res.Priority = ProcMetaPriorityLow
-			} else if spl[1] == "high" {
-				res.Priority = ProcMetaPriorityHigh
-			} else {
-				return nil, fmt.Errorf("invalid value for priority: %s", spl[1])
-			}
-		} else if spl[0] == "acl" {
-			res.Acls = append(res.Acls, spl[1])
-		} else if spl[0] == "aclfilter" {
-			res.Aclfilter = spl[1]
 		}
 	}
 	return res, nil
