@@ -1963,3 +1963,193 @@ const (
 	StreamEventError    StreamEventType = 4
 	StreamEventHangup   StreamEventType = 8
 )
+
+// ErrorLevel as declared in libvirt/virterror.h:44
+type ErrorLevel int32
+
+// ErrorLevel enumeration from libvirt/virterror.h:44
+const (
+	ErrNone    ErrorLevel = iota
+	ErrWarning ErrorLevel = 1
+	ErrError   ErrorLevel = 2
+)
+
+// ErrorDomain as declared in libvirt/virterror.h:139
+type ErrorDomain int32
+
+// ErrorDomain enumeration from libvirt/virterror.h:139
+const (
+	FromNone           ErrorDomain = iota
+	FromXen            ErrorDomain = 1
+	FromXend           ErrorDomain = 2
+	FromXenstore       ErrorDomain = 3
+	FromSexpr          ErrorDomain = 4
+	FromXML            ErrorDomain = 5
+	FromDom            ErrorDomain = 6
+	FromRPC            ErrorDomain = 7
+	FromProxy          ErrorDomain = 8
+	FromConf           ErrorDomain = 9
+	FromQemu           ErrorDomain = 10
+	FromNet            ErrorDomain = 11
+	FromTest           ErrorDomain = 12
+	FromRemote         ErrorDomain = 13
+	FromOpenvz         ErrorDomain = 14
+	FromXenxm          ErrorDomain = 15
+	FromStatsLinux     ErrorDomain = 16
+	FromLxc            ErrorDomain = 17
+	FromStorage        ErrorDomain = 18
+	FromNetwork        ErrorDomain = 19
+	FromDomain         ErrorDomain = 20
+	FromUml            ErrorDomain = 21
+	FromNodedev        ErrorDomain = 22
+	FromXenInotify     ErrorDomain = 23
+	FromSecurity       ErrorDomain = 24
+	FromVbox           ErrorDomain = 25
+	FromInterface      ErrorDomain = 26
+	FromOne            ErrorDomain = 27
+	FromEsx            ErrorDomain = 28
+	FromPhyp           ErrorDomain = 29
+	FromSecret         ErrorDomain = 30
+	FromCPU            ErrorDomain = 31
+	FromXenapi         ErrorDomain = 32
+	FromNwfilter       ErrorDomain = 33
+	FromHook           ErrorDomain = 34
+	FromDomainSnapshot ErrorDomain = 35
+	FromAudit          ErrorDomain = 36
+	FromSysinfo        ErrorDomain = 37
+	FromStreams        ErrorDomain = 38
+	FromVmware         ErrorDomain = 39
+	FromEvent          ErrorDomain = 40
+	FromLibxl          ErrorDomain = 41
+	FromLocking        ErrorDomain = 42
+	FromHyperv         ErrorDomain = 43
+	FromCapabilities   ErrorDomain = 44
+	FromURI            ErrorDomain = 45
+	FromAuth           ErrorDomain = 46
+	FromDbus           ErrorDomain = 47
+	FromParallels      ErrorDomain = 48
+	FromDevice         ErrorDomain = 49
+	FromSSH            ErrorDomain = 50
+	FromLockspace      ErrorDomain = 51
+	FromInitctl        ErrorDomain = 52
+	FromIdentity       ErrorDomain = 53
+	FromCgroup         ErrorDomain = 54
+	FromAccess         ErrorDomain = 55
+	FromSystemd        ErrorDomain = 56
+	FromBhyve          ErrorDomain = 57
+	FromCrypto         ErrorDomain = 58
+	FromFirewall       ErrorDomain = 59
+	FromPolkit         ErrorDomain = 60
+	FromThread         ErrorDomain = 61
+	FromAdmin          ErrorDomain = 62
+	FromLogging        ErrorDomain = 63
+	FromXenxl          ErrorDomain = 64
+	FromPerf           ErrorDomain = 65
+	FromLibssh         ErrorDomain = 66
+)
+
+// ErrorNumber as declared in libvirt/virterror.h:322
+type ErrorNumber int32
+
+// ErrorNumber enumeration from libvirt/virterror.h:322
+const (
+	ErrOk                    ErrorNumber = iota
+	ErrInternalError         ErrorNumber = 1
+	ErrNoMemory              ErrorNumber = 2
+	ErrNoSupport             ErrorNumber = 3
+	ErrUnknownHost           ErrorNumber = 4
+	ErrNoConnect             ErrorNumber = 5
+	ErrInvalidConn           ErrorNumber = 6
+	ErrInvalidDomain         ErrorNumber = 7
+	ErrInvalidArg            ErrorNumber = 8
+	ErrOperationFailed       ErrorNumber = 9
+	ErrGetFailed             ErrorNumber = 10
+	ErrPostFailed            ErrorNumber = 11
+	ErrHTTPError             ErrorNumber = 12
+	ErrSexprSerial           ErrorNumber = 13
+	ErrNoXen                 ErrorNumber = 14
+	ErrXenCall               ErrorNumber = 15
+	ErrOsType                ErrorNumber = 16
+	ErrNoKernel              ErrorNumber = 17
+	ErrNoRoot                ErrorNumber = 18
+	ErrNoSource              ErrorNumber = 19
+	ErrNoTarget              ErrorNumber = 20
+	ErrNoName                ErrorNumber = 21
+	ErrNoOs                  ErrorNumber = 22
+	ErrNoDevice              ErrorNumber = 23
+	ErrNoXenstore            ErrorNumber = 24
+	ErrDriverFull            ErrorNumber = 25
+	ErrCallFailed            ErrorNumber = 26
+	ErrXMLError              ErrorNumber = 27
+	ErrDomExist              ErrorNumber = 28
+	ErrOperationDenied       ErrorNumber = 29
+	ErrOpenFailed            ErrorNumber = 30
+	ErrReadFailed            ErrorNumber = 31
+	ErrParseFailed           ErrorNumber = 32
+	ErrConfSyntax            ErrorNumber = 33
+	ErrWriteFailed           ErrorNumber = 34
+	ErrXMLDetail             ErrorNumber = 35
+	ErrInvalidNetwork        ErrorNumber = 36
+	ErrNetworkExist          ErrorNumber = 37
+	ErrSystemError           ErrorNumber = 38
+	ErrRPC                   ErrorNumber = 39
+	ErrGnutlsError           ErrorNumber = 40
+	WarNoNetwork             ErrorNumber = 41
+	ErrNoDomain              ErrorNumber = 42
+	ErrNoNetwork             ErrorNumber = 43
+	ErrInvalidMac            ErrorNumber = 44
+	ErrAuthFailed            ErrorNumber = 45
+	ErrInvalidStoragePool    ErrorNumber = 46
+	ErrInvalidStorageVol     ErrorNumber = 47
+	WarNoStorage             ErrorNumber = 48
+	ErrNoStoragePool         ErrorNumber = 49
+	ErrNoStorageVol          ErrorNumber = 50
+	WarNoNode                ErrorNumber = 51
+	ErrInvalidNodeDevice     ErrorNumber = 52
+	ErrNoNodeDevice          ErrorNumber = 53
+	ErrNoSecurityModel       ErrorNumber = 54
+	ErrOperationInvalid      ErrorNumber = 55
+	WarNoInterface           ErrorNumber = 56
+	ErrNoInterface           ErrorNumber = 57
+	ErrInvalidInterface      ErrorNumber = 58
+	ErrMultipleInterfaces    ErrorNumber = 59
+	WarNoNwfilter            ErrorNumber = 60
+	ErrInvalidNwfilter       ErrorNumber = 61
+	ErrNoNwfilter            ErrorNumber = 62
+	ErrBuildFirewall         ErrorNumber = 63
+	WarNoSecret              ErrorNumber = 64
+	ErrInvalidSecret         ErrorNumber = 65
+	ErrNoSecret              ErrorNumber = 66
+	ErrConfigUnsupported     ErrorNumber = 67
+	ErrOperationTimeout      ErrorNumber = 68
+	ErrMigratePersistFailed  ErrorNumber = 69
+	ErrHookScriptFailed      ErrorNumber = 70
+	ErrInvalidDomainSnapshot ErrorNumber = 71
+	ErrNoDomainSnapshot      ErrorNumber = 72
+	ErrInvalidStream         ErrorNumber = 73
+	ErrArgumentUnsupported   ErrorNumber = 74
+	ErrStorageProbeFailed    ErrorNumber = 75
+	ErrStoragePoolBuilt      ErrorNumber = 76
+	ErrSnapshotRevertRisky   ErrorNumber = 77
+	ErrOperationAborted      ErrorNumber = 78
+	ErrAuthCancelled         ErrorNumber = 79
+	ErrNoDomainMetadata      ErrorNumber = 80
+	ErrMigrateUnsafe         ErrorNumber = 81
+	ErrOverflow              ErrorNumber = 82
+	ErrBlockCopyActive       ErrorNumber = 83
+	ErrOperationUnsupported  ErrorNumber = 84
+	ErrSSH                   ErrorNumber = 85
+	ErrAgentUnresponsive     ErrorNumber = 86
+	ErrResourceBusy          ErrorNumber = 87
+	ErrAccessDenied          ErrorNumber = 88
+	ErrDbusService           ErrorNumber = 89
+	ErrStorageVolExist       ErrorNumber = 90
+	ErrCPUIncompatible       ErrorNumber = 91
+	ErrXMLInvalidSchema      ErrorNumber = 92
+	ErrMigrateFinishOk       ErrorNumber = 93
+	ErrAuthUnavailable       ErrorNumber = 94
+	ErrNoServer              ErrorNumber = 95
+	ErrNoClient              ErrorNumber = 96
+	ErrAgentUnsynced         ErrorNumber = 97
+	ErrLibssh                ErrorNumber = 98
+)

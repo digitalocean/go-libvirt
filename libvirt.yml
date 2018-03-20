@@ -30,6 +30,7 @@ PARSER:
     IncludePaths: [./lv_source/include]
     SourcesPaths:
         - libvirt/libvirt.h
+        - libvirt/virterror.h
 
 TRANSLATOR:
     ConstRules:
@@ -52,6 +53,9 @@ TRANSLATOR:
             - {action: replace, from: "Uri([A-Z]|$)", to: "URI$1"}
             - {action: replace, from: "Vcpu([A-Z]|$)", to: "VCPU$1"}
             - {action: replace, from: "Xml([A-Z]|$)", to: "XML$1"}
+            - {action: replace, from: "Rpc([A-Z]|$)", to: "RPC$1"}
+            - {action: replace, from: "Ssh([A-Z]|$)", to: "SSH$1"}
+            - {action: replace, from: "Http([A-Z]|$)", to: "HTTP$1"}
         const:
             - {action: accept, from: "^VIR_"}
             # Special case to prevent a collision with a type:

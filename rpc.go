@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"sync/atomic"
@@ -111,6 +112,28 @@ type libvirtError struct {
 	Padding  uint8
 	Message  string
 	Level    uint32
+}
+
+func (e libvirtError) Error() string {
+	return fmt.Sprintf("%s, code: %d, domain id: %d", e.Message, e.Code, e.DomainID)
+}
+
+func checkError(err error, expectedError ErrorNumber) bool {
+	e, ok := err.(libvirtError)
+	if ok {
+		return e.Code == uint32(expectedError)
+	}
+	return false
+}
+
+// ErrIsNotFound detects libvirt's ERR_NO_DOMAIN.
+func ErrIsNotFound(err error) bool {
+	return checkError(err, ErrNoDomain)
+}
+
+// ErrIsOK detects libvirt's ERR_OK.
+func ErrIsOK(err error) bool {
+	return checkError(err, ErrOk)
 }
 
 // listen processes incoming data and routes
@@ -329,7 +352,7 @@ func decodeError(buf []byte) error {
 		return ErrUnsupported
 	}
 
-	return errors.New(e.Message)
+	return e
 }
 
 // decodeEvent extracts an event from the given byte slice.
