@@ -113,42 +113,6 @@ type libvirtError struct {
 	Level    uint32
 }
 
-func (l *Libvirt) connect() error {
-	payload := struct {
-		Padding [3]byte
-		Name    string
-		Flags   uint32
-	}{
-		Padding: [3]byte{0x1, 0x0, 0x0},
-		Name:    "qemu:///system",
-		Flags:   0,
-	}
-
-	buf, err := encode(&payload)
-	if err != nil {
-		return err
-	}
-
-	// libvirt requires that we call auth-list prior to connecting,
-	// event when no authentication is used.
-	_, err = l.request(constants.ProcAuthList, constants.Program, buf)
-	if err != nil {
-		return err
-	}
-
-	_, err = l.request(constants.ProcConnectOpen, constants.Program, buf)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (l *Libvirt) disconnect() error {
-	_, err := l.request(constants.ProcConnectClose, constants.Program, nil)
-	return err
-}
-
 // listen processes incoming data and routes
 // responses to their respective callback handler.
 func (l *Libvirt) listen() {

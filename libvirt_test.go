@@ -57,27 +57,14 @@ func TestMigrate(t *testing.T) {
 		MigrateAutoConverge |
 		MigrateNonSharedDisk
 
-	if err := l.Migrate("test", "qemu+tcp://foo/system", flags); err != nil {
-		t.Fatalf("unexpected live migration error: %v", err)
+	dom, err := l.DomainLookupByName("test")
+	if err != nil {
+		t.Fatalf("failed to lookup domain: %v", err)
 	}
-}
-
-func TestMigrateInvalidDest(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
-
-	var flags DomainMigrateFlags
-	flags = MigrateLive |
-		MigratePeer2peer |
-		MigratePersistDest |
-		MigrateChangeProtection |
-		MigrateAbortOnError |
-		MigrateAutoConverge |
-		MigrateNonSharedDisk
-
-	dest := ":$'"
-	if err := l.Migrate("test", dest, flags); err == nil {
-		t.Fatalf("expected invalid dest uri %q to fail", dest)
+	dconnuri := []string{"qemu+tcp://foo/system"}
+	if _, err := l.DomainMigratePerform3Params(dom, dconnuri,
+		[]TypedParam{}, []byte{}, flags); err != nil {
+		t.Fatalf("unexpected live migration error: %v", err)
 	}
 }
 
@@ -85,7 +72,12 @@ func TestMigrateSetMaxSpeed(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	if err := l.MigrateSetMaxSpeed("test", 100); err != nil {
+	dom, err := l.DomainLookupByName("test")
+	if err != nil {
+		t.Fatalf("failed to lookup domain: %v", err)
+	}
+
+	if err := l.DomainMigrateSetMaxSpeed(dom, 100, 0); err != nil {
 		t.Fatalf("unexpected error setting max speed for migrate: %v", err)
 	}
 }
