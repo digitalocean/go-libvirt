@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"io"
 	"strings"
 	"sync/atomic"
@@ -115,10 +114,10 @@ type libvirtError struct {
 }
 
 func (e libvirtError) Error() string {
-	return fmt.Sprintf("%s, code: %d, domain id: %d", e.Message, e.Code, e.DomainID)
+	return e.Message
 }
 
-func checkError(err error, expectedError ErrorNumber) bool {
+func checkError(err error, expectedError errorNumber) bool {
 	e, ok := err.(libvirtError)
 	if ok {
 		return e.Code == uint32(expectedError)
@@ -126,14 +125,9 @@ func checkError(err error, expectedError ErrorNumber) bool {
 	return false
 }
 
-// ErrIsNotFound detects libvirt's ERR_NO_DOMAIN.
-func ErrIsNotFound(err error) bool {
-	return checkError(err, ErrNoDomain)
-}
-
-// ErrIsOK detects libvirt's ERR_OK.
-func ErrIsOK(err error) bool {
-	return checkError(err, ErrOk)
+// IsNotFound detects libvirt's ERR_NO_DOMAIN.
+func IsNotFound(err error) bool {
+	return checkError(err, errNoDomain)
 }
 
 // listen processes incoming data and routes
@@ -350,6 +344,10 @@ func decodeError(buf []byte) error {
 
 	if strings.Contains(e.Message, "unknown procedure") {
 		return ErrUnsupported
+	}
+	// if libvirt returns ERR_OK, ignore the error
+	if checkError(e, errOk) {
+		return nil
 	}
 
 	return e

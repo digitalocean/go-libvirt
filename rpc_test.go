@@ -89,7 +89,7 @@ var (
 	}
 
 	testErrorMessage = []byte{
-		0x00, 0x00, 0x00, 0x37, // code (55, ErrOperationInvalid)
+		0x00, 0x00, 0x00, 0x37, // code (55, errOperationInvalid)
 		0x00, 0x00, 0x00, 0x0a, // domain id
 
 		// message ("Requested operation is not valid: domain is not running")
@@ -107,7 +107,7 @@ var (
 	}
 
 	testErrorNotFoundMessage = []byte{
-		0x00, 0x00, 0x00, 0x2a, // code (42 ErrDoDmain)
+		0x00, 0x00, 0x00, 0x2a, // code (42 errDoDmain)
 		0x00, 0x00, 0x00, 0x0a, // domain id
 
 		// message
@@ -224,7 +224,7 @@ func TestDecodeEvent(t *testing.T) {
 
 func TestDecodeError(t *testing.T) {
 	expectedMsg := "Requested operation is not valid: domain is not running"
-	expectedCode := ErrOperationInvalid
+	expectedCode := errOperationInvalid
 
 	err := decodeError(testErrorMessage)
 	e := err.(libvirtError)
@@ -238,7 +238,7 @@ func TestDecodeError(t *testing.T) {
 
 func TestErrNotFound(t *testing.T) {
 	err := decodeError(testErrorNotFoundMessage)
-	ok := ErrIsNotFound(err)
+	ok := IsNotFound(err)
 	if !ok {
 		t.Errorf("expected true, got %t", ok)
 	}
