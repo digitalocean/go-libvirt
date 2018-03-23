@@ -113,6 +113,23 @@ type libvirtError struct {
 	Level    uint32
 }
 
+func (e libvirtError) Error() string {
+	return e.Message
+}
+
+func checkError(err error, expectedError errorNumber) bool {
+	e, ok := err.(libvirtError)
+	if ok {
+		return e.Code == uint32(expectedError)
+	}
+	return false
+}
+
+// IsNotFound detects libvirt's ERR_NO_DOMAIN.
+func IsNotFound(err error) bool {
+	return checkError(err, errNoDomain)
+}
+
 // listen processes incoming data and routes
 // responses to their respective callback handler.
 func (l *Libvirt) listen() {
@@ -328,8 +345,12 @@ func decodeError(buf []byte) error {
 	if strings.Contains(e.Message, "unknown procedure") {
 		return ErrUnsupported
 	}
+	// if libvirt returns ERR_OK, ignore the error
+	if checkError(e, errOk) {
+		return nil
+	}
 
-	return errors.New(e.Message)
+	return e
 }
 
 // decodeEvent extracts an event from the given byte slice.
