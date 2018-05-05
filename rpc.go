@@ -356,7 +356,7 @@ func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte, out
 	if outStream != nil {
 		err = <-outStreamErr
 		if err != nil {
-			return response{}, nil
+			return response{}, err
 		}
 	}
 
