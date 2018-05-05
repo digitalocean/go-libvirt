@@ -298,6 +298,27 @@ func (l *Libvirt) request(proc uint32, program uint32, payload []byte) (response
 	return l.requestStream(proc, program, payload, nil, nil)
 }
 
+func (l *Libvirt) processIncomingStream(c chan response, inStream io.Writer) (response, error) {
+	for {
+		resp, err := l.getResponse(c)
+		if err != nil {
+			return resp, err
+		}
+		// StatusOK here means end of stream
+		if resp.Status == StatusOK {
+			return resp, nil
+		}
+		// StatusError is handled in getResponse, so this is StatusContinue
+		// StatusContinue is valid here only for stream packets
+		if inStream != nil {
+			_, err = inStream.Write(resp.Payload)
+			if err != nil {
+				return response{}, err
+			}
+		}
+	}
+}
+
 func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte, outStream io.Reader, inStream io.Writer) (response, error) {
 	serial := l.serial()
 	c := make(chan response)
@@ -315,49 +336,26 @@ func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte, out
 		return resp, err
 	}
 
-	var abortOutStream chan bool
-	var outStreamErr chan error
 	if outStream != nil {
-		abortOutStream = make(chan bool)
-		outStreamErr = make(chan error)
+		abortOutStream := make(chan bool)
+		outStreamErr := make(chan error)
 		go func() {
 			outStreamErr <- l.sendStream(serial, proc, program, outStream, abortOutStream)
 		}()
-	}
 
-	// Even without incoming stream server sends confirmation once all data is received
-	if outStream != nil || inStream != nil {
-		for {
-			resp, err = l.getResponse(c)
-			if err != nil {
-				if outStream != nil {
-					abortOutStream <- true
-				}
-				return resp, err
-			}
-			// Continue is valid here only for stream packets
-			if resp.Status == StatusContinue {
-				if inStream != nil {
-					_, err = inStream.Write(resp.Payload)
-					if err != nil {
-						if outStream != nil {
-							abortOutStream <- true
-						}
-						return response{}, err
-					}
-				}
-			} else {
-				// StatusError is handled in getResponse, so this is StatusOK, end of stream
-				break
-			}
+		// Even without incoming stream server sends confirmation once all data is received
+		resp, err = l.processIncomingStream(c, inStream)
+		if err != nil {
+			abortOutStream <- true
+			return resp, err
 		}
-	}
 
-	if outStream != nil {
 		err = <-outStreamErr
 		if err != nil {
 			return response{}, err
 		}
+	} else if inStream != nil {
+		return l.processIncomingStream(c, inStream)
 	}
 
 	return resp, nil
