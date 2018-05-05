@@ -310,6 +310,10 @@ func (l *Libvirt) processIncomingStream(c chan response, inStream io.Writer) (re
 		}
 		// StatusError is handled in getResponse, so this is StatusContinue
 		// StatusContinue is valid here only for stream packets
+		// libvirtd breaks protocol and returns StatusContinue with empty Payload when stream finishes
+		if len(resp.Payload) == 0 {
+			return resp, nil
+		}
 		if inStream != nil {
 			_, err = inStream.Write(resp.Payload)
 			if err != nil {
