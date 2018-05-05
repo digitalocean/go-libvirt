@@ -364,7 +364,8 @@ func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte, out
 }
 
 func (l *Libvirt) sendStream(serial uint32, proc uint32, program uint32, stream io.Reader, abort chan bool) error {
-	buf := make([]byte, 1<<22-24)
+	// Keep total packet length under 4 MiB to follow possible limitation in libvirt server code
+	buf := make([]byte, 4*MiB-constants.HeaderSize)
 	for {
 		select {
 		case <-abort:
