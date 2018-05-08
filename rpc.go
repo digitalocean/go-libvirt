@@ -174,10 +174,12 @@ func (l *Libvirt) callback(id uint32, res response) {
 	c, ok := l.callbacks[id]
 	l.cm.Unlock()
 	if ok {
+		// we close channel in deregister() so that we don't block here forever without receiver
+		defer func() {
+			recover()
+		}()
 		c <- res
 	}
-
-	l.deregister(id)
 }
 
 // route sends incoming packets to their listeners.
@@ -274,11 +276,107 @@ func (l *Libvirt) deregister(id uint32) {
 // returns response returned by server.
 // if response is not OK, decodes error from it and returns it.
 func (l *Libvirt) request(proc uint32, program uint32, payload []byte) (response, error) {
+	return l.requestStream(proc, program, payload, nil, nil)
+}
+
+func (l *Libvirt) processIncomingStream(c chan response, inStream io.Writer) (response, error) {
+	for {
+		resp, err := l.getResponse(c)
+		if err != nil {
+			return resp, err
+		}
+		// StatusOK here means end of stream
+		if resp.Status == StatusOK {
+			return resp, nil
+		}
+		// StatusError is handled in getResponse, so this is StatusContinue
+		// StatusContinue is valid here only for stream packets
+		// libvirtd breaks protocol and returns StatusContinue with empty Payload when stream finishes
+		if len(resp.Payload) == 0 {
+			return resp, nil
+		}
+		if inStream != nil {
+			_, err = inStream.Write(resp.Payload)
+			if err != nil {
+				return response{}, err
+			}
+		}
+	}
+}
+
+func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte, outStream io.Reader, inStream io.Writer) (response, error) {
 	serial := l.serial()
 	c := make(chan response)
 
 	l.register(serial, c)
+	defer l.deregister(serial)
 
+	err := l.sendPacket(serial, proc, program, payload, Call, StatusOK)
+	if err != nil {
+		return response{}, err
+	}
+
+	resp, err := l.getResponse(c)
+	if err != nil {
+		return resp, err
+	}
+
+	if outStream != nil {
+		abortOutStream := make(chan bool)
+		outStreamErr := make(chan error)
+		go func() {
+			outStreamErr <- l.sendStream(serial, proc, program, outStream, abortOutStream)
+		}()
+
+		// Even without incoming stream server sends confirmation once all data is received
+		resp, err = l.processIncomingStream(c, inStream)
+		if err != nil {
+			abortOutStream <- true
+			return resp, err
+		}
+
+		err = <-outStreamErr
+		if err != nil {
+			return response{}, err
+		}
+	} else if inStream != nil {
+		return l.processIncomingStream(c, inStream)
+	}
+
+	return resp, nil
+}
+
+func (l *Libvirt) sendStream(serial uint32, proc uint32, program uint32, stream io.Reader, abort chan bool) error {
+	// Keep total packet length under 4 MiB to follow possible limitation in libvirt server code
+	buf := make([]byte, 4*MiB-constants.HeaderSize)
+	for {
+		select {
+		case <-abort:
+			return l.sendPacket(serial, proc, program, nil, Stream, StatusError)
+		default:
+		}
+		n, err := stream.Read(buf)
+		if err != nil {
+			if err == io.EOF {
+				return l.sendPacket(serial, proc, program, nil, Stream, StatusOK)
+			}
+			// keep original error
+			err2 := l.sendPacket(serial, proc, program, nil, Stream, StatusError)
+			if err2 != nil {
+				return err2
+			}
+			return err
+		}
+		if n > 0 {
+			err = l.sendPacket(serial, proc, program, buf[:n], Stream, StatusContinue)
+			if err != nil {
+				return err
+			}
+		}
+	}
+}
+
+func (l *Libvirt) sendPacket(serial uint32, proc uint32, program uint32, payload []byte, typ uint32, status uint32) error {
 	size := constants.PacketLengthSize + constants.HeaderSize
 	if payload != nil {
 		size += len(payload)
@@ -290,9 +388,9 @@ func (l *Libvirt) request(proc uint32, program uint32, payload []byte) (response
 			Program:   program,
 			Version:   constants.ProtocolVersion,
 			Procedure: proc,
-			Type:      Call,
+			Type:      typ,
 			Serial:    serial,
-			Status:    StatusOK,
+			Status:    status,
 		},
 	}
 
@@ -301,23 +399,23 @@ func (l *Libvirt) request(proc uint32, program uint32, payload []byte) (response
 	defer l.mu.Unlock()
 	err := binary.Write(l.w, binary.BigEndian, p)
 	if err != nil {
-		return response{}, err
+		return err
 	}
 
 	// write payload
 	if payload != nil {
 		err = binary.Write(l.w, binary.BigEndian, payload)
 		if err != nil {
-			return response{}, err
+			return err
 		}
 	}
 
-	if err := l.w.Flush(); err != nil {
-		return response{}, err
-	}
+	return l.w.Flush()
+}
 
+func (l *Libvirt) getResponse(c chan response) (response, error) {
 	resp := <-c
-	if resp.Status != StatusOK {
+	if resp.Status == StatusError {
 		return resp, decodeError(resp.Payload)
 	}
 

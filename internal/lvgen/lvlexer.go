@@ -259,12 +259,19 @@ func lexText(l *Lexer) stateFn {
 
 // lexBlockComment is used when we find a comment marker '/*' in the input.
 func lexBlockComment(l *Lexer) stateFn {
+	// Double star is used only at the start of metadata comments
+	metadataComment := strings.HasPrefix(l.input[l.pos:], "/**")
 	for {
 		if strings.HasPrefix(l.input[l.pos:], "*/") {
-			// Found the end. Advance past the '*/' and discard the comment body.
+			// Found the end. Advance past the '*/' and discard the comment body
+			// unless it's a metadata comment
 			l.next()
 			l.next()
-			l.ignore()
+			if metadataComment {
+				l.emit(METADATACOMMENT)
+			} else {
+				l.ignore()
+			}
 			return lexText
 		}
 		if l.next() == eof {

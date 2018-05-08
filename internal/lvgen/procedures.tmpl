@@ -23,6 +23,7 @@ package libvirt
 import (
 	"bytes"
 	"fmt"
+	"io"
 
 	"github.com/davecgh/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/internal/constants"
@@ -126,9 +127,15 @@ func decodeTypedParams(dec *xdr.Decoder) ([]TypedParam, error) {
 	return params, nil
 }
 
-{{range .Procs}}
+{{range $proc := .Procs}}
 // {{.Name}} is the go wrapper for {{.LVName}}.
-func (l *Libvirt) {{.Name}}({{range $ix, $arg := .Args}}{{if $ix}}, {{end}}{{.Name}} {{.Type}}{{end}}) ({{range .Ret}}r{{.Name}} {{.Type}}, {{end}}err error) {
+func (l *Libvirt) {{.Name}}(
+  {{- range $ix, $arg := .Args}}
+    {{- if (eq $ix $proc.WriteStreamIdx)}}{{if $ix}}, {{end}}outStream io.Reader{{end}}
+    {{- if (eq $ix $proc.ReadStreamIdx)}}{{if $ix}}, {{end}}inStream io.Writer{{end}}
+    {{- if $ix}}, {{end}}{{.Name}} {{.Type}}
+  {{- end -}}
+) ({{range .Ret}}r{{.Name}} {{.Type}}, {{end}}err error) {
 	var buf []byte
 {{if .ArgsStruct}}
 	args := {{.ArgsStruct}} {
@@ -141,7 +148,10 @@ func (l *Libvirt) {{.Name}}({{range $ix, $arg := .Args}}{{if $ix}}, {{end}}{{.Na
 	}
 {{end}}
 {{if .RetStruct}}	var r response{{end}}
-	{{if .RetStruct}}r{{else}}_{{end}}, err = l.request({{.Num}}, constants.Program, buf)
+	{{if .RetStruct}}r{{else}}_{{end}}, err = l.requestStream({{.Num}}, constants.Program, buf,
+    {{- if (ne .WriteStreamIdx -1)}} outStream,{{else}} nil,{{end}}
+    {{- if (ne .ReadStreamIdx -1)}} inStream{{else}} nil{{end -}}
+    )
 	if err != nil {
 		return
 	}

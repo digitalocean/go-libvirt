@@ -17,6 +17,7 @@
 package libvirt
 
 import (
+	"bytes"
 	"encoding/xml"
 	"net"
 	"sync"
@@ -249,6 +250,58 @@ func TestXMLIntegration(t *testing.T) {
 	var v interface{}
 	if err := xml.Unmarshal(data, &v); err != nil {
 		t.Error(err)
+	}
+}
+
+func TestVolumeUploadDownloadIntegration(t *testing.T) {
+	testdata := []byte("Hello, world!")
+	l := New(testConn(t))
+
+	if err := l.Connect(); err != nil {
+		t.Error(err)
+	}
+	defer l.Disconnect()
+
+	pool, err := l.StoragePool("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var volObj struct {
+		XMLName  xml.Name `xml:"volume"`
+		Name     string   `xml:"name"`
+		Capacity struct {
+			Value uint64 `xml:",chardata"`
+		} `xml:"capacity"`
+		Target struct {
+			Format struct {
+				Type string `xml:"type,attr"`
+			} `xml:"format"`
+		} `xml:"target"`
+	}
+	volObj.Name = "testvol"
+	volObj.Capacity.Value = uint64(len(testdata))
+	volObj.Target.Format.Type = "raw"
+	xmlVol, err := xml.Marshal(volObj)
+	if err != nil {
+		t.Fatal(err)
+	}
+	vol, err := l.StorageVolCreateXML(pool, string(xmlVol), 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.StorageVolDelete(vol, 0)
+	err = l.StorageVolUpload(vol, bytes.NewBuffer(testdata), 0, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	err = l.StorageVolDownload(vol, &buf, 0, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Compare(testdata, buf.Bytes()) != 0 {
+		t.Fatal("download not what we uploaded")
 	}
 }
 
