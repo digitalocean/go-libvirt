@@ -3,7 +3,7 @@ libvirt [![GoDoc](http://godoc.org/github.com/digitalocean/go-libvirt?status.svg
 
 Package `go-libvirt` provides a pure Go interface for interacting with libvirt.
 
-Rather than using Libvirt's C bindings, this package makes use of
+Rather than using libvirt's C bindings, this package makes use of
 libvirt's RPC interface, as documented [here](https://libvirt.org/internals/rpc.html).
 Connections to the libvirt server may be local, or remote. RPC packets are encoded
 using the XDR standard as defined by [RFC 4506](https://tools.ietf.org/html/rfc4506.html).
@@ -20,6 +20,7 @@ and produces go bindings for all the remote procedures defined there.
 
 How to Use This Library
 -----------------------
+
 Once you've vendored go-libvirt into your project, you'll probably want to call
 some libvirt functions. There's some example code below showing how to connect
 to libvirt and make one such call, but once you get past the introduction you'll
@@ -108,8 +109,9 @@ import (
 )
 
 func main() {
-	//c, err := net.DialTimeout("tcp", "127.0.0.1:16509", 2*time.Second)
-	//c, err := net.DialTimeout("tcp", "192.168.1.12:16509", 2*time.Second)
+	// This dials libvirt on the local machine, but you can substitute the first
+	// two parameters with "tcp", "<ip address>:<port>" to connect to libvirt on
+	// a remote machine.
 	c, err := net.DialTimeout("unix", "/var/run/libvirt/libvirt-sock", 2*time.Second)
 	if err != nil {
 		log.Fatalf("failed to dial libvirt: %v", err)
