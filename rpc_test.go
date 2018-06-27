@@ -375,4 +375,28 @@ func TestLookup(t *testing.T) {
 	if d.Name != name {
 		t.Errorf("expected domain %s, got %s", name, d.Name)
 	}
+
+	// The callback should now be deregistered.
+	if _, ok := l.callbacks[id]; ok {
+		t.Error("expected callback to deregister")
+	}
+}
+
+func TestDeregisterAll(t *testing.T) {
+	conn := libvirttest.New()
+	c1 := make(chan response)
+	c2 := make(chan response)
+	l := New(conn)
+	if len(l.callbacks) != 0 {
+		t.Error("expected callback map to be empty at test start")
+	}
+	l.register(1, c1)
+	l.register(2, c2)
+	if len(l.callbacks) != 2 {
+		t.Error("expected callback map to have 2 entries after inserts")
+	}
+	l.deregisterAll()
+	if len(l.callbacks) != 0 {
+		t.Error("expected callback map to be empty after deregisterAll")
+	}
 }

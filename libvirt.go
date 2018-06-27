@@ -1,4 +1,4 @@
-// Copyright 2016 The go-libvirt Authors.
+// Copyright 2018 The go-libvirt Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -123,6 +123,10 @@ func (l *Libvirt) Disconnect() error {
 			return err
 		}
 	}
+
+	// Deregister all the callbacks so that clients with outstanding requests
+	// will unblock.
+	l.deregisterAll()
 
 	_, err := l.request(constants.ProcConnectClose, constants.Program, nil)
 	if err != nil {

@@ -1,4 +1,4 @@
-// Copyright 2016 The go-libvirt Authors.
+// Copyright 2018 The go-libvirt Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -117,6 +117,9 @@ func (e libvirtError) Error() string {
 	return e.Message
 }
 
+// checkError is used to check whether an error is a libvirtError, and if it is,
+// whether its error code matches the one passed in. It will return false if
+// these conditions are not met.
 func checkError(err error, expectedError errorNumber) bool {
 	e, ok := err.(libvirtError)
 	if ok {
@@ -140,6 +143,7 @@ func (l *Libvirt) listen() {
 			// When the underlying connection EOFs or is closed, stop
 			// this goroutine
 			if err == io.EOF || strings.Contains(err.Error(), "use of closed network connection") {
+				l.deregisterAll()
 				return
 			}
 
@@ -267,8 +271,24 @@ func (l *Libvirt) register(id uint32, c chan response) {
 // deregister destroys a method response callback
 func (l *Libvirt) deregister(id uint32) {
 	l.cm.Lock()
-	close(l.callbacks[id])
-	delete(l.callbacks, id)
+	if _, ok := l.callbacks[id]; ok {
+		close(l.callbacks[id])
+		delete(l.callbacks, id)
+	}
+	l.cm.Unlock()
+}
+
+// deregisterAll closes all the waiting callback channels. This is used to clean
+// up if the connection to libvirt is lost. Callers waiting for responses will
+// return an error when the response channel is closed, rather than just
+// hanging.
+func (l *Libvirt) deregisterAll() {
+	l.cm.Lock()
+	for id := range l.callbacks {
+		// can't call deregister() here because we're already holding the lock.
+		close(l.callbacks[id])
+		delete(l.callbacks, id)
+	}
 	l.cm.Unlock()
 }
 
@@ -304,7 +324,11 @@ func (l *Libvirt) processIncomingStream(c chan response, inStream io.Writer) (re
 	}
 }
 
-func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte, outStream io.Reader, inStream io.Writer) (response, error) {
+// requestStream performs a libvirt RPC request. The outStream and inStream
+// parameters are optional, and should be nil for RPC endpoints that don't
+// return a stream.
+func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte,
+	outStream io.Reader, inStream io.Writer) (response, error) {
 	serial := l.serial()
 	c := make(chan response)
 
