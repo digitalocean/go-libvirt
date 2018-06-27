@@ -117,6 +117,9 @@ func (e libvirtError) Error() string {
 	return e.Message
 }
 
+// checkError is used to check whether an error is a libvirtError, and if it is,
+// whether its error code matches the one passed in. It will return false if
+// these conditions are not met.
 func checkError(err error, expectedError errorNumber) bool {
 	e, ok := err.(libvirtError)
 	if ok {
@@ -268,8 +271,10 @@ func (l *Libvirt) register(id uint32, c chan response) {
 // deregister destroys a method response callback
 func (l *Libvirt) deregister(id uint32) {
 	l.cm.Lock()
-	close(l.callbacks[id])
-	delete(l.callbacks, id)
+	if _, ok := l.callbacks[id]; ok {
+		close(l.callbacks[id])
+		delete(l.callbacks, id)
+	}
 	l.cm.Unlock()
 }
 
@@ -319,7 +324,11 @@ func (l *Libvirt) processIncomingStream(c chan response, inStream io.Writer) (re
 	}
 }
 
-func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte, outStream io.Reader, inStream io.Writer) (response, error) {
+// requestStream performs a libvirt RPC request. The outStream and inStream
+// parameters are optional, and should be nil for RPC endpoints that don't
+// return a stream.
+func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte,
+	outStream io.Reader, inStream io.Writer) (response, error) {
 	serial := l.serial()
 	c := make(chan response)
 
