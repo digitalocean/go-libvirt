@@ -143,7 +143,6 @@ func (l *Libvirt) listen() {
 			// When the underlying connection EOFs or is closed, stop
 			// this goroutine
 			if err == io.EOF || strings.Contains(err.Error(), "use of closed network connection") {
-				l.deregisterAll()
 				return
 			}
 
