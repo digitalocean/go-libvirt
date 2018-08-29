@@ -140,7 +140,7 @@ func main() {
 	}
 
 	if err := l.Disconnect(); err != nil {
-		log.Fatal("failed to disconnect: %v", err)
+		log.Fatalf("failed to disconnect: %v", err)
 	}
 }
 
