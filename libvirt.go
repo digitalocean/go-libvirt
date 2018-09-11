@@ -114,6 +114,40 @@ func (l *Libvirt) Connect() error {
 	return nil
 }
 
+// Hack of the Connect function to connect to user session
+// Remember to connect to the correct libvirt socket
+// (i.e. /var/run/user/1000/libvirt.... instead of /var/run/libvirt...)
+func (l *Libvirt) ConnectSession() error {
+	payload := struct {
+		Padding [3]byte
+		Name    string
+		Flags   uint32
+	}{
+		Padding: [3]byte{0x1, 0x0, 0x0},
+		Name:    "qemu:///session",
+		Flags:   0,
+	}
+
+	buf, err := encode(&payload)
+	if err != nil {
+		return err
+	}
+
+	// libvirt requires that we call auth-list prior to connecting,
+	// event when no authentication is used.
+	_, err = l.request(constants.ProcAuthList, constants.Program, buf)
+	if err != nil {
+		return err
+	}
+
+	_, err = l.request(constants.ProcConnectOpen, constants.Program, buf)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 // Disconnect shuts down communication with the libvirt server and closes the
 // underlying net.Conn.
 func (l *Libvirt) Disconnect() error {
