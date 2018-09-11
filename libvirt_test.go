@@ -34,6 +34,16 @@ func TestConnect(t *testing.T) {
 	}
 }
 
+func TestConnectSession(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	err := l.ConnectSession()
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestDisconnect(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
