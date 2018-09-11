@@ -112,6 +112,9 @@ func main() {
 	// This dials libvirt on the local machine, but you can substitute the first
 	// two parameters with "tcp", "<ip address>:<port>" to connect to libvirt on
 	// a remote machine.
+  // To connect to the qemu user session, substitute the correct socket location
+  // i.e. "/var/run/user/1000/libvirt/libvirt-sock"
+  // and use the "l.ConnectSession" function instead of "l.Connect"
 	c, err := net.DialTimeout("unix", "/var/run/libvirt/libvirt-sock", 2*time.Second)
 	if err != nil {
 		log.Fatalf("failed to dial libvirt: %v", err)

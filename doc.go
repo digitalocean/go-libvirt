@@ -40,13 +40,15 @@
 	func main() {
 		//c, err := net.DialTimeout("tcp", "127.0.0.1:16509", 2*time.Second)
 		//c, err := net.DialTimeout("tcp", "192.168.1.12:16509", 2*time.Second)
-		c, err := net.DialTimeout("unix", "/var/run/libvirt/libvirt-sock", 2*time.Second)
+		//c, err := net.DialTimeout("unix", "/var/run/libvirt/libvirt-sock", 2*time.Second)
+		c, err := net.DialTimeout("unix", "/var/run/user/1000/libvirt/libvirt-sock", 2*time.Second)
 		if err != nil {
 			log.Fatalf("failed to dial libvirt: %v", err)
 		}
 
 		l := libvirt.New(c)
-		if err := l.Connect(); err != nil {
+		if err := l.ConnectSession(); err != nil {
+		//if err := l.Connect(); err != nil {
 			log.Fatalf("failed to connect: %v", err)
 		}
 
