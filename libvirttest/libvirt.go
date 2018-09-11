@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/p0rtalgun/go-libvirt/internal/constants"
 )
 
 var testDomainResponse = []byte{

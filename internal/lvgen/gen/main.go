@@ -19,7 +19,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/digitalocean/go-libvirt/internal/lvgen"
+	"github.com/p0rtalgun/go-libvirt/internal/lvgen"
 )
 
 const protoPath = "src/remote/remote_protocol.x"
