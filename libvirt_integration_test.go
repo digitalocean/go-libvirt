@@ -24,7 +24,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/p0rtalgun/go-libvirt/internal/constants"
 )
 
 const testAddr = "127.0.0.1:16509"
@@ -306,7 +306,7 @@ func TestVolumeUploadDownloadIntegration(t *testing.T) {
 }
 
 // verify we're able to concurrently communicate with libvirtd.
-// see: https://github.com/digitalocean/go-libvirt/pull/52
+// see: https://github.com/p0rtalgun/go-libvirt/pull/52
 func Test_concurrentWrite(t *testing.T) {
 	l := New(testConn(t))
 

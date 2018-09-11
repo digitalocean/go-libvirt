@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/digitalocean/go-libvirt/internal/constants"
-	"github.com/digitalocean/go-libvirt/libvirttest"
+	"github.com/p0rtalgun/go-libvirt/internal/constants"
+	"github.com/p0rtalgun/go-libvirt/libvirttest"
 )
 
 func TestConnect(t *testing.T) {
