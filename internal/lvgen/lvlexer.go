@@ -137,7 +137,7 @@ func (l *Lexer) Error(s string) {
 // the items channel, and sets the state to nil, which stops the lexer's state
 // machine.
 func (l *Lexer) errorf(format string, args ...interface{}) stateFn {
-	l.items <- item{ERROR, fmt.Sprintf(format, args), l.line, l.column}
+	l.items <- item{ERROR, fmt.Sprintf(format, args...), l.line, l.column}
 	return nil
 }
 
