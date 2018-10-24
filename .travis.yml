@@ -19,7 +19,7 @@ env:
     - LIBVIRT=3.1.0  EXT=xz
 
 before_install:
-  - go get github.com/golang/lint/golint
+  - go get golang.org/x/lint/golint
   - go get golang.org/x/tools/cmd/goyacc
 
 install:
