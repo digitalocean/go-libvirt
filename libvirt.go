@@ -29,8 +29,8 @@ import (
 	"net"
 	"sync"
 
-	"github.com/davecgh/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 )
 
 // ErrEventsNotSupported is returned by Events() if event streams
@@ -429,7 +429,7 @@ func (l *Libvirt) SetBlockIOTune(dom string, disk string, limits ...BlockLimit) 
 	params := make([]TypedParam, len(limits))
 	for ix, limit := range limits {
 		tpval := NewTypedParamValueUllong(limit.Value)
-		params[ix] = TypedParam{Field: limit.Name, Value: tpval}
+		params[ix] = TypedParam{Field: limit.Name, Value: *tpval}
 	}
 
 	return l.DomainSetBlockIOTune(d, disk, params, uint32(DomainAffectLive))
@@ -457,9 +457,9 @@ func (l *Libvirt) GetBlockIOTune(dom string, disk string) ([]BlockLimit, error) 
 	for _, lim := range lims {
 		var l BlockLimit
 		name := lim.Field
-		switch lim.Value.Get().(type) {
+		switch lim.Value.I.(type) {
 		case uint64:
-			l = BlockLimit{Name: name, Value: lim.Value.Get().(uint64)}
+			l = BlockLimit{Name: name, Value: lim.Value.I.(uint64)}
 		}
 		limits = append(limits, l)
 	}

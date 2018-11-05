@@ -19,7 +19,9 @@ read -r -d '' EXPECTED <<EndOfLicense
 EndOfLicense
 
 EXIT=0
-GOFILES=$(find . -name "*.go")
+# The go-xdr library is a forked version of a public library, and has it's own
+# license. Skip its files.
+GOFILES=$(find . -name "*.go" -not -path "./internal/go-xdr/*")
 
 for FILE in $GOFILES; do
 	BLOCK=$(head -n 20 $FILE)

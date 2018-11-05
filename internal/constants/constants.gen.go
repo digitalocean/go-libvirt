@@ -1,4 +1,4 @@
-// Copyright 2017 The go-libvirt Authors.
+// Copyright 2018 The go-libvirt Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,9 +18,32 @@
 // To regenerate, run 'go generate' in internal/lvgen.
 //
 
-// Package constants contains libvirt procedure identifiers and other enums and
-// constants.
 package constants
+
+// qemu constants
+const (
+	ProgramQEMU      = 0x20008087
+	ProgramKeepAlive = 0x6b656570
+)
+
+// qemu procedure identifiers
+const (
+	QEMUDomainMonitor                       = 1
+	QEMUConnectDomainMonitorEventRegister   = 4
+	QEMUConnectDomainMonitorEventDeregister = 5
+	QEMUDomainMonitorEvent                  = 6
+)
+
+const (
+	// PacketLengthSize is the packet length, in bytes.
+	PacketLengthSize = 4
+
+	// HeaderSize is the packet header size, in bytes.
+	HeaderSize = 24
+
+	// UUIDSize is the length of a UUID, in bytes.
+	UUIDSize = 16
+)
 
 // These are libvirt procedure numbers which correspond to each respective
 // API call between remote_internal driver and libvirtd. Each procedure is
@@ -819,6 +842,28 @@ const (
 	ProcDomainManagedSaveDefineXML = 389
 	// ProcDomainSetLifecycleAction is libvirt's REMOTE_PROC_DOMAIN_SET_LIFECYCLE_ACTION
 	ProcDomainSetLifecycleAction = 390
+	// ProcStoragePoolLookupByTargetPath is libvirt's REMOTE_PROC_STORAGE_POOL_LOOKUP_BY_TARGET_PATH
+	ProcStoragePoolLookupByTargetPath = 391
+	// ProcDomainDetachDeviceAlias is libvirt's REMOTE_PROC_DOMAIN_DETACH_DEVICE_ALIAS
+	ProcDomainDetachDeviceAlias = 392
+	// ProcConnectCompareHypervisorCPU is libvirt's REMOTE_PROC_CONNECT_COMPARE_HYPERVISOR_CPU
+	ProcConnectCompareHypervisorCPU = 393
+	// ProcConnectBaselineHypervisorCPU is libvirt's REMOTE_PROC_CONNECT_BASELINE_HYPERVISOR_CPU
+	ProcConnectBaselineHypervisorCPU = 394
+	// ProcNodeGetSevInfo is libvirt's REMOTE_PROC_NODE_GET_SEV_INFO
+	ProcNodeGetSevInfo = 395
+	// ProcDomainGetLaunchSecurityInfo is libvirt's REMOTE_PROC_DOMAIN_GET_LAUNCH_SECURITY_INFO
+	ProcDomainGetLaunchSecurityInfo = 396
+	// ProcNwfilterBindingLookupByPortDev is libvirt's REMOTE_PROC_NWFILTER_BINDING_LOOKUP_BY_PORT_DEV
+	ProcNwfilterBindingLookupByPortDev = 397
+	// ProcNwfilterBindingGetXMLDesc is libvirt's REMOTE_PROC_NWFILTER_BINDING_GET_XML_DESC
+	ProcNwfilterBindingGetXMLDesc = 398
+	// ProcNwfilterBindingCreateXML is libvirt's REMOTE_PROC_NWFILTER_BINDING_CREATE_XML
+	ProcNwfilterBindingCreateXML = 399
+	// ProcNwfilterBindingDelete is libvirt's REMOTE_PROC_NWFILTER_BINDING_DELETE
+	ProcNwfilterBindingDelete = 400
+	// ProcConnectListAllNwfilterBindings is libvirt's REMOTE_PROC_CONNECT_LIST_ALL_NWFILTER_BINDINGS
+	ProcConnectListAllNwfilterBindings = 401
 
 
 	// From consts:
@@ -850,6 +895,8 @@ const (
 	NodeDeviceCapsListMax = 65536
 	// NwfilterListMax is libvirt's REMOTE_NWFILTER_LIST_MAX
 	NwfilterListMax = 16384
+	// NwfilterBindingListMax is libvirt's REMOTE_NWFILTER_BINDING_LIST_MAX
+	NwfilterBindingListMax = 16384
 	// DomainSchedulerParametersMax is libvirt's REMOTE_DOMAIN_SCHEDULER_PARAMETERS_MAX
 	DomainSchedulerParametersMax = 16
 	// DomainBlkioParametersMax is libvirt's REMOTE_DOMAIN_BLKIO_PARAMETERS_MAX
@@ -928,6 +975,10 @@ const (
 	DomainIPAddrMax = 2048
 	// DomainGuestVcpuParamsMax is libvirt's REMOTE_DOMAIN_GUEST_VCPU_PARAMS_MAX
 	DomainGuestVcpuParamsMax = 64
+	// NodeSevInfoMax is libvirt's REMOTE_NODE_SEV_INFO_MAX
+	NodeSevInfoMax = 64
+	// DomainLaunchSecurityInfoParamsMax is libvirt's REMOTE_DOMAIN_LAUNCH_SECURITY_INFO_PARAMS_MAX
+	DomainLaunchSecurityInfoParamsMax = 64
 	// DomainEventGraphicsIdentityMax is libvirt's REMOTE_DOMAIN_EVENT_GRAPHICS_IDENTITY_MAX
 	DomainEventGraphicsIdentityMax = 20
 	// Program is libvirt's REMOTE_PROGRAM

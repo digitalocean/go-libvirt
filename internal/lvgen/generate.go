@@ -254,9 +254,7 @@ func Generate(proto io.Reader) error {
 	}
 	defer procFile.Close()
 
-	err = genGo(constFile, procFile)
-
-	return err
+	return genGo(constFile, procFile)
 }
 
 // genGo is called when the parsing is done; it generates the golang output
