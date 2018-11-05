@@ -1,4 +1,4 @@
-// Copyright 2016 The go-libvirt Authors.
+// Copyright 2016-2018 The go-libvirt Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -469,5 +469,43 @@ func TestGetBlockIOTune(t *testing.T) {
 	lim := BlockLimit{"write_bytes_sec", 500000}
 	if limits[2] != lim {
 		t.Fatalf("unexpected result in limits list: %v", limits[2])
+	}
+}
+
+// ConnectGetAllDomainStats is a good test, since its return values include an
+// array of TypedParams embedded in a struct.
+func TestConnectGetAllDomainStats(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	doms, _, err := l.ConnectListAllDomains(1, 0)
+	if err != nil {
+		t.Fatalf("unexpected error listing all domains")
+	}
+
+	stats, err := l.ConnectGetAllDomainStats(doms, uint32(DomainStatsState), 0)
+	if err != nil {
+		t.Fatalf("unexpected error getting domain stats")
+	}
+
+	// Verify that the stats records we got back look like this:
+	// [{state.state {1 1}} {state.reason {1 2}}]
+	// [{state.state {1 1}} {state.reason {1 1}}]
+	if len(stats) != 2 {
+		t.Fatalf("expected 2 domain stats records, got %d", len(stats))
+	}
+
+	tp1 := NewTypedParamValueInt(1)
+	if stats[1].Params[0].Field != "state.state" {
+		t.Fatalf("unexpected domain statistic %v", stats[1].Params[0].Field)
+	}
+	if stats[1].Params[1].Field != "state.reason" {
+		t.Fatalf("unexpected domain statistic %v", stats[1].Params[1].Field)
+	}
+	if stats[1].Params[0].Value != *tp1 {
+		t.Fatalf("unexpected typed param value %v", stats[1].Params[0].Value)
+	}
+	if stats[1].Params[1].Value != *tp1 {
+		t.Fatalf("unexpected typed param value %v", stats[1].Params[1].Value)
 	}
 }

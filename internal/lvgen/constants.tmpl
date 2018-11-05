@@ -18,9 +18,32 @@
 // To regenerate, run 'go generate' in internal/lvgen.
 //
 
-// Package constants contains libvirt procedure identifiers and other enums and
-// constants.
 package constants
+
+// qemu constants
+const (
+	ProgramQEMU      = 0x20008087
+	ProgramKeepAlive = 0x6b656570
+)
+
+// qemu procedure identifiers
+const (
+	QEMUDomainMonitor                       = 1
+	QEMUConnectDomainMonitorEventRegister   = 4
+	QEMUConnectDomainMonitorEventDeregister = 5
+	QEMUDomainMonitorEvent                  = 6
+)
+
+const (
+	// PacketLengthSize is the packet length, in bytes.
+	PacketLengthSize = 4
+
+	// HeaderSize is the packet header size, in bytes.
+	HeaderSize = 24
+
+	// UUIDSize is the length of a UUID, in bytes.
+	UUIDSize = 16
+)
 
 // These are libvirt procedure numbers which correspond to each respective
 // API call between remote_internal driver and libvirtd. Each procedure is

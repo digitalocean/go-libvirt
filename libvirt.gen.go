@@ -24,14 +24,88 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"reflect"
 
-	"github.com/davecgh/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 )
 
 const (
 	VirUUIDBuflen = 16
 )
+
+type typedParamDecoder struct {}
+
+// decodeTypedParam decodes a TypedParam. These are part of the libvirt spec,
+// and not xdr proper. TypedParams contain a name, which is called Field for
+// some reason, and a Value, which itself has a "discriminant" - an integer enum
+// encoding the actual type, and a value, the length of which varies based on
+// the actual type.
+func (tpd typedParamDecoder) Decode(d *xdr.Decoder, v reflect.Value) (int, error) {
+	// Get the name of the typed param first
+	name, n, err := d.DecodeString()
+	if err != nil {
+		return n, err
+	}
+	//fmt.Println("***GAH*** decoding", name)
+	val, n2, err := tpd.decodeTypedParamValue(d)
+	n += n2
+	if err != nil {
+		return n, err
+	}
+	tp := &TypedParam{Field: name, Value: *val}
+	v.Set(reflect.ValueOf(*tp))
+
+	return n, nil
+}
+
+// decodeTypedParamValue decodes the Value part of a TypedParam.
+func (typedParamDecoder) decodeTypedParamValue(d *xdr.Decoder) (*TypedParamValue, int, error) {
+	// All TypedParamValues begin with a uint32 discriminant that tells us what
+	// type they are.
+	discriminant, n, err := d.DecodeUint()
+	if err != nil {
+		return nil, n, err
+	}
+	var n2 int
+	var tpv *TypedParamValue
+	switch discriminant {
+	case 1:
+		var val int32
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 2:
+		var val uint32
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 3:
+		var val int64
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 4:
+		var val uint64
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 5:
+		var val float64
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 6:
+		var val int32
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 7:
+		var val string
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+
+	default:
+		err = fmt.Errorf("invalid parameter type %v", discriminant)
+	}
+	n += n2
+
+	return tpv, n, err
+}
 
 //
 // Typedefs:
@@ -46,6 +120,8 @@ type OptDomain []Domain
 type OptNetwork []Network
 // OptNwfilter is libvirt's remote_nwfilter
 type OptNwfilter []Nwfilter
+// OptNwfilterBinding is libvirt's remote_nwfilter_binding
+type OptNwfilterBinding []NwfilterBinding
 // OptStoragePool is libvirt's remote_storage_pool
 type OptStoragePool []StoragePool
 // OptStorageVol is libvirt's remote_storage_vol
@@ -83,6 +159,12 @@ type Network struct {
 type Nwfilter struct {
 	Name string
 	UUID UUID
+}
+
+// NwfilterBinding is libvirt's remote_nonnull_nwfilter_binding
+type NwfilterBinding struct {
+	Portdev string
+	Filtername string
 }
 
 // Interface is libvirt's remote_nonnull_interface
@@ -1185,6 +1267,13 @@ type DomainUpdateDeviceFlagsArgs struct {
 	Flags DomainDeviceModifyFlags
 }
 
+// DomainDetachDeviceAliasArgs is libvirt's remote_domain_detach_device_alias_args
+type DomainDetachDeviceAliasArgs struct {
+	Dom Domain
+	Alias string
+	Flags uint32
+}
+
 // DomainGetAutostartArgs is libvirt's remote_domain_get_autostart_args
 type DomainGetAutostartArgs struct {
 	Dom Domain
@@ -1750,6 +1839,16 @@ type StoragePoolLookupByVolumeRet struct {
 	Pool StoragePool
 }
 
+// StoragePoolLookupByTargetPathArgs is libvirt's remote_storage_pool_lookup_by_target_path_args
+type StoragePoolLookupByTargetPathArgs struct {
+	Path string
+}
+
+// StoragePoolLookupByTargetPathRet is libvirt's remote_storage_pool_lookup_by_target_path_ret
+type StoragePoolLookupByTargetPathRet struct {
+	Pool StoragePool
+}
+
 // StoragePoolCreateXMLArgs is libvirt's remote_storage_pool_create_xml_args
 type StoragePoolCreateXMLArgs struct {
 	XML string
@@ -2058,7 +2157,7 @@ type NodeDeviceGetParentArgs struct {
 
 // NodeDeviceGetParentRet is libvirt's remote_node_device_get_parent_ret
 type NodeDeviceGetParentRet struct {
-	Parent OptString
+	ParentName OptString
 }
 
 // NodeDeviceNumOfCapsArgs is libvirt's remote_node_device_num_of_caps_args
@@ -2898,7 +2997,7 @@ type StorageVolUploadArgs struct {
 	Vol StorageVol
 	Offset uint64
 	Length uint64
-	Flags uint32
+	Flags StorageVolUploadFlags
 }
 
 // StorageVolDownloadArgs is libvirt's remote_storage_vol_download_args
@@ -2906,7 +3005,7 @@ type StorageVolDownloadArgs struct {
 	Vol StorageVol
 	Offset uint64
 	Length uint64
-	Flags uint32
+	Flags StorageVolDownloadFlags
 }
 
 // DomainGetStateArgs is libvirt's remote_domain_get_state_args
@@ -3728,213 +3827,156 @@ type DomainSetLifecycleActionArgs struct {
 	Flags DomainModificationImpact
 }
 
+// ConnectCompareHypervisorCPUArgs is libvirt's remote_connect_compare_hypervisor_cpu_args
+type ConnectCompareHypervisorCPUArgs struct {
+	Emulator OptString
+	Arch OptString
+	Machine OptString
+	Virttype OptString
+	XMLCPU string
+	Flags uint32
+}
+
+// ConnectCompareHypervisorCPURet is libvirt's remote_connect_compare_hypervisor_cpu_ret
+type ConnectCompareHypervisorCPURet struct {
+	Result int32
+}
+
+// ConnectBaselineHypervisorCPUArgs is libvirt's remote_connect_baseline_hypervisor_cpu_args
+type ConnectBaselineHypervisorCPUArgs struct {
+	Emulator OptString
+	Arch OptString
+	Machine OptString
+	Virttype OptString
+	XMLCPUs []string
+	Flags uint32
+}
+
+// ConnectBaselineHypervisorCPURet is libvirt's remote_connect_baseline_hypervisor_cpu_ret
+type ConnectBaselineHypervisorCPURet struct {
+	CPU string
+}
+
+// NodeGetSevInfoArgs is libvirt's remote_node_get_sev_info_args
+type NodeGetSevInfoArgs struct {
+	Nparams int32
+	Flags uint32
+}
+
+// NodeGetSevInfoRet is libvirt's remote_node_get_sev_info_ret
+type NodeGetSevInfoRet struct {
+	Params []TypedParam
+	Nparams int32
+}
+
+// DomainGetLaunchSecurityInfoArgs is libvirt's remote_domain_get_launch_security_info_args
+type DomainGetLaunchSecurityInfoArgs struct {
+	Dom Domain
+	Flags uint32
+}
+
+// DomainGetLaunchSecurityInfoRet is libvirt's remote_domain_get_launch_security_info_ret
+type DomainGetLaunchSecurityInfoRet struct {
+	Params []TypedParam
+}
+
+// NwfilterBindingLookupByPortDevArgs is libvirt's remote_nwfilter_binding_lookup_by_port_dev_args
+type NwfilterBindingLookupByPortDevArgs struct {
+	Name string
+}
+
+// NwfilterBindingLookupByPortDevRet is libvirt's remote_nwfilter_binding_lookup_by_port_dev_ret
+type NwfilterBindingLookupByPortDevRet struct {
+	OptNwfilter NwfilterBinding
+}
+
+// NwfilterBindingCreateXMLArgs is libvirt's remote_nwfilter_binding_create_xml_args
+type NwfilterBindingCreateXMLArgs struct {
+	XML string
+	Flags uint32
+}
+
+// NwfilterBindingCreateXMLRet is libvirt's remote_nwfilter_binding_create_xml_ret
+type NwfilterBindingCreateXMLRet struct {
+	OptNwfilter NwfilterBinding
+}
+
+// NwfilterBindingDeleteArgs is libvirt's remote_nwfilter_binding_delete_args
+type NwfilterBindingDeleteArgs struct {
+	OptNwfilter NwfilterBinding
+}
+
+// NwfilterBindingGetXMLDescArgs is libvirt's remote_nwfilter_binding_get_xml_desc_args
+type NwfilterBindingGetXMLDescArgs struct {
+	OptNwfilter NwfilterBinding
+	Flags uint32
+}
+
+// NwfilterBindingGetXMLDescRet is libvirt's remote_nwfilter_binding_get_xml_desc_ret
+type NwfilterBindingGetXMLDescRet struct {
+	XML string
+}
+
+// ConnectListAllNwfilterBindingsArgs is libvirt's remote_connect_list_all_nwfilter_bindings_args
+type ConnectListAllNwfilterBindingsArgs struct {
+	NeedResults int32
+	Flags uint32
+}
+
+// ConnectListAllNwfilterBindingsRet is libvirt's remote_connect_list_all_nwfilter_bindings_ret
+type ConnectListAllNwfilterBindingsRet struct {
+	Bindings []NwfilterBinding
+	Ret uint32
+}
+
+
 
 // TypedParamValue is a discriminated union.
-type TypedParamValue interface {
-	Get() interface{}
+type TypedParamValue struct {
+	D uint32
+	I interface{}
 }
 
-// TypedParamValueInt is one of the possible values of the TypedParamValue union.
-type TypedParamValueInt struct {
-	DVal uint32
-	I int32
-}
 // NewTypedParamValueInt creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueInt(v int32) *TypedParamValueInt {
-	return &TypedParamValueInt{DVal: 1, I: v}
+func NewTypedParamValueInt(v int32) *TypedParamValue {
+	return &TypedParamValue{D: 1, I: v}
 }
-func decodeTypedParamValueInt(dec *xdr.Decoder) (*TypedParamValueInt, error) {
-	var v int32
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueInt(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueInt) Get() interface{} { return c.I }
 
-// TypedParamValueUint is one of the possible values of the TypedParamValue union.
-type TypedParamValueUint struct {
-	DVal uint32
-	Ui uint32
-}
 // NewTypedParamValueUint creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueUint(v uint32) *TypedParamValueUint {
-	return &TypedParamValueUint{DVal: 2, Ui: v}
+func NewTypedParamValueUint(v uint32) *TypedParamValue {
+	return &TypedParamValue{D: 2, I: v}
 }
-func decodeTypedParamValueUint(dec *xdr.Decoder) (*TypedParamValueUint, error) {
-	var v uint32
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueUint(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueUint) Get() interface{} { return c.Ui }
 
-// TypedParamValueLlong is one of the possible values of the TypedParamValue union.
-type TypedParamValueLlong struct {
-	DVal uint32
-	L int64
-}
 // NewTypedParamValueLlong creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueLlong(v int64) *TypedParamValueLlong {
-	return &TypedParamValueLlong{DVal: 3, L: v}
+func NewTypedParamValueLlong(v int64) *TypedParamValue {
+	return &TypedParamValue{D: 3, I: v}
 }
-func decodeTypedParamValueLlong(dec *xdr.Decoder) (*TypedParamValueLlong, error) {
-	var v int64
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueLlong(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueLlong) Get() interface{} { return c.L }
 
-// TypedParamValueUllong is one of the possible values of the TypedParamValue union.
-type TypedParamValueUllong struct {
-	DVal uint32
-	Ul uint64
-}
 // NewTypedParamValueUllong creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueUllong(v uint64) *TypedParamValueUllong {
-	return &TypedParamValueUllong{DVal: 4, Ul: v}
+func NewTypedParamValueUllong(v uint64) *TypedParamValue {
+	return &TypedParamValue{D: 4, I: v}
 }
-func decodeTypedParamValueUllong(dec *xdr.Decoder) (*TypedParamValueUllong, error) {
-	var v uint64
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueUllong(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueUllong) Get() interface{} { return c.Ul }
 
-// TypedParamValueDouble is one of the possible values of the TypedParamValue union.
-type TypedParamValueDouble struct {
-	DVal uint32
-	D float64
-}
 // NewTypedParamValueDouble creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueDouble(v float64) *TypedParamValueDouble {
-	return &TypedParamValueDouble{DVal: 5, D: v}
+func NewTypedParamValueDouble(v float64) *TypedParamValue {
+	return &TypedParamValue{D: 5, I: v}
 }
-func decodeTypedParamValueDouble(dec *xdr.Decoder) (*TypedParamValueDouble, error) {
-	var v float64
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueDouble(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueDouble) Get() interface{} { return c.D }
 
-// TypedParamValueBoolean is one of the possible values of the TypedParamValue union.
-type TypedParamValueBoolean struct {
-	DVal uint32
-	B int32
-}
 // NewTypedParamValueBoolean creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueBoolean(v int32) *TypedParamValueBoolean {
-	return &TypedParamValueBoolean{DVal: 6, B: v}
+func NewTypedParamValueBoolean(v int32) *TypedParamValue {
+	return &TypedParamValue{D: 6, I: v}
 }
-func decodeTypedParamValueBoolean(dec *xdr.Decoder) (*TypedParamValueBoolean, error) {
-	var v int32
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueBoolean(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueBoolean) Get() interface{} { return c.B }
 
-// TypedParamValueString is one of the possible values of the TypedParamValue union.
-type TypedParamValueString struct {
-	DVal uint32
-	S string
-}
 // NewTypedParamValueString creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueString(v string) *TypedParamValueString {
-	return &TypedParamValueString{DVal: 7, S: v}
-}
-func decodeTypedParamValueString(dec *xdr.Decoder) (*TypedParamValueString, error) {
-	var v string
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueString(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueString) Get() interface{} { return c.S }
-
-func decodeTypedParamValue(dec *xdr.Decoder) (TypedParamValue, error) {
-	discriminant, _, err := dec.DecodeInt()
-	if err != nil {
-		return nil, err
-	}
-	var caseval TypedParamValue
-	switch discriminant {
-	case 1:
-		caseval, err = decodeTypedParamValueInt(dec)
-	case 2:
-		caseval, err = decodeTypedParamValueUint(dec)
-	case 3:
-		caseval, err = decodeTypedParamValueLlong(dec)
-	case 4:
-		caseval, err = decodeTypedParamValueUllong(dec)
-	case 5:
-		caseval, err = decodeTypedParamValueDouble(dec)
-	case 6:
-		caseval, err = decodeTypedParamValueBoolean(dec)
-	case 7:
-		caseval, err = decodeTypedParamValueString(dec)
-
-	default:
-		err = fmt.Errorf("invalid parameter type %v", discriminant)
-	}
-
-	return caseval, err
-}
-
-// TODO: Generate these.
-func decodeTypedParam(dec *xdr.Decoder) (*TypedParam, error) {
-	name, _, err := dec.DecodeString()
-	if err != nil {
-		return nil, err
-	}
-	val, err := decodeTypedParamValue(dec)
-	return &TypedParam{name, val}, nil
-}
-
-func decodeTypedParams(dec *xdr.Decoder) ([]TypedParam, error) {
-	count, _, err := dec.DecodeInt()
-	if err != nil {
-		return nil, err
-	}
-	params := make([]TypedParam, count)
-	for ix := int32(0); ix < count; ix++ {
-		p, err := decodeTypedParam(dec)
-		if err != nil {
-			return nil, err
-		}
-		params[ix] = *p
-	}
-
-	return params, nil
+func NewTypedParamValueString(v string) *TypedParamValue {
+	return &TypedParamValue{D: 7, I: v}
 }
 
 
@@ -3985,8 +4027,10 @@ func (l *Libvirt) ConnectGetType() (rType string, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: string
 	_, err = dec.Decode(&rType)
 	if err != nil {
@@ -4007,8 +4051,10 @@ func (l *Libvirt) ConnectGetVersion() (rHvVer uint64, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// HvVer: uint64
 	_, err = dec.Decode(&rHvVer)
 	if err != nil {
@@ -4038,8 +4084,10 @@ func (l *Libvirt) ConnectGetMaxVcpus(Type OptString) (rMaxVcpus int32, err error
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// MaxVcpus: int32
 	_, err = dec.Decode(&rMaxVcpus)
 	if err != nil {
@@ -4060,8 +4108,10 @@ func (l *Libvirt) NodeGetInfo() (rModel [32]int8, rMemory uint64, rCpus int32, r
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Model: [32]int8
 	_, err = dec.Decode(&rModel)
 	if err != nil {
@@ -4117,8 +4167,10 @@ func (l *Libvirt) ConnectGetCapabilities() (rCapabilities string, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Capabilities: string
 	_, err = dec.Decode(&rCapabilities)
 	if err != nil {
@@ -4194,8 +4246,10 @@ func (l *Libvirt) DomainCreateXML(XMLDesc string, Flags DomainCreateFlags) (rDom
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -4225,8 +4279,10 @@ func (l *Libvirt) DomainDefineXML(XML string) (rDom Domain, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -4302,8 +4358,10 @@ func (l *Libvirt) DomainGetXMLDesc(Dom Domain, Flags DomainXMLFlags) (rXML strin
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -4333,8 +4391,10 @@ func (l *Libvirt) DomainGetAutostart(Dom Domain) (rAutostart int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Autostart: int32
 	_, err = dec.Decode(&rAutostart)
 	if err != nil {
@@ -4364,8 +4424,10 @@ func (l *Libvirt) DomainGetInfo(Dom Domain) (rState uint8, rMaxMem uint64, rMemo
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// State: uint8
 	_, err = dec.Decode(&rState)
 	if err != nil {
@@ -4415,8 +4477,10 @@ func (l *Libvirt) DomainGetMaxMemory(Dom Domain) (rMemory uint64, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Memory: uint64
 	_, err = dec.Decode(&rMemory)
 	if err != nil {
@@ -4446,8 +4510,10 @@ func (l *Libvirt) DomainGetMaxVcpus(Dom Domain) (rNum int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -4477,8 +4543,10 @@ func (l *Libvirt) DomainGetOsType(Dom Domain) (rType string, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: string
 	_, err = dec.Decode(&rType)
 	if err != nil {
@@ -4510,8 +4578,10 @@ func (l *Libvirt) DomainGetVcpus(Dom Domain, Maxinfo int32, Maplen int32) (rInfo
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Info: []VcpuInfo
 	_, err = dec.Decode(&rInfo)
 	if err != nil {
@@ -4546,8 +4616,10 @@ func (l *Libvirt) ConnectListDefinedDomains(Maxnames int32) (rNames []string, er
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -4577,8 +4649,10 @@ func (l *Libvirt) DomainLookupByID(ID int32) (rDom Domain, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -4608,8 +4682,10 @@ func (l *Libvirt) DomainLookupByName(Name string) (rDom Domain, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -4639,8 +4715,10 @@ func (l *Libvirt) DomainLookupByUUID(UUID UUID) (rDom Domain, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -4661,8 +4739,10 @@ func (l *Libvirt) ConnectNumOfDefinedDomains() (rNum int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -4919,8 +4999,10 @@ func (l *Libvirt) ConnectListDefinedNetworks(Maxnames int32) (rNames []string, e
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -4950,8 +5032,10 @@ func (l *Libvirt) ConnectListDomains(Maxids int32) (rIds []int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Ids: []int32
 	_, err = dec.Decode(&rIds)
 	if err != nil {
@@ -4981,8 +5065,10 @@ func (l *Libvirt) ConnectListNetworks(Maxnames int32) (rNames []string, err erro
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -5034,8 +5120,10 @@ func (l *Libvirt) NetworkCreateXML(XML string) (rNet Network, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Net: Network
 	_, err = dec.Decode(&rNet)
 	if err != nil {
@@ -5065,8 +5153,10 @@ func (l *Libvirt) NetworkDefineXML(XML string) (rNet Network, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Net: Network
 	_, err = dec.Decode(&rNet)
 	if err != nil {
@@ -5119,8 +5209,10 @@ func (l *Libvirt) NetworkGetXMLDesc(Net Network, Flags uint32) (rXML string, err
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -5150,8 +5242,10 @@ func (l *Libvirt) NetworkGetAutostart(Net Network) (rAutostart int32, err error)
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Autostart: int32
 	_, err = dec.Decode(&rAutostart)
 	if err != nil {
@@ -5181,8 +5275,10 @@ func (l *Libvirt) NetworkGetBridgeName(Net Network) (rName string, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Name: string
 	_, err = dec.Decode(&rName)
 	if err != nil {
@@ -5212,8 +5308,10 @@ func (l *Libvirt) NetworkLookupByName(Name string) (rNet Network, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Net: Network
 	_, err = dec.Decode(&rNet)
 	if err != nil {
@@ -5243,8 +5341,10 @@ func (l *Libvirt) NetworkLookupByUUID(UUID UUID) (rNet Network, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Net: Network
 	_, err = dec.Decode(&rNet)
 	if err != nil {
@@ -5310,8 +5410,10 @@ func (l *Libvirt) ConnectNumOfDefinedNetworks() (rNum int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -5332,8 +5434,10 @@ func (l *Libvirt) ConnectNumOfDomains() (rNum int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -5354,8 +5458,10 @@ func (l *Libvirt) ConnectNumOfNetworks() (rNum int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -5454,8 +5560,10 @@ func (l *Libvirt) DomainGetSchedulerType(Dom Domain) (rType string, rNparams int
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: string
 	_, err = dec.Decode(&rType)
 	if err != nil {
@@ -5491,12 +5599,13 @@ func (l *Libvirt) DomainGetSchedulerParameters(Dom Domain, Nparams int32) (rPara
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 
@@ -5537,8 +5646,10 @@ func (l *Libvirt) ConnectGetHostname() (rHostname string, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Hostname: string
 	_, err = dec.Decode(&rHostname)
 	if err != nil {
@@ -5568,8 +5679,10 @@ func (l *Libvirt) ConnectSupportsFeature(Feature int32) (rSupported int32, err e
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Supported: int32
 	_, err = dec.Decode(&rSupported)
 	if err != nil {
@@ -5602,8 +5715,10 @@ func (l *Libvirt) DomainMigratePrepare(UriIn OptString, Flags uint64, Dname OptS
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Cookie: []byte
 	_, err = dec.Decode(&rCookie)
 	if err != nil {
@@ -5668,8 +5783,10 @@ func (l *Libvirt) DomainMigrateFinish(Dname string, Cookie []byte, Uri string, F
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Ddom: Domain
 	_, err = dec.Decode(&rDdom)
 	if err != nil {
@@ -5700,8 +5817,10 @@ func (l *Libvirt) DomainBlockStats(Dom Domain, Path string) (rRdReq int64, rRdBy
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// RdReq: int64
 	_, err = dec.Decode(&rRdReq)
 	if err != nil {
@@ -5752,8 +5871,10 @@ func (l *Libvirt) DomainInterfaceStats(Dom Domain, Device string) (rRxBytes int6
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// RxBytes: int64
 	_, err = dec.Decode(&rRxBytes)
 	if err != nil {
@@ -5809,8 +5930,10 @@ func (l *Libvirt) AuthList() (rTypes []AuthType, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Types: []AuthType
 	_, err = dec.Decode(&rTypes)
 	if err != nil {
@@ -5831,8 +5954,10 @@ func (l *Libvirt) AuthSaslInit() (rMechlist string, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Mechlist: string
 	_, err = dec.Decode(&rMechlist)
 	if err != nil {
@@ -5864,8 +5989,10 @@ func (l *Libvirt) AuthSaslStart(Mech string, Nil int32, Data []int8) (rComplete 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Complete: int32
 	_, err = dec.Decode(&rComplete)
 	if err != nil {
@@ -5906,8 +6033,10 @@ func (l *Libvirt) AuthSaslStep(Nil int32, Data []int8) (rComplete int32, rNil in
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Complete: int32
 	_, err = dec.Decode(&rComplete)
 	if err != nil {
@@ -5938,8 +6067,10 @@ func (l *Libvirt) AuthPolkit() (rComplete int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Complete: int32
 	_, err = dec.Decode(&rComplete)
 	if err != nil {
@@ -5960,8 +6091,10 @@ func (l *Libvirt) ConnectNumOfStoragePools() (rNum int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -5991,8 +6124,10 @@ func (l *Libvirt) ConnectListStoragePools(Maxnames int32) (rNames []string, err 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -6013,8 +6148,10 @@ func (l *Libvirt) ConnectNumOfDefinedStoragePools() (rNum int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -6044,8 +6181,10 @@ func (l *Libvirt) ConnectListDefinedStoragePools(Maxnames int32) (rNames []strin
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -6077,8 +6216,10 @@ func (l *Libvirt) ConnectFindStoragePoolSources(Type string, SrcSpec OptString, 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -6109,8 +6250,10 @@ func (l *Libvirt) StoragePoolCreateXML(XML string, Flags StoragePoolCreateFlags)
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Pool: StoragePool
 	_, err = dec.Decode(&rPool)
 	if err != nil {
@@ -6141,8 +6284,10 @@ func (l *Libvirt) StoragePoolDefineXML(XML string, Flags uint32) (rPool StorageP
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Pool: StoragePool
 	_, err = dec.Decode(&rPool)
 	if err != nil {
@@ -6308,8 +6453,10 @@ func (l *Libvirt) StoragePoolLookupByName(Name string) (rPool StoragePool, err e
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Pool: StoragePool
 	_, err = dec.Decode(&rPool)
 	if err != nil {
@@ -6339,8 +6486,10 @@ func (l *Libvirt) StoragePoolLookupByUUID(UUID UUID) (rPool StoragePool, err err
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Pool: StoragePool
 	_, err = dec.Decode(&rPool)
 	if err != nil {
@@ -6370,8 +6519,10 @@ func (l *Libvirt) StoragePoolLookupByVolume(Vol StorageVol) (rPool StoragePool, 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Pool: StoragePool
 	_, err = dec.Decode(&rPool)
 	if err != nil {
@@ -6401,8 +6552,10 @@ func (l *Libvirt) StoragePoolGetInfo(Pool StoragePool) (rState uint8, rCapacity 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// State: uint8
 	_, err = dec.Decode(&rState)
 	if err != nil {
@@ -6448,8 +6601,10 @@ func (l *Libvirt) StoragePoolGetXMLDesc(Pool StoragePool, Flags StorageXMLFlags)
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -6479,8 +6634,10 @@ func (l *Libvirt) StoragePoolGetAutostart(Pool StoragePool) (rAutostart int32, e
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Autostart: int32
 	_, err = dec.Decode(&rAutostart)
 	if err != nil {
@@ -6533,8 +6690,10 @@ func (l *Libvirt) StoragePoolNumOfVolumes(Pool StoragePool) (rNum int32, err err
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -6565,8 +6724,10 @@ func (l *Libvirt) StoragePoolListVolumes(Pool StoragePool, Maxnames int32) (rNam
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -6598,8 +6759,10 @@ func (l *Libvirt) StorageVolCreateXML(Pool StoragePool, XML string, Flags Storag
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Vol: StorageVol
 	_, err = dec.Decode(&rVol)
 	if err != nil {
@@ -6653,8 +6816,10 @@ func (l *Libvirt) StorageVolLookupByName(Pool StoragePool, Name string) (rVol St
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Vol: StorageVol
 	_, err = dec.Decode(&rVol)
 	if err != nil {
@@ -6684,8 +6849,10 @@ func (l *Libvirt) StorageVolLookupByKey(Key string) (rVol StorageVol, err error)
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Vol: StorageVol
 	_, err = dec.Decode(&rVol)
 	if err != nil {
@@ -6715,8 +6882,10 @@ func (l *Libvirt) StorageVolLookupByPath(Path string) (rVol StorageVol, err erro
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Vol: StorageVol
 	_, err = dec.Decode(&rVol)
 	if err != nil {
@@ -6746,8 +6915,10 @@ func (l *Libvirt) StorageVolGetInfo(Vol StorageVol) (rType int8, rCapacity uint6
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: int8
 	_, err = dec.Decode(&rType)
 	if err != nil {
@@ -6788,8 +6959,10 @@ func (l *Libvirt) StorageVolGetXMLDesc(Vol StorageVol, Flags uint32) (rXML strin
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -6819,8 +6992,10 @@ func (l *Libvirt) StorageVolGetPath(Vol StorageVol) (rName string, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Name: string
 	_, err = dec.Decode(&rName)
 	if err != nil {
@@ -6851,8 +7026,10 @@ func (l *Libvirt) NodeGetCellsFreeMemory(StartCell int32, Maxcells int32) (rCell
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Cells: []uint64
 	_, err = dec.Decode(&rCells)
 	if err != nil {
@@ -6873,8 +7050,10 @@ func (l *Libvirt) NodeGetFreeMemory() (rFreeMem uint64, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// FreeMem: uint64
 	_, err = dec.Decode(&rFreeMem)
 	if err != nil {
@@ -6908,8 +7087,10 @@ func (l *Libvirt) DomainBlockPeek(Dom Domain, Path string, Offset uint64, Size u
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Buffer: []byte
 	_, err = dec.Decode(&rBuffer)
 	if err != nil {
@@ -6942,8 +7123,10 @@ func (l *Libvirt) DomainMemoryPeek(Dom Domain, Offset uint64, Size uint32, Flags
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Buffer: []byte
 	_, err = dec.Decode(&rBuffer)
 	if err != nil {
@@ -6964,8 +7147,10 @@ func (l *Libvirt) ConnectDomainEventRegister() (rCbRegistered int32, err error) 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CbRegistered: int32
 	_, err = dec.Decode(&rCbRegistered)
 	if err != nil {
@@ -6986,8 +7171,10 @@ func (l *Libvirt) ConnectDomainEventDeregister() (rCbRegistered int32, err error
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CbRegistered: int32
 	_, err = dec.Decode(&rCbRegistered)
 	if err != nil {
@@ -7034,8 +7221,10 @@ func (l *Libvirt) DomainMigratePrepare2(UriIn OptString, Flags uint64, Dname Opt
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Cookie: []byte
 	_, err = dec.Decode(&rCookie)
 	if err != nil {
@@ -7074,8 +7263,10 @@ func (l *Libvirt) DomainMigrateFinish2(Dname string, Cookie []byte, Uri string, 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Ddom: Domain
 	_, err = dec.Decode(&rDdom)
 	if err != nil {
@@ -7096,8 +7287,10 @@ func (l *Libvirt) ConnectGetUri() (rUri string, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Uri: string
 	_, err = dec.Decode(&rUri)
 	if err != nil {
@@ -7128,8 +7321,10 @@ func (l *Libvirt) NodeNumOfDevices(Cap OptString, Flags uint32) (rNum int32, err
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -7161,8 +7356,10 @@ func (l *Libvirt) NodeListDevices(Cap OptString, Maxnames int32, Flags uint32) (
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -7192,8 +7389,10 @@ func (l *Libvirt) NodeDeviceLookupByName(Name string) (rDev NodeDevice, err erro
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dev: NodeDevice
 	_, err = dec.Decode(&rDev)
 	if err != nil {
@@ -7224,8 +7423,10 @@ func (l *Libvirt) NodeDeviceGetXMLDesc(Name string, Flags uint32) (rXML string, 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -7236,7 +7437,7 @@ func (l *Libvirt) NodeDeviceGetXMLDesc(Name string, Flags uint32) (rXML string, 
 }
 
 // NodeDeviceGetParent is the go wrapper for REMOTE_PROC_NODE_DEVICE_GET_PARENT.
-func (l *Libvirt) NodeDeviceGetParent(Name string) (rParent OptString, err error) {
+func (l *Libvirt) NodeDeviceGetParent(Name string) (rParentName OptString, err error) {
 	var buf []byte
 
 	args := NodeDeviceGetParentArgs {
@@ -7255,10 +7456,12 @@ func (l *Libvirt) NodeDeviceGetParent(Name string) (rParent OptString, err error
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
-	// Parent: OptString
-	_, err = dec.Decode(&rParent)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// ParentName: OptString
+	_, err = dec.Decode(&rParentName)
 	if err != nil {
 		return
 	}
@@ -7286,8 +7489,10 @@ func (l *Libvirt) NodeDeviceNumOfCaps(Name string) (rNum int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -7318,8 +7523,10 @@ func (l *Libvirt) NodeDeviceListCaps(Name string, Maxnames int32) (rNames []stri
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -7415,8 +7622,10 @@ func (l *Libvirt) DomainGetSecurityLabel(Dom Domain) (rLabel []int8, rEnforcing 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Label: []int8
 	_, err = dec.Decode(&rLabel)
 	if err != nil {
@@ -7442,8 +7651,10 @@ func (l *Libvirt) NodeGetSecurityModel() (rModel []int8, rDoi []int8, err error)
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Model: []int8
 	_, err = dec.Decode(&rModel)
 	if err != nil {
@@ -7479,8 +7690,10 @@ func (l *Libvirt) NodeDeviceCreateXML(XMLDesc string, Flags uint32) (rDev NodeDe
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dev: NodeDevice
 	_, err = dec.Decode(&rDev)
 	if err != nil {
@@ -7535,8 +7748,10 @@ func (l *Libvirt) StorageVolCreateXMLFrom(Pool StoragePool, XML string, Clonevol
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Vol: StorageVol
 	_, err = dec.Decode(&rVol)
 	if err != nil {
@@ -7557,8 +7772,10 @@ func (l *Libvirt) ConnectNumOfInterfaces() (rNum int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -7588,8 +7805,10 @@ func (l *Libvirt) ConnectListInterfaces(Maxnames int32) (rNames []string, err er
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -7619,8 +7838,10 @@ func (l *Libvirt) InterfaceLookupByName(Name string) (rIface Interface, err erro
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Iface: Interface
 	_, err = dec.Decode(&rIface)
 	if err != nil {
@@ -7650,8 +7871,10 @@ func (l *Libvirt) InterfaceLookupByMacString(Mac string) (rIface Interface, err 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Iface: Interface
 	_, err = dec.Decode(&rIface)
 	if err != nil {
@@ -7682,8 +7905,10 @@ func (l *Libvirt) InterfaceGetXMLDesc(Iface Interface, Flags uint32) (rXML strin
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -7714,8 +7939,10 @@ func (l *Libvirt) InterfaceDefineXML(XML string, Flags uint32) (rIface Interface
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Iface: Interface
 	_, err = dec.Decode(&rIface)
 	if err != nil {
@@ -7815,8 +8042,10 @@ func (l *Libvirt) ConnectDomainXMLFromNative(NativeFormat string, NativeConfig s
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// DomainXML: string
 	_, err = dec.Decode(&rDomainXML)
 	if err != nil {
@@ -7848,8 +8077,10 @@ func (l *Libvirt) ConnectDomainXMLToNative(NativeFormat string, DomainXML string
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// NativeConfig: string
 	_, err = dec.Decode(&rNativeConfig)
 	if err != nil {
@@ -7870,8 +8101,10 @@ func (l *Libvirt) ConnectNumOfDefinedInterfaces() (rNum int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -7901,8 +8134,10 @@ func (l *Libvirt) ConnectListDefinedInterfaces(Maxnames int32) (rNames []string,
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -7923,8 +8158,10 @@ func (l *Libvirt) ConnectNumOfSecrets() (rNum int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -7954,8 +8191,10 @@ func (l *Libvirt) ConnectListSecrets(Maxuuids int32) (rUuids []string, err error
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Uuids: []string
 	_, err = dec.Decode(&rUuids)
 	if err != nil {
@@ -7985,8 +8224,10 @@ func (l *Libvirt) SecretLookupByUUID(UUID UUID) (rOptSecret Secret, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// OptSecret: Secret
 	_, err = dec.Decode(&rOptSecret)
 	if err != nil {
@@ -8017,8 +8258,10 @@ func (l *Libvirt) SecretDefineXML(XML string, Flags uint32) (rOptSecret Secret, 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// OptSecret: Secret
 	_, err = dec.Decode(&rOptSecret)
 	if err != nil {
@@ -8049,8 +8292,10 @@ func (l *Libvirt) SecretGetXMLDesc(OptSecret Secret, Flags uint32) (rXML string,
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -8105,8 +8350,10 @@ func (l *Libvirt) SecretGetValue(OptSecret Secret, Flags uint32) (rValue []byte,
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Value: []byte
 	_, err = dec.Decode(&rValue)
 	if err != nil {
@@ -8159,8 +8406,10 @@ func (l *Libvirt) SecretLookupByUsage(UsageType int32, UsageID string) (rOptSecr
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// OptSecret: Secret
 	_, err = dec.Decode(&rOptSecret)
 	if err != nil {
@@ -8206,8 +8455,10 @@ func (l *Libvirt) ConnectIsSecure() (rSecure int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Secure: int32
 	_, err = dec.Decode(&rSecure)
 	if err != nil {
@@ -8237,8 +8488,10 @@ func (l *Libvirt) DomainIsActive(Dom Domain) (rActive int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Active: int32
 	_, err = dec.Decode(&rActive)
 	if err != nil {
@@ -8268,8 +8521,10 @@ func (l *Libvirt) DomainIsPersistent(Dom Domain) (rPersistent int32, err error) 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Persistent: int32
 	_, err = dec.Decode(&rPersistent)
 	if err != nil {
@@ -8299,8 +8554,10 @@ func (l *Libvirt) NetworkIsActive(Net Network) (rActive int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Active: int32
 	_, err = dec.Decode(&rActive)
 	if err != nil {
@@ -8330,8 +8587,10 @@ func (l *Libvirt) NetworkIsPersistent(Net Network) (rPersistent int32, err error
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Persistent: int32
 	_, err = dec.Decode(&rPersistent)
 	if err != nil {
@@ -8361,8 +8620,10 @@ func (l *Libvirt) StoragePoolIsActive(Pool StoragePool) (rActive int32, err erro
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Active: int32
 	_, err = dec.Decode(&rActive)
 	if err != nil {
@@ -8392,8 +8653,10 @@ func (l *Libvirt) StoragePoolIsPersistent(Pool StoragePool) (rPersistent int32, 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Persistent: int32
 	_, err = dec.Decode(&rPersistent)
 	if err != nil {
@@ -8423,8 +8686,10 @@ func (l *Libvirt) InterfaceIsActive(Iface Interface) (rActive int32, err error) 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Active: int32
 	_, err = dec.Decode(&rActive)
 	if err != nil {
@@ -8445,8 +8710,10 @@ func (l *Libvirt) ConnectGetLibVersion() (rLibVer uint64, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// LibVer: uint64
 	_, err = dec.Decode(&rLibVer)
 	if err != nil {
@@ -8477,8 +8744,10 @@ func (l *Libvirt) ConnectCompareCPU(XML string, Flags ConnectCompareCPUFlags) (r
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Result: int32
 	_, err = dec.Decode(&rResult)
 	if err != nil {
@@ -8510,8 +8779,10 @@ func (l *Libvirt) DomainMemoryStats(Dom Domain, MaxStats uint32, Flags uint32) (
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Stats: []DomainMemoryStat
 	_, err = dec.Decode(&rStats)
 	if err != nil {
@@ -8590,8 +8861,10 @@ func (l *Libvirt) ConnectBaselineCPU(XMLCPUs []string, Flags ConnectBaselineCPUF
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CPU: string
 	_, err = dec.Decode(&rCPU)
 	if err != nil {
@@ -8621,8 +8894,10 @@ func (l *Libvirt) DomainGetJobInfo(Dom Domain) (rType int32, rTimeElapsed uint64
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: int32
 	_, err = dec.Decode(&rType)
 	if err != nil {
@@ -8909,8 +9184,10 @@ func (l *Libvirt) NwfilterLookupByName(Name string) (rOptNwfilter Nwfilter, err 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// OptNwfilter: Nwfilter
 	_, err = dec.Decode(&rOptNwfilter)
 	if err != nil {
@@ -8940,8 +9217,10 @@ func (l *Libvirt) NwfilterLookupByUUID(UUID UUID) (rOptNwfilter Nwfilter, err er
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// OptNwfilter: Nwfilter
 	_, err = dec.Decode(&rOptNwfilter)
 	if err != nil {
@@ -8972,8 +9251,10 @@ func (l *Libvirt) NwfilterGetXMLDesc(OptNwfilter Nwfilter, Flags uint32) (rXML s
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -8994,8 +9275,10 @@ func (l *Libvirt) ConnectNumOfNwfilters() (rNum int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -9025,8 +9308,10 @@ func (l *Libvirt) ConnectListNwfilters(Maxnames int32) (rNames []string, err err
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -9056,8 +9341,10 @@ func (l *Libvirt) NwfilterDefineXML(XML string) (rOptNwfilter Nwfilter, err erro
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// OptNwfilter: Nwfilter
 	_, err = dec.Decode(&rOptNwfilter)
 	if err != nil {
@@ -9133,8 +9420,10 @@ func (l *Libvirt) DomainHasManagedSaveImage(Dom Domain, Flags uint32) (rResult i
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Result: int32
 	_, err = dec.Decode(&rResult)
 	if err != nil {
@@ -9189,8 +9478,10 @@ func (l *Libvirt) DomainSnapshotCreateXML(Dom Domain, XMLDesc string, Flags uint
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Snap: DomainSnapshot
 	_, err = dec.Decode(&rSnap)
 	if err != nil {
@@ -9221,8 +9512,10 @@ func (l *Libvirt) DomainSnapshotGetXMLDesc(Snap DomainSnapshot, Flags uint32) (r
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -9253,8 +9546,10 @@ func (l *Libvirt) DomainSnapshotNum(Dom Domain, Flags uint32) (rNum int32, err e
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -9286,8 +9581,10 @@ func (l *Libvirt) DomainSnapshotListNames(Dom Domain, Maxnames int32, Flags uint
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -9319,8 +9616,10 @@ func (l *Libvirt) DomainSnapshotLookupByName(Dom Domain, Name string, Flags uint
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Snap: DomainSnapshot
 	_, err = dec.Decode(&rSnap)
 	if err != nil {
@@ -9351,8 +9650,10 @@ func (l *Libvirt) DomainHasCurrentSnapshot(Dom Domain, Flags uint32) (rResult in
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Result: int32
 	_, err = dec.Decode(&rResult)
 	if err != nil {
@@ -9383,8 +9684,10 @@ func (l *Libvirt) DomainSnapshotCurrent(Dom Domain, Flags uint32) (rSnap DomainS
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Snap: DomainSnapshot
 	_, err = dec.Decode(&rSnap)
 	if err != nil {
@@ -9462,8 +9765,10 @@ func (l *Libvirt) DomainGetBlockInfo(Dom Domain, Path string, Flags uint32) (rAl
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Allocation: uint64
 	_, err = dec.Decode(&rAllocation)
 	if err != nil {
@@ -9517,8 +9822,10 @@ func (l *Libvirt) DomainCreateWithFlags(Dom Domain, Flags uint32) (rDom Domain, 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -9574,12 +9881,13 @@ func (l *Libvirt) DomainGetMemoryParameters(Dom Domain, Nparams int32, Flags uin
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -9636,8 +9944,10 @@ func (l *Libvirt) DomainGetVcpusFlags(Dom Domain, Flags uint32) (rNum int32, err
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -9691,8 +10001,10 @@ func (l *Libvirt) DomainIsUpdated(Dom Domain) (rUpdated int32, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Updated: int32
 	_, err = dec.Decode(&rUpdated)
 	if err != nil {
@@ -9722,8 +10034,10 @@ func (l *Libvirt) ConnectGetSysinfo(Flags uint32) (rSysinfo string, err error) {
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Sysinfo: string
 	_, err = dec.Decode(&rSysinfo)
 	if err != nil {
@@ -9803,12 +10117,13 @@ func (l *Libvirt) DomainGetBlkioParameters(Dom Domain, Nparams int32, Flags uint
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -9845,7 +10160,7 @@ func (l *Libvirt) DomainMigrateSetMaxSpeed(Dom Domain, Bandwidth uint64, Flags u
 }
 
 // StorageVolUpload is the go wrapper for REMOTE_PROC_STORAGE_VOL_UPLOAD.
-func (l *Libvirt) StorageVolUpload(Vol StorageVol, outStream io.Reader, Offset uint64, Length uint64, Flags uint32) (err error) {
+func (l *Libvirt) StorageVolUpload(Vol StorageVol, outStream io.Reader, Offset uint64, Length uint64, Flags StorageVolUploadFlags) (err error) {
 	var buf []byte
 
 	args := StorageVolUploadArgs {
@@ -9870,7 +10185,7 @@ func (l *Libvirt) StorageVolUpload(Vol StorageVol, outStream io.Reader, Offset u
 }
 
 // StorageVolDownload is the go wrapper for REMOTE_PROC_STORAGE_VOL_DOWNLOAD.
-func (l *Libvirt) StorageVolDownload(Vol StorageVol, inStream io.Writer, Offset uint64, Length uint64, Flags uint32) (err error) {
+func (l *Libvirt) StorageVolDownload(Vol StorageVol, inStream io.Writer, Offset uint64, Length uint64, Flags StorageVolDownloadFlags) (err error) {
 	var buf []byte
 
 	args := StorageVolDownloadArgs {
@@ -9939,8 +10254,10 @@ func (l *Libvirt) DomainScreenshot(Dom Domain, inStream io.Writer, Screen uint32
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Mime: OptString
 	_, err = dec.Decode(&rMime)
 	if err != nil {
@@ -9971,8 +10288,10 @@ func (l *Libvirt) DomainGetState(Dom Domain, Flags uint32) (rState int32, rReaso
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// State: int32
 	_, err = dec.Decode(&rState)
 	if err != nil {
@@ -10011,8 +10330,10 @@ func (l *Libvirt) DomainMigrateBegin3(Dom Domain, Xmlin OptString, Flags uint64,
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -10052,8 +10373,10 @@ func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn OptString, Flags 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -10092,8 +10415,10 @@ func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, outStream io.Read
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -10130,8 +10455,10 @@ func (l *Libvirt) DomainMigratePerform3(Dom Domain, Xmlin OptString, CookieIn []
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -10166,8 +10493,10 @@ func (l *Libvirt) DomainMigrateFinish3(Dname string, CookieIn []byte, Dconnuri O
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -10319,12 +10648,13 @@ func (l *Libvirt) DomainGetSchedulerParametersFlags(Dom Domain, Nparams int32, F
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 
@@ -10417,8 +10747,10 @@ func (l *Libvirt) NodeGetCPUStats(CPUNum int32, Nparams int32, Flags uint32) (rP
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []NodeGetCPUStats
 	_, err = dec.Decode(&rParams)
 	if err != nil {
@@ -10455,8 +10787,10 @@ func (l *Libvirt) NodeGetMemoryStats(Nparams int32, CellNum int32, Flags uint32)
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []NodeGetMemoryStats
 	_, err = dec.Decode(&rParams)
 	if err != nil {
@@ -10492,8 +10826,10 @@ func (l *Libvirt) DomainGetControlInfo(Dom Domain, Flags uint32) (rState uint32,
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// State: uint32
 	_, err = dec.Decode(&rState)
 	if err != nil {
@@ -10536,8 +10872,10 @@ func (l *Libvirt) DomainGetVcpuPinInfo(Dom Domain, Ncpumaps int32, Maplen int32,
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Cpumaps: []byte
 	_, err = dec.Decode(&rCpumaps)
 	if err != nil {
@@ -10668,8 +11006,10 @@ func (l *Libvirt) DomainSaveImageGetXMLDesc(File string, Flags uint32) (rXML str
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -10749,8 +11089,10 @@ func (l *Libvirt) DomainGetBlockJobInfo(Dom Domain, Path string, Flags uint32) (
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Found: int32
 	_, err = dec.Decode(&rFound)
 	if err != nil {
@@ -10864,8 +11206,10 @@ func (l *Libvirt) DomainMigrateGetMaxSpeed(Dom Domain, Flags uint32) (rBandwidth
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Bandwidth: uint64
 	_, err = dec.Decode(&rBandwidth)
 	if err != nil {
@@ -10898,12 +11242,13 @@ func (l *Libvirt) DomainBlockStatsFlags(Dom Domain, Path string, Nparams int32, 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -10936,8 +11281,10 @@ func (l *Libvirt) DomainSnapshotGetParent(Snap DomainSnapshot, Flags uint32) (rS
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Snap: DomainSnapshot
 	_, err = dec.Decode(&rSnap)
 	if err != nil {
@@ -10991,8 +11338,10 @@ func (l *Libvirt) DomainSnapshotNumChildren(Snap DomainSnapshot, Flags uint32) (
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -11024,8 +11373,10 @@ func (l *Libvirt) DomainSnapshotListChildrenNames(Snap DomainSnapshot, Maxnames 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -11169,12 +11520,13 @@ func (l *Libvirt) DomainGetBlockIOTune(Dom Domain, Disk OptString, Nparams int32
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -11232,12 +11584,13 @@ func (l *Libvirt) DomainGetNumaParameters(Dom Domain, Nparams int32, Flags uint3
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -11297,12 +11650,13 @@ func (l *Libvirt) DomainGetInterfaceParameters(Dom Domain, Device string, Nparam
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -11434,12 +11788,13 @@ func (l *Libvirt) DomainGetCPUStats(Dom Domain, Nparams uint32, StartCPU int32, 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -11473,8 +11828,10 @@ func (l *Libvirt) DomainGetDiskErrors(Dom Domain, Maxerrors uint32, Flags uint32
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Errors: []DomainDiskError
 	_, err = dec.Decode(&rErrors)
 	if err != nil {
@@ -11539,8 +11896,10 @@ func (l *Libvirt) DomainGetMetadata(Dom Domain, Type int32, Uri OptString, Flags
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Metadata: string
 	_, err = dec.Decode(&rMetadata)
 	if err != nil {
@@ -11659,8 +12018,10 @@ func (l *Libvirt) DomainSnapshotIsCurrent(Snap DomainSnapshot, Flags uint32) (rC
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Current: int32
 	_, err = dec.Decode(&rCurrent)
 	if err != nil {
@@ -11691,8 +12052,10 @@ func (l *Libvirt) DomainSnapshotHasMetadata(Snap DomainSnapshot, Flags uint32) (
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Metadata: int32
 	_, err = dec.Decode(&rMetadata)
 	if err != nil {
@@ -11723,8 +12086,10 @@ func (l *Libvirt) ConnectListAllDomains(NeedResults int32, Flags ConnectListAllD
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Domains: []Domain
 	_, err = dec.Decode(&rDomains)
 	if err != nil {
@@ -11761,8 +12126,10 @@ func (l *Libvirt) DomainListAllSnapshots(Dom Domain, NeedResults int32, Flags ui
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Snapshots: []DomainSnapshot
 	_, err = dec.Decode(&rSnapshots)
 	if err != nil {
@@ -11799,8 +12166,10 @@ func (l *Libvirt) DomainSnapshotListAllChildren(Snapshot DomainSnapshot, NeedRes
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Snapshots: []DomainSnapshot
 	_, err = dec.Decode(&rSnapshots)
 	if err != nil {
@@ -11849,8 +12218,10 @@ func (l *Libvirt) DomainGetHostname(Dom Domain, Flags uint32) (rHostname string,
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Hostname: string
 	_, err = dec.Decode(&rHostname)
 	if err != nil {
@@ -11880,8 +12251,10 @@ func (l *Libvirt) DomainGetSecurityLabelList(Dom Domain) (rLabels []DomainGetSec
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Labels: []DomainGetSecurityLabelRet
 	_, err = dec.Decode(&rLabels)
 	if err != nil {
@@ -11942,8 +12315,10 @@ func (l *Libvirt) DomainGetEmulatorPinInfo(Dom Domain, Maplen int32, Flags Domai
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Cpumaps: []byte
 	_, err = dec.Decode(&rCpumaps)
 	if err != nil {
@@ -11979,8 +12354,10 @@ func (l *Libvirt) ConnectListAllStoragePools(NeedResults int32, Flags ConnectLis
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Pools: []StoragePool
 	_, err = dec.Decode(&rPools)
 	if err != nil {
@@ -12017,8 +12394,10 @@ func (l *Libvirt) StoragePoolListAllVolumes(Pool StoragePool, NeedResults int32,
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Vols: []StorageVol
 	_, err = dec.Decode(&rVols)
 	if err != nil {
@@ -12054,8 +12433,10 @@ func (l *Libvirt) ConnectListAllNetworks(NeedResults int32, Flags ConnectListAll
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Nets: []Network
 	_, err = dec.Decode(&rNets)
 	if err != nil {
@@ -12091,8 +12472,10 @@ func (l *Libvirt) ConnectListAllInterfaces(NeedResults int32, Flags ConnectListA
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Ifaces: []Interface
 	_, err = dec.Decode(&rIfaces)
 	if err != nil {
@@ -12128,8 +12511,10 @@ func (l *Libvirt) ConnectListAllNodeDevices(NeedResults int32, Flags uint32) (rD
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Devices: []NodeDevice
 	_, err = dec.Decode(&rDevices)
 	if err != nil {
@@ -12165,8 +12550,10 @@ func (l *Libvirt) ConnectListAllNwfilters(NeedResults int32, Flags uint32) (rFil
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Filters: []Nwfilter
 	_, err = dec.Decode(&rFilters)
 	if err != nil {
@@ -12202,8 +12589,10 @@ func (l *Libvirt) ConnectListAllSecrets(NeedResults int32, Flags ConnectListAllS
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Secrets: []Secret
 	_, err = dec.Decode(&rSecrets)
 	if err != nil {
@@ -12262,12 +12651,13 @@ func (l *Libvirt) NodeGetMemoryParameters(Nparams int32, Flags uint32) (rParams 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -12368,8 +12758,10 @@ func (l *Libvirt) NodeGetCPUMap(NeedMap int32, NeedOnline int32, Flags uint32) (
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Cpumap: []byte
 	_, err = dec.Decode(&rCpumap)
 	if err != nil {
@@ -12485,8 +12877,10 @@ func (l *Libvirt) NodeDeviceLookupScsiHostByWwn(Wwnn string, Wwpn string, Flags 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dev: NodeDevice
 	_, err = dec.Decode(&rDev)
 	if err != nil {
@@ -12517,17 +12911,18 @@ func (l *Libvirt) DomainGetJobStats(Dom Domain, Flags DomainGetJobStatsFlags) (r
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: int32
 	_, err = dec.Decode(&rType)
 	if err != nil {
 		return
 	}
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 
@@ -12555,8 +12950,10 @@ func (l *Libvirt) DomainMigrateGetCompressionCache(Dom Domain, Flags uint32) (rC
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CacheSize: uint64
 	_, err = dec.Decode(&rCacheSize)
 	if err != nil {
@@ -12636,8 +13033,10 @@ func (l *Libvirt) DomainMigrateBegin3Params(Dom Domain, Params []TypedParam, Fla
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -12674,8 +13073,10 @@ func (l *Libvirt) DomainMigratePrepare3Params(Params []TypedParam, CookieIn []by
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -12712,8 +13113,10 @@ func (l *Libvirt) DomainMigratePrepareTunnel3Params(Params []TypedParam, CookieI
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -12747,8 +13150,10 @@ func (l *Libvirt) DomainMigratePerform3Params(Dom Domain, Dconnuri OptString, Pa
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -12781,8 +13186,10 @@ func (l *Libvirt) DomainMigrateFinish3Params(Params []TypedParam, CookieIn []byt
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -12868,8 +13275,10 @@ func (l *Libvirt) DomainCreateXMLWithFiles(XMLDesc string, Flags DomainCreateFla
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -12900,8 +13309,10 @@ func (l *Libvirt) DomainCreateWithFiles(Dom Domain, Flags DomainCreateFlags) (rD
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -12946,8 +13357,10 @@ func (l *Libvirt) ConnectGetCPUModelNames(Arch string, NeedResults int32, Flags 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Models: []string
 	_, err = dec.Decode(&rModels)
 	if err != nil {
@@ -12983,8 +13396,10 @@ func (l *Libvirt) ConnectNetworkEventRegisterAny(EventID int32, Net OptNetwork) 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CallbackID: int32
 	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
@@ -13050,8 +13465,10 @@ func (l *Libvirt) ConnectDomainEventCallbackRegisterAny(EventID int32, Dom OptDo
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CallbackID: int32
 	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
@@ -13338,8 +13755,10 @@ func (l *Libvirt) DomainFsfreeze(Dom Domain, Mountpoints []string, Flags uint32)
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Filesystems: int32
 	_, err = dec.Decode(&rFilesystems)
 	if err != nil {
@@ -13371,8 +13790,10 @@ func (l *Libvirt) DomainFsthaw(Dom Domain, Mountpoints []string, Flags uint32) (
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Filesystems: int32
 	_, err = dec.Decode(&rFilesystems)
 	if err != nil {
@@ -13403,8 +13824,10 @@ func (l *Libvirt) DomainGetTime(Dom Domain, Flags uint32) (rSeconds int64, rNsec
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Seconds: int64
 	_, err = dec.Decode(&rSeconds)
 	if err != nil {
@@ -13480,8 +13903,10 @@ func (l *Libvirt) NodeGetFreePages(Pages []uint32, StartCell int32, CellCount ui
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Counts: []uint64
 	_, err = dec.Decode(&rCounts)
 	if err != nil {
@@ -13514,8 +13939,10 @@ func (l *Libvirt) NetworkGetDhcpLeases(Net Network, Mac OptString, NeedResults i
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Leases: []NetworkDhcpLease
 	_, err = dec.Decode(&rLeases)
 	if err != nil {
@@ -13554,8 +13981,10 @@ func (l *Libvirt) ConnectGetDomainCapabilities(Emulatorbin OptString, Arch OptSt
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Capabilities: string
 	_, err = dec.Decode(&rCapabilities)
 	if err != nil {
@@ -13611,8 +14040,10 @@ func (l *Libvirt) ConnectGetAllDomainStats(Doms []Domain, Stats uint32, Flags Co
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// RetStats: []DomainStatsRecord
 	_, err = dec.Decode(&rRetStats)
 	if err != nil {
@@ -13685,8 +14116,10 @@ func (l *Libvirt) NodeAllocPages(PageSizes []uint32, PageCounts []uint64, StartC
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Ret: int32
 	_, err = dec.Decode(&rRet)
 	if err != nil {
@@ -13730,8 +14163,10 @@ func (l *Libvirt) DomainGetFsinfo(Dom Domain, Flags uint32) (rInfo []DomainFsinf
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Info: []DomainFsinfo
 	_, err = dec.Decode(&rInfo)
 	if err != nil {
@@ -13767,8 +14202,10 @@ func (l *Libvirt) DomainDefineXMLFlags(XML string, Flags DomainDefineFlags) (rDo
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -13799,8 +14236,10 @@ func (l *Libvirt) DomainGetIothreadInfo(Dom Domain, Flags DomainModificationImpa
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Info: []DomainIothreadInfo
 	_, err = dec.Decode(&rInfo)
 	if err != nil {
@@ -13862,8 +14301,10 @@ func (l *Libvirt) DomainInterfaceAddresses(Dom Domain, Source uint32, Flags uint
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Ifaces: []DomainInterface
 	_, err = dec.Decode(&rIfaces)
 	if err != nil {
@@ -13981,8 +14422,10 @@ func (l *Libvirt) DomainRename(Dom Domain, NewName OptString, Flags uint32) (rRe
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Retcode: int32
 	_, err = dec.Decode(&rRetcode)
 	if err != nil {
@@ -14101,12 +14544,13 @@ func (l *Libvirt) DomainGetPerfEvents(Dom Domain, Flags DomainModificationImpact
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 
@@ -14171,8 +14615,10 @@ func (l *Libvirt) ConnectStoragePoolEventRegisterAny(EventID int32, Pool OptStor
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CallbackID: int32
 	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
@@ -14238,12 +14684,13 @@ func (l *Libvirt) DomainGetGuestVcpus(Dom Domain, Flags uint32) (rParams []Typed
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 
@@ -14309,8 +14756,10 @@ func (l *Libvirt) ConnectNodeDeviceEventRegisterAny(EventID int32, Dev OptNodeDe
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CallbackID: int32
 	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
@@ -14389,8 +14838,10 @@ func (l *Libvirt) StorageVolGetInfoFlags(Vol StorageVol, Flags uint32) (rType in
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: int8
 	_, err = dec.Decode(&rType)
 	if err != nil {
@@ -14444,8 +14895,10 @@ func (l *Libvirt) ConnectSecretEventRegisterAny(EventID int32, OptSecret OptSecr
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CallbackID: int32
 	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
@@ -14587,8 +15040,10 @@ func (l *Libvirt) DomainMigrateGetMaxDowntime(Dom Domain, Flags uint32) (rDownti
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Downtime: uint64
 	_, err = dec.Decode(&rDowntime)
 	if err != nil {
@@ -14619,8 +15074,10 @@ func (l *Libvirt) DomainManagedSaveGetXMLDesc(Dom Domain, Flags DomainXMLFlags) 
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -14672,6 +15129,374 @@ func (l *Libvirt) DomainSetLifecycleAction(Dom Domain, Type uint32, Action uint3
 
 
 	_, err = l.requestStream(390, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// StoragePoolLookupByTargetPath is the go wrapper for REMOTE_PROC_STORAGE_POOL_LOOKUP_BY_TARGET_PATH.
+func (l *Libvirt) StoragePoolLookupByTargetPath(Path string) (rPool StoragePool, err error) {
+	var buf []byte
+
+	args := StoragePoolLookupByTargetPathArgs {
+		Path: Path,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(391, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Pool: StoragePool
+	_, err = dec.Decode(&rPool)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainDetachDeviceAlias is the go wrapper for REMOTE_PROC_DOMAIN_DETACH_DEVICE_ALIAS.
+func (l *Libvirt) DomainDetachDeviceAlias(Dom Domain, Alias string, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainDetachDeviceAliasArgs {
+		Dom: Dom,
+		Alias: Alias,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(392, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// ConnectCompareHypervisorCPU is the go wrapper for REMOTE_PROC_CONNECT_COMPARE_HYPERVISOR_CPU.
+func (l *Libvirt) ConnectCompareHypervisorCPU(Emulator OptString, Arch OptString, Machine OptString, Virttype OptString, XMLCPU string, Flags uint32) (rResult int32, err error) {
+	var buf []byte
+
+	args := ConnectCompareHypervisorCPUArgs {
+		Emulator: Emulator,
+		Arch: Arch,
+		Machine: Machine,
+		Virttype: Virttype,
+		XMLCPU: XMLCPU,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(393, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Result: int32
+	_, err = dec.Decode(&rResult)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// ConnectBaselineHypervisorCPU is the go wrapper for REMOTE_PROC_CONNECT_BASELINE_HYPERVISOR_CPU.
+func (l *Libvirt) ConnectBaselineHypervisorCPU(Emulator OptString, Arch OptString, Machine OptString, Virttype OptString, XMLCPUs []string, Flags uint32) (rCPU string, err error) {
+	var buf []byte
+
+	args := ConnectBaselineHypervisorCPUArgs {
+		Emulator: Emulator,
+		Arch: Arch,
+		Machine: Machine,
+		Virttype: Virttype,
+		XMLCPUs: XMLCPUs,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(394, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// CPU: string
+	_, err = dec.Decode(&rCPU)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NodeGetSevInfo is the go wrapper for REMOTE_PROC_NODE_GET_SEV_INFO.
+func (l *Libvirt) NodeGetSevInfo(Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+	var buf []byte
+
+	args := NodeGetSevInfoArgs {
+		Nparams: Nparams,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(395, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Params: []TypedParam
+	_, err = dec.Decode(&rParams)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainGetLaunchSecurityInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_LAUNCH_SECURITY_INFO.
+func (l *Libvirt) DomainGetLaunchSecurityInfo(Dom Domain, Flags uint32) (rParams []TypedParam, err error) {
+	var buf []byte
+
+	args := DomainGetLaunchSecurityInfoArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(396, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Params: []TypedParam
+	_, err = dec.Decode(&rParams)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NwfilterBindingLookupByPortDev is the go wrapper for REMOTE_PROC_NWFILTER_BINDING_LOOKUP_BY_PORT_DEV.
+func (l *Libvirt) NwfilterBindingLookupByPortDev(Name string) (rOptNwfilter NwfilterBinding, err error) {
+	var buf []byte
+
+	args := NwfilterBindingLookupByPortDevArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(397, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// OptNwfilter: NwfilterBinding
+	_, err = dec.Decode(&rOptNwfilter)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NwfilterBindingGetXMLDesc is the go wrapper for REMOTE_PROC_NWFILTER_BINDING_GET_XML_DESC.
+func (l *Libvirt) NwfilterBindingGetXMLDesc(OptNwfilter NwfilterBinding, Flags uint32) (rXML string, err error) {
+	var buf []byte
+
+	args := NwfilterBindingGetXMLDescArgs {
+		OptNwfilter: OptNwfilter,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(398, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// XML: string
+	_, err = dec.Decode(&rXML)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NwfilterBindingCreateXML is the go wrapper for REMOTE_PROC_NWFILTER_BINDING_CREATE_XML.
+func (l *Libvirt) NwfilterBindingCreateXML(XML string, Flags uint32) (rOptNwfilter NwfilterBinding, err error) {
+	var buf []byte
+
+	args := NwfilterBindingCreateXMLArgs {
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(399, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// OptNwfilter: NwfilterBinding
+	_, err = dec.Decode(&rOptNwfilter)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NwfilterBindingDelete is the go wrapper for REMOTE_PROC_NWFILTER_BINDING_DELETE.
+func (l *Libvirt) NwfilterBindingDelete(OptNwfilter NwfilterBinding) (err error) {
+	var buf []byte
+
+	args := NwfilterBindingDeleteArgs {
+		OptNwfilter: OptNwfilter,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(400, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// ConnectListAllNwfilterBindings is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_NWFILTER_BINDINGS.
+func (l *Libvirt) ConnectListAllNwfilterBindings(NeedResults int32, Flags uint32) (rBindings []NwfilterBinding, rRet uint32, err error) {
+	var buf []byte
+
+	args := ConnectListAllNwfilterBindingsArgs {
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(401, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Bindings: []NwfilterBinding
+	_, err = dec.Decode(&rBindings)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
 	if err != nil {
 		return
 	}
