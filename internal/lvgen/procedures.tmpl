@@ -47,7 +47,6 @@ func (tpd typedParamDecoder) Decode(d *xdr.Decoder, v reflect.Value) (int, error
 	if err != nil {
 		return n, err
 	}
-	//fmt.Println("***GAH*** decoding", name)
 	val, n2, err := tpd.decodeTypedParamValue(d)
 	n += n2
 	if err != nil {
