@@ -1,6 +1,6 @@
 language: go
 os: linux
-dist: trusty
+dist: bionic
 sudo: require
 
 cache:
@@ -8,7 +8,7 @@ cache:
     - $HOME/.ccache
 
 go:
-  - "1.11"
+  - "1.12"
 
 env:
   global:
