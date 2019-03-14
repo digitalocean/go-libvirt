@@ -864,6 +864,8 @@ const (
 	ProcNwfilterBindingDelete = 400
 	// ProcConnectListAllNwfilterBindings is libvirt's REMOTE_PROC_CONNECT_LIST_ALL_NWFILTER_BINDINGS
 	ProcConnectListAllNwfilterBindings = 401
+	// ProcDomainSetIothreadParams is libvirt's REMOTE_PROC_DOMAIN_SET_IOTHREAD_PARAMS
+	ProcDomainSetIothreadParams = 402
 
 
 	// From consts:
@@ -975,6 +977,8 @@ const (
 	DomainIPAddrMax = 2048
 	// DomainGuestVcpuParamsMax is libvirt's REMOTE_DOMAIN_GUEST_VCPU_PARAMS_MAX
 	DomainGuestVcpuParamsMax = 64
+	// DomainIothreadParamsMax is libvirt's REMOTE_DOMAIN_IOTHREAD_PARAMS_MAX
+	DomainIothreadParamsMax = 64
 	// NodeSevInfoMax is libvirt's REMOTE_NODE_SEV_INFO_MAX
 	NodeSevInfoMax = 64
 	// DomainLaunchSecurityInfoParamsMax is libvirt's REMOTE_DOMAIN_LAUNCH_SECURITY_INFO_PARAMS_MAX

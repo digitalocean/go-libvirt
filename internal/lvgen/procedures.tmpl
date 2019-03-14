@@ -36,11 +36,11 @@ const (
 
 type typedParamDecoder struct {}
 
-// decodeTypedParam decodes a TypedParam. These are part of the libvirt spec,
-// and not xdr proper. TypedParams contain a name, which is called Field for
-// some reason, and a Value, which itself has a "discriminant" - an integer enum
-// encoding the actual type, and a value, the length of which varies based on
-// the actual type.
+// Decode decodes a TypedParam. These are part of the libvirt spec, and not xdr
+// proper. TypedParams contain a name, which is called Field for some reason,
+// and a Value, which itself has a "discriminant" - an integer enum encoding the
+// actual type, and a value, the length of which varies based on the actual
+// type.
 func (tpd typedParamDecoder) Decode(d *xdr.Decoder, v reflect.Value) (int, error) {
 	// Get the name of the typed param first
 	name, n, err := d.DecodeString()
