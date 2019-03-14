@@ -36,11 +36,11 @@ const (
 
 type typedParamDecoder struct {}
 
-// decodeTypedParam decodes a TypedParam. These are part of the libvirt spec,
-// and not xdr proper. TypedParams contain a name, which is called Field for
-// some reason, and a Value, which itself has a "discriminant" - an integer enum
-// encoding the actual type, and a value, the length of which varies based on
-// the actual type.
+// Decode decodes a TypedParam. These are part of the libvirt spec, and not xdr
+// proper. TypedParams contain a name, which is called Field for some reason,
+// and a Value, which itself has a "discriminant" - an integer enum encoding the
+// actual type, and a value, the length of which varies based on the actual
+// type.
 func (tpd typedParamDecoder) Decode(d *xdr.Decoder, v reflect.Value) (int, error) {
 	// Get the name of the typed param first
 	name, n, err := d.DecodeString()
@@ -1203,6 +1203,14 @@ type DomainDelIothreadArgs struct {
 	Dom Domain
 	IothreadID uint32
 	Flags DomainModificationImpact
+}
+
+// DomainSetIothreadParamsArgs is libvirt's remote_domain_set_iothread_params_args
+type DomainSetIothreadParamsArgs struct {
+	Dom Domain
+	IothreadID uint32
+	Params []TypedParam
+	Flags uint32
 }
 
 // DomainGetSecurityLabelArgs is libvirt's remote_domain_get_security_label_args
@@ -15496,6 +15504,31 @@ func (l *Libvirt) ConnectListAllNwfilterBindings(NeedResults int32, Flags uint32
 	}
 	// Ret: uint32
 	_, err = dec.Decode(&rRet)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainSetIothreadParams is the go wrapper for REMOTE_PROC_DOMAIN_SET_IOTHREAD_PARAMS.
+func (l *Libvirt) DomainSetIothreadParams(Dom Domain, IothreadID uint32, Params []TypedParam, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainSetIothreadParamsArgs {
+		Dom: Dom,
+		IothreadID: IothreadID,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(402, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
