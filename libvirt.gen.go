@@ -36,7 +36,7 @@ const (
 
 type typedParamDecoder struct {}
 
-// decodeTypedParam decodes a TypedParam. These are part of the libvirt spec,
+// Decode decodes a TypedParam. These are part of the libvirt spec,
 // and not xdr proper. TypedParams contain a name, which is called Field for
 // some reason, and a Value, which itself has a "discriminant" - an integer enum
 // encoding the actual type, and a value, the length of which varies based on
