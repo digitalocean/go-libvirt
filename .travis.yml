@@ -14,9 +14,9 @@ env:
   global:
     - CCACHE_TEMPDIR=/tmp/.ccache-temp
   matrix:
-    - LIBVIRT=1.2.12 EXT=gz
     - LIBVIRT=2.3.0  EXT=xz
     - LIBVIRT=3.1.0  EXT=xz
+    - LIBVIRT=5.1.0  EXT=xz
 
 before_install:
   - go get golang.org/x/lint/golint
