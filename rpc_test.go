@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
-	"github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
+	xdr "github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/libvirttest"
 )
 
@@ -176,7 +176,8 @@ func TestPktLen(t *testing.T) {
 }
 
 func TestDecodeEvent(t *testing.T) {
-	e, err := decodeEvent(testEvent)
+	var e DomainEvent
+	err := eventDecoder(testEvent, &e)
 	if err != nil {
 		t.Error(err)
 	}
@@ -290,12 +291,11 @@ func TestDeregister(t *testing.T) {
 
 func TestAddStream(t *testing.T) {
 	id := uint32(1)
-	c := make(chan *DomainEvent)
 
 	l := &Libvirt{}
-	l.events = make(map[uint32]chan *DomainEvent)
+	l.events = make(map[uint32]eventStream)
 
-	l.addStream(id, c)
+	l.addStream(id, newEventStream(0, 0))
 	if _, ok := l.events[id]; !ok {
 		t.Error("expected event stream to exist")
 	}
@@ -306,7 +306,7 @@ func TestRemoveStream(t *testing.T) {
 
 	conn := libvirttest.New()
 	l := New(conn)
-	l.events[id] = make(chan *DomainEvent)
+	l.events[id] = newEventStream(constants.QEMUConnectDomainMonitorEventDeregister, constants.ProgramQEMU)
 
 	err := l.removeStream(id)
 	if err != nil {
@@ -320,17 +320,23 @@ func TestRemoveStream(t *testing.T) {
 
 func TestStream(t *testing.T) {
 	id := uint32(1)
-	c := make(chan *DomainEvent, 1)
+	c := make(chan event, 1)
 
 	l := &Libvirt{}
-	l.events = map[uint32]chan *DomainEvent{
-		id: c,
+	l.events = map[uint32]eventStream{
+		id: eventStream{Events: c},
 	}
 
-	l.stream(testEvent)
+	var streamEvent DomainEvent
+	err := eventDecoder(testEvent, &streamEvent)
+	if err != nil { // event was malformed, drop.
+		t.Error(err)
+	}
+
+	l.stream(streamEvent)
 	e := <-c
 
-	if e.Event != "BLOCK_JOB_COMPLETED" {
+	if e.(DomainEvent).Event != "BLOCK_JOB_COMPLETED" {
 		t.Error("expected event")
 	}
 }

@@ -23,7 +23,7 @@ import (
 	"sync/atomic"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
-	"github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
+	xdr "github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 )
 
 // ErrUnsupported is returned if a procedure is not supported by libvirt
@@ -102,6 +102,23 @@ type packet struct {
 type response struct {
 	Payload []byte
 	Status  uint32
+}
+
+// event stream associated with a program and a procedure
+type eventStream struct {
+	// Channel of events sent by libvirt
+	Events chan event
+
+	// Remote procedure identifier used to unregister callback
+	DeregisterProc uint32
+
+	// Program identifier
+	Program uint32
+}
+
+// helper to create an event stream
+func newEventStream(deregisterProc, program uint32) eventStream {
+	return eventStream{Events: make(chan event), DeregisterProc: deregisterProc, Program: program}
 }
 
 // libvirt error response
@@ -189,8 +206,20 @@ func (l *Libvirt) callback(id uint32, res response) {
 // route sends incoming packets to their listeners.
 func (l *Libvirt) route(h *header, buf []byte) {
 	// route events to their respective listener
-	if h.Program == constants.ProgramQEMU && h.Procedure == constants.QEMUDomainMonitorEvent {
-		l.stream(buf)
+	var streamEvent event
+	switch {
+	case h.Program == constants.ProgramQEMU && h.Procedure == constants.QEMUDomainMonitorEvent:
+		streamEvent = &DomainEvent{}
+	case h.Program == constants.Program && h.Procedure == constants.ProcDomainEventCallbackLifecycle:
+		streamEvent = &DomainEventCallbackLifecycleMsg{}
+	}
+
+	if streamEvent != nil {
+		err := eventDecoder(buf, streamEvent)
+		if err != nil { // event was malformed, drop.
+			return
+		}
+		l.stream(streamEvent)
 		return
 	}
 
@@ -209,16 +238,10 @@ func (l *Libvirt) serial() uint32 {
 
 // stream decodes domain events and sends them
 // to the respective event listener.
-func (l *Libvirt) stream(buf []byte) {
-	e, err := decodeEvent(buf)
-	if err != nil {
-		// event was malformed, drop.
-		return
-	}
-
+func (l *Libvirt) stream(e event) error {
 	// send to event listener
 	l.em.Lock()
-	c, ok := l.events[e.CallbackID]
+	c, ok := l.events[e.GetCallbackID()]
 	l.em.Unlock()
 
 	if ok {
@@ -227,14 +250,15 @@ func (l *Libvirt) stream(buf []byte) {
 		defer func() {
 			recover()
 		}()
-		c <- e
+		c.Events <- e
 	}
+	return nil
 }
 
 // addStream configures the routing for an event stream.
-func (l *Libvirt) addStream(id uint32, stream chan *DomainEvent) {
+func (l *Libvirt) addStream(id uint32, s eventStream) {
 	l.em.Lock()
-	l.events[id] = stream
+	l.events[id] = s
 	l.em.Unlock()
 }
 
@@ -242,7 +266,8 @@ func (l *Libvirt) addStream(id uint32, stream chan *DomainEvent) {
 // for the provided callback id. Upon successful de-registration the
 // callback handler is destroyed.
 func (l *Libvirt) removeStream(id uint32) error {
-	close(l.events[id])
+	stream := l.events[id]
+	close(stream.Events)
 
 	payload := struct {
 		CallbackID uint32
@@ -255,7 +280,7 @@ func (l *Libvirt) removeStream(id uint32) error {
 		return err
 	}
 
-	_, err = l.request(constants.QEMUConnectDomainMonitorEventDeregister, constants.ProgramQEMU, buf)
+	_, err = l.request(stream.DeregisterProc, stream.Program, buf)
 	if err != nil {
 		return err
 	}
@@ -481,18 +506,11 @@ func decodeError(buf []byte) error {
 	return e
 }
 
-// decodeEvent extracts an event from the given byte slice.
-// Errors encountered will be returned along with a nil event.
-func decodeEvent(buf []byte) (*DomainEvent, error) {
-	var e DomainEvent
-
+// eventDecoder decoder an event from a xdr buffer.
+func eventDecoder(buf []byte, e interface{}) error {
 	dec := xdr.NewDecoder(bytes.NewReader(buf))
-	_, err := dec.Decode(&e)
-	if err != nil {
-		return nil, err
-	}
-
-	return &e, nil
+	_, err := dec.Decode(e)
+	return err
 }
 
 // pktlen determines the length of an incoming rpc response.

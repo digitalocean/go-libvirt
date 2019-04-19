@@ -30,12 +30,17 @@ import (
 	"sync"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
-	"github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
+	xdr "github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 )
 
 // ErrEventsNotSupported is returned by Events() if event streams
 // are unsupported by either QEMU or libvirt.
 var ErrEventsNotSupported = errors.New("event monitor is not supported")
+
+// internal event
+type event interface {
+	GetCallbackID() uint32
+}
 
 // Libvirt implements libvirt's remote procedure call protocol.
 type Libvirt struct {
@@ -50,7 +55,7 @@ type Libvirt struct {
 
 	// event listeners
 	em     sync.Mutex
-	events map[uint32]chan *DomainEvent
+	events map[uint32]eventStream
 
 	// next request serial number
 	s uint32
@@ -65,6 +70,16 @@ type DomainEvent struct {
 	Microseconds uint32
 	Padding      uint8
 	Details      []byte
+}
+
+// GetCallbackID returns the callback id of a qemu domain event
+func (de DomainEvent) GetCallbackID() uint32 {
+	return de.CallbackID
+}
+
+// GetCallbackID returns the callback id of a libvirt lifecycle event
+func (m DomainEventCallbackLifecycleMsg) GetCallbackID() uint32 {
+	return uint32(m.CallbackID)
 }
 
 // qemuError represents a QEMU process error.
@@ -201,13 +216,37 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 		return nil, err
 	}
 
-	stream := make(chan *DomainEvent)
+	stream := newEventStream(constants.QEMUConnectDomainMonitorEventDeregister, constants.ProgramQEMU)
 	l.addStream(cbID, stream)
 	c := make(chan DomainEvent)
 	go func() {
 		// process events
-		for e := range stream {
-			c <- *e
+		for e := range stream.Events {
+			c <- *e.(*DomainEvent)
+		}
+	}()
+
+	return c, nil
+}
+
+// LifecycleEvents streams lifecycle events.
+// If a problem is encountered setting up the event monitor connection
+// an error will be returned. Errors encountered during streaming will
+// cause the returned event channel to be closed.
+func (l *Libvirt) LifecycleEvents() (<-chan DomainEventLifecycleMsg, error) {
+	callbackID, err := l.ConnectDomainEventCallbackRegisterAny(int32(DomainEventIDLifecycle), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	stream := newEventStream(constants.ProcConnectDomainEventCallbackDeregisterAny, constants.Program)
+	l.addStream(uint32(callbackID), stream)
+
+	c := make(chan DomainEventLifecycleMsg)
+	go func() {
+		// process events
+		for e := range stream.Events {
+			c <- e.(*DomainEventCallbackLifecycleMsg).Msg
 		}
 	}()
 
@@ -504,7 +543,7 @@ func New(conn net.Conn) *Libvirt {
 		w:         bufio.NewWriter(conn),
 		mu:        &sync.Mutex{},
 		callbacks: make(map[uint32]chan response),
-		events:    make(map[uint32]chan *DomainEvent),
+		events:    make(map[uint32]eventStream),
 	}
 
 	go l.listen()
