@@ -411,7 +411,8 @@ func (l *Libvirt) sendStream(serial uint32, proc uint32, program uint32, stream 
 		default:
 		}
 		n, err := stream.Read(buf)
-		if err != nil {
+		// If there are remaining bytes in the buffer (n > 0) on io.EOF they first has to be sent. io.EOF is then handeld with the next call to Read
+		if err != nil && !(err == io.EOF && n > 0) {
 			if err == io.EOF {
 				return l.sendPacket(serial, proc, program, nil, Stream, StatusOK)
 			}
