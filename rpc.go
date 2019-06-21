@@ -411,6 +411,12 @@ func (l *Libvirt) sendStream(serial uint32, proc uint32, program uint32, stream 
 		default:
 		}
 		n, err := stream.Read(buf)
+		if n > 0 {
+			err2 := l.sendPacket(serial, proc, program, buf[:n], Stream, StatusContinue)
+			if err2 != nil {
+				return err2
+			}
+		}
 		if err != nil {
 			if err == io.EOF {
 				return l.sendPacket(serial, proc, program, nil, Stream, StatusOK)
@@ -421,12 +427,6 @@ func (l *Libvirt) sendStream(serial uint32, proc uint32, program uint32, stream 
 				return err2
 			}
 			return err
-		}
-		if n > 0 {
-			err = l.sendPacket(serial, proc, program, buf[:n], Stream, StatusContinue)
-			if err != nil {
-				return err
-			}
 		}
 	}
 }
