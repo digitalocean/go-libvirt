@@ -160,6 +160,14 @@ func (l *Libvirt) listen() {
 			// When the underlying connection EOFs or is closed, stop
 			// this goroutine
 			if err == io.EOF || strings.Contains(err.Error(), "use of closed network connection") {
+				// close event streams
+				for id := range l.events {
+					l.removeStream(id, true)
+				}
+
+				// Deregister all the callbacks so that clients with outstanding requests
+				// will unblock.
+				l.deregisterAll()
 				return
 			}
 
@@ -265,7 +273,7 @@ func (l *Libvirt) addStream(id uint32, s eventStream) {
 // removeStream notifies the libvirt server to stop sending events
 // for the provided callback id. Upon successful de-registration the
 // callback handler is destroyed.
-func (l *Libvirt) removeStream(id uint32) error {
+func (l *Libvirt) removeStream(id uint32, force bool) error {
 	stream := l.events[id]
 	close(stream.Events)
 
@@ -281,7 +289,7 @@ func (l *Libvirt) removeStream(id uint32) error {
 	}
 
 	_, err = l.request(stream.DeregisterProc, stream.Program, buf)
-	if err != nil {
+	if err != nil && !force {
 		return err
 	}
 
@@ -289,7 +297,7 @@ func (l *Libvirt) removeStream(id uint32) error {
 	delete(l.events, id)
 	l.em.Unlock()
 
-	return nil
+	return err
 }
 
 // register configures a method response callback

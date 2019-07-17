@@ -134,7 +134,7 @@ func (l *Libvirt) Connect() error {
 func (l *Libvirt) Disconnect() error {
 	// close event streams
 	for id := range l.events {
-		if err := l.removeStream(id); err != nil {
+		if err := l.removeStream(id, false); err != nil {
 			return err
 		}
 	}

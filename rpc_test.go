@@ -308,7 +308,7 @@ func TestRemoveStream(t *testing.T) {
 	l := New(conn)
 	l.events[id] = newEventStream(constants.QEMUConnectDomainMonitorEventDeregister, constants.ProgramQEMU)
 
-	err := l.removeStream(id)
+	err := l.removeStream(id, false)
 	if err != nil {
 		t.Error(err)
 	}
