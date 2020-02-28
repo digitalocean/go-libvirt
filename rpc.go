@@ -18,9 +18,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
 	xdr "github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
@@ -68,6 +70,11 @@ const (
 	// This indicates that further data packets will be following.
 	StatusContinue
 )
+
+const getResponseTimeout = time.Minute
+
+// ErrLibvirtGetResponseTimeout happens if reading response from libvirtd is stuck.
+var ErrLibvirtGetResponseTimeout = fmt.Errorf("cannot get response from libvirt within %s", getResponseTimeout)
 
 // header is a libvirt rpc packet header
 type header struct {
@@ -469,7 +476,16 @@ func (l *Libvirt) sendPacket(serial uint32, proc uint32, program uint32, payload
 }
 
 func (l *Libvirt) getResponse(c chan response) (response, error) {
-	resp := <-c
+	timer := time.NewTimer(getResponseTimeout)
+	defer timer.Stop()
+
+	var resp response
+	select {
+	case <-timer.C:
+		return response{}, ErrLibvirtGetResponseTimeout
+	case resp = <-c:
+	}
+
 	if resp.Status == StatusError {
 		return resp, decodeError(resp.Payload)
 	}
