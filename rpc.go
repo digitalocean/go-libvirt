@@ -194,12 +194,14 @@ func (l *Libvirt) callback(id uint32, res response) {
 	c, ok := l.callbacks[id]
 	l.cm.Unlock()
 	if ok {
-		// we close the channel in deregister() so that we don't block here
-		// forever without a receiver. If that happens, this write will panic.
-		defer func() {
-			recover()
+		go func() {
+			// we close the channel in deregister() so that we don't block here
+			// forever without a receiver. If that happens, this write will panic.
+			defer func() {
+				recover()
+			}()
+			c <- res
 		}()
-		c <- res
 	}
 }
 
@@ -245,12 +247,14 @@ func (l *Libvirt) stream(e event) error {
 	l.em.Unlock()
 
 	if ok {
-		// we close the channel in deregister() so that we don't block here
-		// forever without a receiver. If that happens, this write will panic.
-		defer func() {
-			recover()
+		go func() {
+			// we close the channel in deregister() so that we don't block here
+			// forever without a receiver. If that happens, this write will panic.
+			defer func() {
+				recover()
+			}()
+			c.Events <- e
 		}()
-		c.Events <- e
 	}
 	return nil
 }
