@@ -153,6 +153,10 @@ func IsNotFound(err error) bool {
 // listen processes incoming data and routes
 // responses to their respective callback handler.
 func (l *Libvirt) listen() {
+	evnetWaitChan := make(chan bool)
+	go func(){
+		evnetWaitChan <- true
+	}
 	for {
 		// response packet length
 		length, err := pktlen(l.r)
@@ -184,7 +188,7 @@ func (l *Libvirt) listen() {
 		}
 
 		// route response to caller
-		l.route(h, buf)
+		evnetWaitChan = l.route(h, buf, evnetWaitChan)
 	}
 }
 
@@ -206,7 +210,7 @@ func (l *Libvirt) callback(id uint32, res response) {
 }
 
 // route sends incoming packets to their listeners.
-func (l *Libvirt) route(h *header, buf []byte) {
+func (l *Libvirt) route(h *header, buf []byte, previousWaitChan chan bool) chan bool {
 	// route events to their respective listener
 	var streamEvent event
 	switch {
@@ -219,10 +223,9 @@ func (l *Libvirt) route(h *header, buf []byte) {
 	if streamEvent != nil {
 		err := eventDecoder(buf, streamEvent)
 		if err != nil { // event was malformed, drop.
-			return
+			return previousWaitChan
 		}
-		l.stream(streamEvent)
-		return
+		return 	l.stream(streamEvent, previousWaitChan)
 	}
 
 	// send responses to caller
@@ -231,6 +234,7 @@ func (l *Libvirt) route(h *header, buf []byte) {
 		Status:  h.Status,
 	}
 	l.callback(h.Serial, res)
+	return previousWaitChan
 }
 
 // serial provides atomic access to the next sequential request serial number.
@@ -240,23 +244,25 @@ func (l *Libvirt) serial() uint32 {
 
 // stream decodes domain events and sends them
 // to the respective event listener.
-func (l *Libvirt) stream(e event) error {
+func (l *Libvirt) stream(e event, previousWaitChan chan bool) chan bool {
 	// send to event listener
 	l.em.Lock()
 	c, ok := l.events[e.GetCallbackID()]
 	l.em.Unlock()
-
+	nextWaitChan := make(chan bool)
 	if ok {
 		go func() {
 			// we close the channel in deregister() so that we don't block here
 			// forever without a receiver. If that happens, this write will panic.
 			defer func() {
 				recover()
+				nextWaitChan <- true
 			}()
+			<- previousWaitChan
 			c.Events <- e
 		}()
 	}
-	return nil
+	return nextWaitChan
 }
 
 // addStream configures the routing for an event stream.
