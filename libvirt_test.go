@@ -15,6 +15,7 @@
 package libvirt
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -163,49 +164,80 @@ func TestDomainMemoryStats(t *testing.T) {
 	}
 }
 
-func TestEvents(t *testing.T) {
+func TestEventsWithContext(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
-	done := make(chan struct{})
 
-	stream, err := l.Events("test")
-	if err != nil {
-		t.Error(err)
-	}
+	t.Run("close", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
 
-	go func() {
-		var e DomainEvent
-		select {
-		case e = <-stream:
-		case <-time.After(time.Second * 5):
-			t.Error("expected event, received timeout")
-		}
-
-		result := struct {
-			Device string `json:"device"`
-			Len    int    `json:"len"`
-			Offset int    `json:"offset"`
-			Speed  int    `json:"speed"`
-			Type   string `json:"type"`
-		}{}
-
-		if err := json.Unmarshal(e.Details, &result); err != nil {
+		stream, err := l.EventsWithContext(ctx, "test")
+		if err != nil {
 			t.Error(err)
 		}
 
-		expected := "drive-ide0-0-0"
-		if result.Device != expected {
-			t.Errorf("expected device %q, got %q", expected, result.Device)
+		go func() {
+			<-time.After(time.Millisecond * 50)
+			cancel()
+		}()
+
+		go func() {
+			<-time.After(time.Millisecond * 200)
+			conn.Test.Write(append(testEventHeader, testEvent...))
+		}()
+
+		select {
+		case _, ok := <-stream:
+			if ok != false {
+				t.Error("stream should be closed")
+			}
+		case <-time.After(time.Second * 500000): // todo set to 5 before commit
+			t.Error("stream not closed within 5 seconds")
+		}
+	})
+
+	t.Run("positive", func(t *testing.T) {
+		done := make(chan struct{})
+
+		stream, err := l.Events("test")
+		if err != nil {
+			t.Error(err)
 		}
 
-		done <- struct{}{}
-	}()
+		go func() {
+			var e DomainEvent
+			select {
+			case e = <-stream:
+			case <-time.After(time.Second * 5):
+				t.Error("expected event, received timeout")
+			}
 
-	// send an event to the listener goroutine
-	conn.Test.Write(append(testEventHeader, testEvent...))
+			result := struct {
+				Device string `json:"device"`
+				Len    int    `json:"len"`
+				Offset int    `json:"offset"`
+				Speed  int    `json:"speed"`
+				Type   string `json:"type"`
+			}{}
 
-	// wait for completion
-	<-done
+			if err := json.Unmarshal(e.Details, &result); err != nil {
+				t.Error(err)
+			}
+
+			expected := "drive-ide0-0-0"
+			if result.Device != expected {
+				t.Errorf("expected device %q, got %q", expected, result.Device)
+			}
+
+			done <- struct{}{}
+		}()
+
+		// send an event to the listener goroutine
+		conn.Test.Write(append(testEventHeader, testEvent...))
+
+		// wait for completion
+		<-done
+	})
 }
 
 func TestRun(t *testing.T) {

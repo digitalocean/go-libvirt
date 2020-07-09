@@ -23,6 +23,7 @@ package libvirt
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -174,11 +175,11 @@ func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 	return DomainState(state), err
 }
 
-// Events streams domain events.
+// EventsWithContext streams domain events.
 // If a problem is encountered setting up the event monitor connection
 // an error will be returned. Errors encountered during streaming will
 // cause the returned event channel to be closed.
-func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
+func (l *Libvirt) EventsWithContext(ctx context.Context, dom string) (<-chan DomainEvent, error) {
 	d, err := l.lookup(dom)
 	if err != nil {
 		return nil, err
@@ -220,13 +221,28 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 	l.addStream(cbID, stream)
 	c := make(chan DomainEvent)
 	go func() {
+		defer func() {
+			_ = l.removeStream(cbID)
+			close(c)
+		}()
+
 		// process events
-		for e := range stream.Events {
-			c <- *e.(*DomainEvent)
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case e := <-stream.Events:
+				c <- *e.(*DomainEvent)
+			}
 		}
 	}()
 
 	return c, nil
+}
+
+// Events same as EventsWithContext but with default context
+func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
+	return l.EventsWithContext(context.Background(), dom)
 }
 
 // LifecycleEvents streams lifecycle events.
