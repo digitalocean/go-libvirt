@@ -224,6 +224,7 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 		for e := range stream.Events {
 			c <- *e.(*DomainEvent)
 		}
+		close(c)
 	}()
 
 	return c, nil
@@ -248,6 +249,7 @@ func (l *Libvirt) LifecycleEvents() (<-chan DomainEventLifecycleMsg, error) {
 		for e := range stream.Events {
 			c <- e.(*DomainEventCallbackLifecycleMsg).Msg
 		}
+		close(c)
 	}()
 
 	return c, nil
