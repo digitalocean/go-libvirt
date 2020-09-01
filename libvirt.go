@@ -133,9 +133,24 @@ func (l *Libvirt) ConnectToURI(uri ConnectURI) error {
 
 	// libvirt requires that we call auth-list prior to connecting,
 	// event when no authentication is used.
-	_, err = l.request(constants.ProcAuthList, constants.Program, buf)
+	resp, err := l.AuthList()
 	if err != nil {
 		return err
+	}
+
+	// Try to authenticate if required and auth type is supported
+loop:
+	for _, auth := range resp {
+		switch auth {
+		case constants.AuthNone:
+			break loop
+		case constants.AuthPolkit:
+			_, err := l.AuthPolkit()
+			if err != nil {
+				return err
+			}
+			break loop
+		}
 	}
 
 	_, err = l.request(constants.ProcConnectOpen, constants.Program, buf)
