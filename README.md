@@ -81,10 +81,6 @@ instead. Over time these handwritten routines will be removed from go-libvirt.
 Warning
 -------
 
-The libvirt project strongly recommends *against* talking to the RPC interface
-directly. They consider it to be a private implementation detail with the
-possibility of being entirely rearchitected in the future.
-
 While these package are reasonably well-tested and have seen some use inside of
 DigitalOcean, there may be subtle bugs which could cause the packages to act
 in unexpected ways.  Use at your own risk!
