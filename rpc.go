@@ -172,8 +172,7 @@ Relay:
 				}
 				ic.enqueue(ev)
 			case ic.drainCh <- sendEv:
-				// nothing to do here but send the event. This blocks until the
-				// client consumes it.
+				sendEv = nil
 			case <-ctx.Done():
 				break Relay
 			}
