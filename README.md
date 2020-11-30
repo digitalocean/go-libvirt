@@ -8,15 +8,35 @@ libvirt's RPC interface, as documented [here](https://libvirt.org/internals/rpc.
 Connections to the libvirt server may be local, or remote. RPC packets are encoded
 using the XDR standard as defined by [RFC 4506](https://tools.ietf.org/html/rfc4506.html).
 
-libvirt's RPC interface is quite extensive, and changes from one version to the next, so
-this project uses a code generator to build the go bindings. The code generator should
-be run whenever you want to build go-libvirt for a new version of libvirt. To do this,
-you'll need to set an environment variable `LIBVIRT_SOURCE` to the directory containing
-the untarred libvirt sources, and then run `go generate ./...` from the go-libvirt directory.
-The code generator consumes [src/remote/remote_protocol.x](https://github.com/libvirt/libvirt/blob/master/src/remote/remote_protocol.x)
-and produces go bindings for all the remote procedures defined there.
+libvirt's RPC interface is quite extensive, and changes from one version to the
+next, so this project uses a pair of code generators to build the go bindings.
+The code generators should be run whenever you want to build go-libvirt for a
+new version of libvirt. See the next section for directions on re-generating
+go-libvirt.
 
 [Pull requests are welcome](https://github.com/digitalocean/go-libvirt/blob/master/CONTRIBUTING.md)!
+
+Running the Code Generators
+---------------------------
+
+The code generator doesn't run automatically when you build go-libvirt. It's
+meant to be run manually any time you change the version of libvirt you're
+using. When you download go-libvirt it will come with generated files
+corresponding to a particular version of libvirt. You can use the library as-is,
+but the generated code may be missing libvirt functions, if you're using a newer
+version of libvirt, or it may have extra functions that will return
+'unimplemented' errors if you try to call them. If this is a problem, you should
+re-run the code generator. To do this, follow these steps:
+
+- First, download a copy of the libvirt sources corresponding to the version you
+  want to use.
+- Next, run `autogen.sh` in the libvirt directory. The autotools will check for
+  necessary libraries and prepare libvirt for building. We don't actually need
+  to build libvirt, but we do require some header files that are produced in
+  this step.
+- Finally, set the environment variable `LIBVIRT_SOURCE` to the directory you
+  put libvirt into, and run `go generate ./...` from the go-libvirt directory.
+  This runs both of the go-libvirt's code generators.
 
 How to Use This Library
 -----------------------
