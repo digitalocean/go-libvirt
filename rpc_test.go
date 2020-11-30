@@ -16,12 +16,15 @@ package libvirt
 
 import (
 	"bytes"
+	"context"
+	"fmt"
 	"sync"
 	"testing"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
 	xdr "github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/libvirttest"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -86,6 +89,18 @@ var (
 		0x70, 0x65, 0x65, 0x64, 0x22, 0x3a, 0x30, 0x2c,
 		0x22, 0x74, 0x79, 0x70, 0x65, 0x22, 0x3a, 0x22,
 		0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x22, 0x7d,
+	}
+
+	testLifeCycle = []byte{
+		0x00, 0x00, 0x00, 0x01, // callback id
+
+		// domain name ("test")
+		0x00, 0x00, 0x00, 0x04, 0x74, 0x65, 0x73, 0x74,
+
+		// event data
+		0x00, 0x00, 0x00, 0x50, 0xad, 0xf7, 0x3f, 0xbe, 0xca, 0x48, 0xac, 0x95,
+		0x13, 0x8a, 0x31, 0xf4, 0xfe, 0x03, 0x2a, 0xff, 0xff, 0xff, 0xff, 0x00,
+		0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x01,
 	}
 
 	testErrorMessage = []byte{
@@ -295,7 +310,8 @@ func TestAddStream(t *testing.T) {
 	l := &Libvirt{}
 	l.events = make(map[uint32]eventStream)
 
-	l.addStream(id, newEventStream(0, 0))
+	ctx := context.Background()
+	l.addStream(id, newEventStream(ctx, 0, 0))
 	if _, ok := l.events[id]; !ok {
 		t.Error("expected event stream to exist")
 	}
@@ -306,7 +322,8 @@ func TestRemoveStream(t *testing.T) {
 
 	conn := libvirttest.New()
 	l := New(conn)
-	l.events[id] = newEventStream(constants.QEMUConnectDomainMonitorEventDeregister, constants.ProgramQEMU)
+	ctx := context.Background()
+	l.events[id] = newEventStream(ctx, constants.ProgramQEMU, constants.QEMUConnectDomainMonitorEventDeregister)
 
 	err := l.removeStream(id)
 	if err != nil {
@@ -320,11 +337,12 @@ func TestRemoveStream(t *testing.T) {
 
 func TestStream(t *testing.T) {
 	id := uint32(1)
-	c := make(chan event, 1)
+	ctx := context.Background()
+	c := newEventStream(ctx, constants.Program, 1)
 
 	l := &Libvirt{}
 	l.events = map[uint32]eventStream{
-		id: eventStream{Events: c},
+		id: c,
 	}
 
 	var streamEvent DomainEvent
@@ -334,7 +352,7 @@ func TestStream(t *testing.T) {
 	}
 
 	l.stream(streamEvent)
-	e := <-c
+	e, _ := c.Recv()
 
 	if e.(DomainEvent).Event != "BLOCK_JOB_COMPLETED" {
 		t.Error("expected event")
@@ -405,4 +423,69 @@ func TestDeregisterAll(t *testing.T) {
 	if len(l.callbacks) != 0 {
 		t.Error("expected callback map to be empty after deregisterAll")
 	}
+}
+
+// TestRouteDeadlock ensures that go-libvirt doesn't hang when trying to send
+// both an event and a response (to a request) at the same time.
+//
+// Events are inherently asyncronous - the client may not be ready to receive an
+// event when it arrives. We don't want that to prevent go-libvirt from
+// continuing to receive responses to outstanding requests. This test checks for
+// deadlocks where the client doesn't immediately consume incoming events.
+func TestRouteDeadlock(t *testing.T) {
+	id := uint32(1)
+	// ech := make(chan event, 1)
+	rch := make(chan response, 1)
+
+	l := &Libvirt{
+		callbacks: map[uint32]chan response{
+			id: rch,
+		},
+		events: map[uint32]eventStream{},
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	stream := newEventStream(ctx, constants.Program, constants.ProcConnectDomainEventCallbackDeregisterAny)
+	l.addStream(id, stream)
+
+	respHeader := &header{constants.Program, 0, 0, 0, id, StatusOK}
+	eventHeader := &header{constants.Program, 0, constants.ProcDomainEventCallbackLifecycle, 0, 0, StatusOK}
+
+	send := func(respCount, evCount int) {
+		// Send the events first
+		for i := 0; i < evCount; i++ {
+			l.route(eventHeader, testLifeCycle)
+		}
+		// Now send the requests.
+		for i := 0; i < respCount; i++ {
+			l.route(respHeader, []byte{})
+		}
+	}
+
+	cases := []struct{ rCount, eCount int }{
+		{2, 0},
+		{0, 2},
+		{1, 1},
+		{2, 2},
+		{50, 50},
+	}
+
+	for _, tc := range cases {
+		fmt.Printf("testing %d responses and %d events\n", tc.rCount, tc.eCount)
+		go send(tc.rCount, tc.eCount)
+
+		for i := 0; i < tc.rCount; i++ {
+			r := <-rch
+			assert.Equal(t, r.Status, uint32(StatusOK))
+		}
+		for i := 0; i < tc.eCount; i++ {
+			e, _ := stream.Recv()
+			fmt.Printf("event %v/%v received\n", i, len(cases))
+			assert.Equal(t, "test", e.(*DomainEventCallbackLifecycleMsg).Msg.Dom.Name)
+		}
+	}
+
+	// finally verify that canceling the context doesn't cause a deadlock.
+	fmt.Println("checking for deadlock after context cancellation")
+	cancel()
+	send(0, 50)
 }

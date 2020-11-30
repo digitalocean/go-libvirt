@@ -130,11 +130,11 @@ func TestDomainMemoryStats(t *testing.T) {
 	l := New(conn)
 
 	wantDomainMemoryStats := []DomainMemoryStat{
-		DomainMemoryStat{
+		{
 			Tag: 6,
 			Val: 1048576,
 		},
-		DomainMemoryStat{
+		{
 			Tag: 7,
 			Val: 91272,
 		},

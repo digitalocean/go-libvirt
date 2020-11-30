@@ -216,14 +216,18 @@ func (l *Libvirt) Events(dom string) (<-chan DomainEvent, error) {
 		return nil, err
 	}
 
-	stream := newEventStream(constants.QEMUConnectDomainMonitorEventDeregister, constants.ProgramQEMU)
+	ctx, cancel := context.WithCancel(context.Background())
+	stream := newEventStream(ctx, constants.ProgramQEMU, constants.QEMUConnectDomainMonitorEventDeregister)
 	l.addStream(cbID, stream)
 	c := make(chan DomainEvent)
 	go func() {
+		defer cancel()
+
 		// process events
-		for e := range stream.Events {
-			c <- *e.(*DomainEvent)
+		for ev, ok := stream.Recv(); ok; {
+			c <- *ev.(*DomainEvent)
 		}
+
 		close(c)
 	}()
 
@@ -240,14 +244,21 @@ func (l *Libvirt) LifecycleEvents() (<-chan DomainEventLifecycleMsg, error) {
 		return nil, err
 	}
 
-	stream := newEventStream(constants.ProcConnectDomainEventCallbackDeregisterAny, constants.Program)
+	ctx, cancel := context.WithCancel(context.Background())
+	stream := newEventStream(ctx, constants.Program, constants.ProcConnectDomainEventCallbackDeregisterAny)
 	l.addStream(uint32(callbackID), stream)
 
 	c := make(chan DomainEventLifecycleMsg)
 	go func() {
-		// process events
-		for e := range stream.Events {
-			c <- e.(*DomainEventCallbackLifecycleMsg).Msg
+		defer cancel()
+
+		// process events until there are no more
+		for {
+			ev, ok := stream.Recv()
+			if !ok {
+				break
+			}
+			c <- ev.(*DomainEventCallbackLifecycleMsg).Msg
 		}
 		close(c)
 	}()
