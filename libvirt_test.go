@@ -15,6 +15,7 @@
 package libvirt
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
@@ -150,8 +151,6 @@ func TestDomainMemoryStats(t *testing.T) {
 		t.Error(err)
 	}
 
-	t.Log(gotDomainMemoryStats)
-
 	if len(gotDomainMemoryStats) == 0 {
 		t.Error("No memory stats returned!")
 	}
@@ -168,17 +167,21 @@ func TestEvents(t *testing.T) {
 	l := New(conn)
 	done := make(chan struct{})
 
-	stream, err := l.Events("test")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	stream, err := l.Events(ctx, "test")
 	if err != nil {
 		t.Error(err)
 	}
 
 	go func() {
 		var e DomainEvent
+
 		select {
 		case e = <-stream:
 		case <-time.After(time.Second * 5):
-			t.Error("expected event, received timeout")
+			t.Fatal("expected event, received timeout")
 		}
 
 		result := struct {
