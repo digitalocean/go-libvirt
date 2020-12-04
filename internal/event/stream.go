@@ -20,7 +20,7 @@ type Stream struct {
 	shutdown context.CancelFunc
 }
 
-// Receive returns the next available event from the Stream's queue.
+// Recv returns the next available event from the Stream's queue.
 func (s *Stream) Recv() chan Event {
 	return s.out
 }

@@ -69,12 +69,12 @@ type DomainEvent struct {
 	Details      []byte
 }
 
-// CallbackID returns the callback ID of a QEMU domain event.
+// GetCallbackID returns the callback ID of a QEMU domain event.
 func (de DomainEvent) GetCallbackID() uint32 {
 	return de.CallbackID
 }
 
-// CallbackID returns the callback ID of a libvirt lifecycle event.
+// GetCallbackID returns the callback ID of a libvirt lifecycle event.
 func (m DomainEventCallbackLifecycleMsg) GetCallbackID() uint32 {
 	return uint32(m.CallbackID)
 }
