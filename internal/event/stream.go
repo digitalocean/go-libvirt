@@ -77,6 +77,7 @@ func (s *Stream) process(ctx context.Context) {
 	for {
 		// informs send() to stop trying
 		nctx, next := context.WithCancel(ctx)
+		defer next()
 
 		select {
 		// new event received, append to queue
