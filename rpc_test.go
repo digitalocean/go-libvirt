@@ -311,7 +311,7 @@ func TestAddStream(t *testing.T) {
 	l.events = make(map[int32]eventStream)
 
 	ctx := context.Background()
-	l.addStream(id, newEventStream(ctx, 0, 0))
+	l.addStream(newEventStream(ctx, 0, id))
 	if _, ok := l.events[id]; !ok {
 		t.Error("expected event stream to exist")
 	}
@@ -445,7 +445,7 @@ func TestRouteDeadlock(t *testing.T) {
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	stream := newEventStream(ctx, constants.Program, id)
-	l.addStream(id, stream)
+	l.addStream(stream)
 
 	respHeader := &header{constants.Program, 0, 0, 0, id, StatusOK}
 	eventHeader := &header{constants.Program, 0, constants.ProcDomainEventCallbackLifecycle, 0, 0, StatusOK}
