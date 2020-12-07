@@ -19,9 +19,12 @@ import (
 	"context"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
+	"reflect"
 	"strings"
 	"sync/atomic"
+	"unsafe"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
 	xdr "github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
@@ -85,7 +88,7 @@ type header struct {
 	Type uint32
 
 	// Call serial number
-	Serial uint32
+	Serial int32
 
 	// Request status, e.g., StatusOK
 	Status uint32
@@ -99,11 +102,18 @@ type packet struct {
 	Header header
 }
 
+// Global packet instance, for use with unsafe.Sizeof()
+var _p packet
+
 // internal rpc response
 type response struct {
 	Payload []byte
 	Status  uint32
 }
+
+// typedParamDecoder is an empty struct with methods for handling libvirt's
+// typed parameters, which are basically a union type.
+type typedParamDecoder struct{}
 
 // eventStream acts like a buffered channel with an unbounded buffer. The
 // implementation consists of a pair of unbuffered channels and a goroutine to
@@ -112,11 +122,11 @@ type response struct {
 // prevents the rpc dispatcher from deadlocking by trying to send an event when
 // the caller is not polling for one.
 type eventStream struct {
-	// Procedure is the remote procedure identifier
-	Procedure uint32
-
 	// Program specifies the source of the events - libvirt or QEMU.
-	Program uint32
+	Program int32
+
+	// CallbackID is the value returned by ConnectDomainCallbackRegisterAny
+	CallbackID int32
 
 	// Private members used to implement the unbounded channel behavior.
 	fillCh  chan event
@@ -124,13 +134,13 @@ type eventStream struct {
 	queue   []event
 }
 
-func newEventStream(ctx context.Context, program, procedure uint32) eventStream {
+func newEventStream(ctx context.Context, program, callbackID int32) eventStream {
 	ic := eventStream{
-		Program:   program,
-		Procedure: procedure,
-		fillCh:    make(chan event),
-		drainCh:   make(chan event),
-		queue:     make([]event, 0),
+		Program:    program,
+		CallbackID: callbackID,
+		fillCh:     make(chan event),
+		drainCh:    make(chan event),
+		queue:      make([]event, 0),
 	}
 
 	// Start a goroutine to manage the queue
@@ -265,7 +275,7 @@ func (l *Libvirt) listen() {
 		}
 
 		// payload: packet length minus what was previously read
-		size := int(length) - (constants.PacketLengthSize + constants.HeaderSize)
+		size := int(length) - int(unsafe.Sizeof(_p))
 		buf := make([]byte, size)
 		_, err = io.ReadFull(l.r, buf)
 		if err != nil {
@@ -279,7 +289,7 @@ func (l *Libvirt) listen() {
 }
 
 // callback sends rpc responses to their respective caller.
-func (l *Libvirt) callback(id uint32, res response) {
+func (l *Libvirt) callback(id int32, res response) {
 	l.cm.Lock()
 	c, ok := l.callbacks[id]
 	l.cm.Unlock()
@@ -306,7 +316,7 @@ func (l *Libvirt) route(h *header, buf []byte) {
 	// route events to their respective listener
 	var streamEvent event
 	switch {
-	case h.Program == constants.ProgramQEMU && h.Procedure == constants.QEMUDomainMonitorEvent:
+	case h.Program == constants.QemuProgram && h.Procedure == constants.QemuProcDomainMonitorEvent:
 		streamEvent = &DomainEvent{}
 	case h.Program == constants.Program && h.Procedure == constants.ProcDomainEventCallbackLifecycle:
 		streamEvent = &DomainEventCallbackLifecycleMsg{}
@@ -330,8 +340,8 @@ func (l *Libvirt) route(h *header, buf []byte) {
 }
 
 // serial provides atomic access to the next sequential request serial number.
-func (l *Libvirt) serial() uint32 {
-	return atomic.AddUint32(&l.s, 1)
+func (l *Libvirt) serial() int32 {
+	return atomic.AddInt32(&l.s, 1)
 }
 
 // stream decodes domain events and sends them to the respective event listener.
@@ -350,33 +360,17 @@ func (l *Libvirt) stream(e event) {
 }
 
 // addStream configures the routing for an event stream.
-func (l *Libvirt) addStream(id uint32, s eventStream) {
+func (l *Libvirt) addStream(s eventStream) {
 	l.em.Lock()
-	l.events[id] = s
+	l.events[s.CallbackID] = s
 	l.em.Unlock()
 }
 
-// removeStream notifies the libvirt server to stop sending events
-// for the provided callback id. Upon successful de-registration the
-// callback handler is destroyed.
-func (l *Libvirt) removeStream(id uint32) error {
+// removeStream removes the event stream from the internal list we use to
+// dispatch events to the client. The caller should first unsubscribe from the
+// event via a libvirt call.
+func (l *Libvirt) removeStream(id int32) error {
 	stream := l.events[id]
-
-	payload := struct {
-		CallbackID uint32
-	}{
-		CallbackID: id,
-	}
-
-	buf, err := encode(&payload)
-	if err != nil {
-		return err
-	}
-
-	_, err = l.request(stream.Procedure, stream.Program, buf)
-	if err != nil {
-		return err
-	}
 
 	l.em.Lock()
 	delete(l.events, id)
@@ -391,14 +385,14 @@ func (l *Libvirt) removeStream(id uint32) error {
 }
 
 // register configures a method response callback
-func (l *Libvirt) register(id uint32, c chan response) {
+func (l *Libvirt) register(id int32, c chan response) {
 	l.cm.Lock()
 	l.callbacks[id] = c
 	l.cm.Unlock()
 }
 
 // deregister destroys a method response callback
-func (l *Libvirt) deregister(id uint32) {
+func (l *Libvirt) deregister(id int32) {
 	l.cm.Lock()
 	if _, ok := l.callbacks[id]; ok {
 		close(l.callbacks[id])
@@ -504,9 +498,9 @@ func (l *Libvirt) processIncomingStream(c chan response, inStream io.Writer) (re
 	}
 }
 
-func (l *Libvirt) sendStream(serial uint32, proc uint32, program uint32, stream io.Reader, abort chan bool) error {
+func (l *Libvirt) sendStream(serial int32, proc uint32, program uint32, stream io.Reader, abort chan bool) error {
 	// Keep total packet length under 4 MiB to follow possible limitation in libvirt server code
-	buf := make([]byte, 4*MiB-constants.HeaderSize)
+	buf := make([]byte, 4*MiB-unsafe.Sizeof(_p))
 	for {
 		select {
 		case <-abort:
@@ -534,14 +528,9 @@ func (l *Libvirt) sendStream(serial uint32, proc uint32, program uint32, stream 
 	}
 }
 
-func (l *Libvirt) sendPacket(serial uint32, proc uint32, program uint32, payload []byte, typ uint32, status uint32) error {
-	size := constants.PacketLengthSize + constants.HeaderSize
-	if payload != nil {
-		size += len(payload)
-	}
+func (l *Libvirt) sendPacket(serial int32, proc uint32, program uint32, payload []byte, typ uint32, status uint32) error {
 
 	p := packet{
-		Len: uint32(size),
 		Header: header{
 			Program:   program,
 			Version:   constants.ProtocolVersion,
@@ -551,6 +540,12 @@ func (l *Libvirt) sendPacket(serial uint32, proc uint32, program uint32, payload
 			Status:    status,
 		},
 	}
+
+	size := int(unsafe.Sizeof(p.Len)) + int(unsafe.Sizeof(p.Header))
+	if payload != nil {
+		size += len(payload)
+	}
+	p.Len = uint32(size)
 
 	// write header
 	l.mu.Lock()
@@ -620,7 +615,7 @@ func eventDecoder(buf []byte, e interface{}) error {
 // If an error is encountered reading the provided Reader, the
 // error is returned and response length will be 0.
 func pktlen(r io.Reader) (uint32, error) {
-	buf := make([]byte, constants.PacketLengthSize)
+	buf := make([]byte, unsafe.Sizeof(_p.Len))
 
 	// read exactly constants.PacketLengthSize bytes
 	_, err := io.ReadFull(r, buf)
@@ -633,7 +628,7 @@ func pktlen(r io.Reader) (uint32, error) {
 
 // extractHeader returns the decoded header from an incoming response.
 func extractHeader(r io.Reader) (*header, error) {
-	buf := make([]byte, constants.HeaderSize)
+	buf := make([]byte, unsafe.Sizeof(_p.Header))
 
 	// read exactly constants.HeaderSize bytes
 	_, err := io.ReadFull(r, buf)
@@ -646,9 +641,79 @@ func extractHeader(r io.Reader) (*header, error) {
 		Version:   binary.BigEndian.Uint32(buf[4:8]),
 		Procedure: binary.BigEndian.Uint32(buf[8:12]),
 		Type:      binary.BigEndian.Uint32(buf[12:16]),
-		Serial:    binary.BigEndian.Uint32(buf[16:20]),
+		Serial:    int32(binary.BigEndian.Uint32(buf[16:20])),
 		Status:    binary.BigEndian.Uint32(buf[20:24]),
 	}
 
 	return h, nil
+}
+
+// Decode decodes a TypedParam. These are part of the libvirt spec, and not xdr
+// proper. TypedParams contain a name, which is called Field for some reason,
+// and a Value, which itself has a "discriminant" - an integer enum encoding the
+// actual type, and a value, the length of which varies based on the actual
+// type.
+func (tpd typedParamDecoder) Decode(d *xdr.Decoder, v reflect.Value) (int, error) {
+	// Get the name of the typed param first
+	name, n, err := d.DecodeString()
+	if err != nil {
+		return n, err
+	}
+	val, n2, err := tpd.decodeTypedParamValue(d)
+	n += n2
+	if err != nil {
+		return n, err
+	}
+	tp := &TypedParam{Field: name, Value: *val}
+	v.Set(reflect.ValueOf(*tp))
+
+	return n, nil
+}
+
+// decodeTypedParamValue decodes the Value part of a TypedParam.
+func (typedParamDecoder) decodeTypedParamValue(d *xdr.Decoder) (*TypedParamValue, int, error) {
+	// All TypedParamValues begin with a uint32 discriminant that tells us what
+	// type they are.
+	discriminant, n, err := d.DecodeUint()
+	if err != nil {
+		return nil, n, err
+	}
+	var n2 int
+	var tpv *TypedParamValue
+	switch discriminant {
+	case 1:
+		var val int32
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 2:
+		var val uint32
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 3:
+		var val int64
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 4:
+		var val uint64
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 5:
+		var val float64
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 6:
+		var val int32
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 7:
+		var val string
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+
+	default:
+		err = fmt.Errorf("invalid parameter type %v", discriminant)
+	}
+	n += n2
+
+	return tpv, n, err
 }

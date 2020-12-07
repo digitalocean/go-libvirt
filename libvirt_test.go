@@ -20,8 +20,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/digitalocean/go-libvirt/internal/constants"
 	"github.com/digitalocean/go-libvirt/libvirttest"
+	"golang.org/x/net/context"
 )
 
 func TestConnect(t *testing.T) {
@@ -168,7 +168,9 @@ func TestEvents(t *testing.T) {
 	l := New(conn)
 	done := make(chan struct{})
 
-	stream, err := l.Events("test")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	stream, err := l.SubscribeQemuEvents(ctx, "test")
 	if err != nil {
 		t.Error(err)
 	}
@@ -278,7 +280,7 @@ func TestSecrets(t *testing.T) {
 	}
 
 	// 19fdc2f2-fa64-46f3-bacf-42a8aafca6dd
-	wantUUID := [constants.UUIDSize]byte{
+	wantUUID := [UUIDBuflen]byte{
 		0x19, 0xfd, 0xc2, 0xf2, 0xfa, 0x64, 0x46, 0xf3,
 		0xba, 0xcf, 0x42, 0xa8, 0xaa, 0xfc, 0xa6, 0xdd,
 	}
@@ -303,7 +305,7 @@ func TestStoragePool(t *testing.T) {
 	}
 
 	// bb30a11c-0846-4827-8bba-3e6b5cf1b65f
-	wantUUID := [constants.UUIDSize]byte{
+	wantUUID := [UUIDBuflen]byte{
 		0xbb, 0x30, 0xa1, 0x1c, 0x08, 0x46, 0x48, 0x27,
 		0x8b, 0xba, 0x3e, 0x6b, 0x5c, 0xf1, 0xb6, 0x5f,
 	}
@@ -335,7 +337,7 @@ func TestStoragePools(t *testing.T) {
 	}
 
 	// bb30a11c-0846-4827-8bba-3e6b5cf1b65f
-	wantUUID := [constants.UUIDSize]byte{
+	wantUUID := [UUIDBuflen]byte{
 		0xbb, 0x30, 0xa1, 0x1c, 0x08, 0x46, 0x48, 0x27,
 		0x8b, 0xba, 0x3e, 0x6b, 0x5c, 0xf1, 0xb6, 0x5f,
 	}
