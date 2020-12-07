@@ -18,9 +18,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"io"
+	"reflect"
 	"strings"
 	"sync/atomic"
+	"unsafe"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
 	"github.com/digitalocean/go-libvirt/internal/event"
@@ -85,7 +88,7 @@ type header struct {
 	Type uint32
 
 	// Call serial number
-	Serial uint32
+	Serial int32
 
 	// Request status, e.g., StatusOK
 	Status uint32
@@ -98,6 +101,9 @@ type packet struct {
 	Len    uint32
 	Header header
 }
+
+// Global packet instance, for use with unsafe.Sizeof()
+var _p packet
 
 // internal rpc response
 type response struct {
@@ -159,7 +165,7 @@ func (l *Libvirt) listen() {
 		}
 
 		// payload: packet length minus what was previously read
-		size := int(length) - (constants.PacketLengthSize + constants.HeaderSize)
+		size := int(length) - int(unsafe.Sizeof(_p))
 		buf := make([]byte, size)
 		_, err = io.ReadFull(l.r, buf)
 		if err != nil {
@@ -173,7 +179,7 @@ func (l *Libvirt) listen() {
 }
 
 // callback sends RPC responses to respective callers.
-func (l *Libvirt) callback(id uint32, res response) {
+func (l *Libvirt) callback(id int32, res response) {
 	l.cmux.Lock()
 	defer l.cmux.Unlock()
 
@@ -185,21 +191,13 @@ func (l *Libvirt) callback(id uint32, res response) {
 	c <- res
 }
 
-// TODO: This needs to be rewritten. The current code treats these lifecycle and
-// qemu monitor events specially, but doens't require that the client have a
-// goroutine running to collect them when they arrive. Without that, it's
-// possible for the client to get stuck if it tries to read a request when this
-// code is trying to send an event on the channel. Also, these are not the only
-// event types supported by libvirt, just the ones someone has cared enough to
-// add in here.
-
 // route sends incoming packets to their listeners.
 func (l *Libvirt) route(h *header, buf []byte) {
 	// route events to their respective listener
 	var event event.Event
 
 	switch {
-	case h.Program == constants.ProgramQEMU && h.Procedure == constants.QEMUDomainMonitorEvent:
+	case h.Program == constants.QemuProgram && h.Procedure == constants.QemuProcDomainMonitorEvent:
 		event = &DomainEvent{}
 	case h.Program == constants.Program && h.Procedure == constants.ProcDomainEventCallbackLifecycle:
 		event = &DomainEventCallbackLifecycleMsg{}
@@ -220,8 +218,8 @@ func (l *Libvirt) route(h *header, buf []byte) {
 }
 
 // serial provides atomic access to the next sequential request serial number.
-func (l *Libvirt) serial() uint32 {
-	return atomic.AddUint32(&l.s, 1)
+func (l *Libvirt) serial() int32 {
+	return atomic.AddInt32(&l.s, 1)
 }
 
 // stream decodes and relays domain events to their respective listener.
@@ -238,49 +236,33 @@ func (l *Libvirt) stream(e event.Event) {
 }
 
 // addStream configures the routing for an event stream.
-func (l *Libvirt) addStream(id uint32, s *event.Stream) {
+func (l *Libvirt) addStream(s *event.Stream) {
 	l.emux.Lock()
 	defer l.emux.Unlock()
 
-	l.events[id] = s
+	l.events[s.CallbackID] = s
 }
 
 // removeStream notifies the libvirt server to stop sending events for the
 // provided callback ID. Upon successful de-registration the callback handler
 // is destroyed. Subsequent calls to removeStream are idempotent and return
 // nil.
-func (l *Libvirt) removeStream(id uint32) error {
-	stream, ok := l.events[id]
-	if !ok {
-		// already removed
-		return nil
-	}
-
-	payload := struct {
-		CallbackID uint32
-	}{
-		CallbackID: id,
-	}
-
-	buf, err := encode(&payload)
-	if err != nil {
-		return err
-	}
-
-	_, err = l.request(stream.Procedure, stream.Program, buf)
-	if err != nil {
-		return err
-	}
-
+// TODO: Fix this comment
+func (l *Libvirt) removeStream(id int32) error {
 	l.emux.Lock()
-	delete(l.events, id)
-	l.emux.Unlock()
+	defer l.emux.Unlock()
+
+	// if the event is already removed, just return nil
+	_, ok := l.events[id]
+	if ok {
+		delete(l.events, id)
+	}
 
 	return nil
 }
 
 // register configures a method response callback
-func (l *Libvirt) register(id uint32, c chan response) {
+func (l *Libvirt) register(id int32, c chan response) {
 	l.cmux.Lock()
 	defer l.cmux.Unlock()
 
@@ -289,7 +271,7 @@ func (l *Libvirt) register(id uint32, c chan response) {
 
 // deregister destroys a method response callback. It is the responsibility of
 // the caller to manage locking (l.cmux) during this call.
-func (l *Libvirt) deregister(id uint32) {
+func (l *Libvirt) deregister(id int32) {
 	_, ok := l.callbacks[id]
 	if !ok {
 		return
@@ -404,9 +386,9 @@ func (l *Libvirt) processIncomingStream(c chan response, inStream io.Writer) (re
 	}
 }
 
-func (l *Libvirt) sendStream(serial uint32, proc uint32, program uint32, stream io.Reader, abort chan bool) error {
+func (l *Libvirt) sendStream(serial int32, proc uint32, program uint32, stream io.Reader, abort chan bool) error {
 	// Keep total packet length under 4 MiB to follow possible limitation in libvirt server code
-	buf := make([]byte, 4*MiB-constants.HeaderSize)
+	buf := make([]byte, 4*MiB-unsafe.Sizeof(_p))
 	for {
 		select {
 		case <-abort:
@@ -434,14 +416,9 @@ func (l *Libvirt) sendStream(serial uint32, proc uint32, program uint32, stream 
 	}
 }
 
-func (l *Libvirt) sendPacket(serial uint32, proc uint32, program uint32, payload []byte, typ uint32, status uint32) error {
-	size := constants.PacketLengthSize + constants.HeaderSize
-	if payload != nil {
-		size += len(payload)
-	}
+func (l *Libvirt) sendPacket(serial int32, proc uint32, program uint32, payload []byte, typ uint32, status uint32) error {
 
 	p := packet{
-		Len: uint32(size),
 		Header: header{
 			Program:   program,
 			Version:   constants.ProtocolVersion,
@@ -451,6 +428,12 @@ func (l *Libvirt) sendPacket(serial uint32, proc uint32, program uint32, payload
 			Status:    status,
 		},
 	}
+
+	size := int(unsafe.Sizeof(p.Len)) + int(unsafe.Sizeof(p.Header))
+	if payload != nil {
+		size += len(payload)
+	}
+	p.Len = uint32(size)
 
 	// write header
 	l.mu.Lock()
@@ -519,7 +502,7 @@ func eventDecoder(buf []byte, e interface{}) error {
 // pktlen returns the length of an incoming RPC packet.  Read errors will
 // result in a returned response length of 0 and a non-nil error.
 func pktlen(r io.Reader) (uint32, error) {
-	buf := make([]byte, constants.PacketLengthSize)
+	buf := make([]byte, unsafe.Sizeof(_p.Len))
 
 	// extract the packet's length from the header
 	_, err := io.ReadFull(r, buf)
@@ -532,7 +515,7 @@ func pktlen(r io.Reader) (uint32, error) {
 
 // extractHeader returns the decoded header from an incoming response.
 func extractHeader(r io.Reader) (*header, error) {
-	buf := make([]byte, constants.HeaderSize)
+	buf := make([]byte, unsafe.Sizeof(_p.Header))
 
 	// extract the packet's header from r
 	_, err := io.ReadFull(r, buf)
@@ -545,7 +528,79 @@ func extractHeader(r io.Reader) (*header, error) {
 		Version:   binary.BigEndian.Uint32(buf[4:8]),
 		Procedure: binary.BigEndian.Uint32(buf[8:12]),
 		Type:      binary.BigEndian.Uint32(buf[12:16]),
-		Serial:    binary.BigEndian.Uint32(buf[16:20]),
+		Serial:    int32(binary.BigEndian.Uint32(buf[16:20])),
 		Status:    binary.BigEndian.Uint32(buf[20:24]),
 	}, nil
+}
+
+type typedParamDecoder struct{}
+
+// Decode decodes a TypedParam. These are part of the libvirt spec, and not xdr
+// proper. TypedParams contain a name, which is called Field for some reason,
+// and a Value, which itself has a "discriminant" - an integer enum encoding the
+// actual type, and a value, the length of which varies based on the actual
+// type.
+func (tpd typedParamDecoder) Decode(d *xdr.Decoder, v reflect.Value) (int, error) {
+	// Get the name of the typed param first
+	name, n, err := d.DecodeString()
+	if err != nil {
+		return n, err
+	}
+	val, n2, err := tpd.decodeTypedParamValue(d)
+	n += n2
+	if err != nil {
+		return n, err
+	}
+	tp := &TypedParam{Field: name, Value: *val}
+	v.Set(reflect.ValueOf(*tp))
+
+	return n, nil
+}
+
+// decodeTypedParamValue decodes the Value part of a TypedParam.
+func (typedParamDecoder) decodeTypedParamValue(d *xdr.Decoder) (*TypedParamValue, int, error) {
+	// All TypedParamValues begin with a uint32 discriminant that tells us what
+	// type they are.
+	discriminant, n, err := d.DecodeUint()
+	if err != nil {
+		return nil, n, err
+	}
+	var n2 int
+	var tpv *TypedParamValue
+	switch discriminant {
+	case 1:
+		var val int32
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 2:
+		var val uint32
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 3:
+		var val int64
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 4:
+		var val uint64
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 5:
+		var val float64
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 6:
+		var val int32
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+	case 7:
+		var val string
+		n2, err = d.Decode(&val)
+		tpv = &TypedParamValue{D: discriminant, I: val}
+
+	default:
+		err = fmt.Errorf("invalid parameter type %v", discriminant)
+	}
+	n += n2
+
+	return tpv, n, err
 }

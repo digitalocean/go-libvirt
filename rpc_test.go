@@ -29,7 +29,7 @@ import (
 
 var (
 	// dc229f87d4de47198cfd2e21c6105b01
-	testUUID = [constants.UUIDSize]byte{
+	testUUID = [UUIDBuflen]byte{
 		0xdc, 0x22, 0x9f, 0x87, 0xd4, 0xde, 0x47, 0x19,
 		0x8c, 0xfd, 0x2e, 0x21, 0xc6, 0x10, 0x5b, 0x01,
 	}
@@ -197,7 +197,7 @@ func TestDecodeEvent(t *testing.T) {
 		t.Error(err)
 	}
 
-	expCbID := uint32(1)
+	expCbID := int32(1)
 	if e.CallbackID != expCbID {
 		t.Errorf("expected callback id %d, got %d", expCbID, e.CallbackID)
 	}
@@ -280,8 +280,8 @@ func TestEncode(t *testing.T) {
 
 func TestRegister(t *testing.T) {
 	l := &Libvirt{}
-	l.callbacks = make(map[uint32]chan response)
-	id := uint32(1)
+	l.callbacks = make(map[int32]chan response)
+	id := int32(1)
 	c := make(chan response)
 
 	l.register(id, c)
@@ -291,10 +291,10 @@ func TestRegister(t *testing.T) {
 }
 
 func TestDeregister(t *testing.T) {
-	id := uint32(1)
+	id := int32(1)
 
 	l := &Libvirt{}
-	l.callbacks = map[uint32]chan response{
+	l.callbacks = map[int32]chan response{
 		id: make(chan response),
 	}
 
@@ -305,34 +305,35 @@ func TestDeregister(t *testing.T) {
 }
 
 func TestAddStream(t *testing.T) {
-	id := uint32(1)
+	id := int32(1)
 
 	l := &Libvirt{}
-	l.events = make(map[uint32]*event.Stream)
+	l.events = make(map[int32]*event.Stream)
 
-	stream := event.NewStream(0, 0)
+	stream := event.NewStream(0, id)
 	defer stream.Shutdown()
 
-	l.addStream(id, event.NewStream(0, 0))
+	l.addStream(stream)
 	if _, ok := l.events[id]; !ok {
 		t.Error("expected event stream to exist")
 	}
 }
 
 func TestRemoveStream(t *testing.T) {
-	id := uint32(1)
+	id := int32(1)
 
 	conn := libvirttest.New()
 	l := New(conn)
 
-	stream := event.NewStream(constants.ProgramQEMU, constants.QEMUConnectDomainMonitorEventDeregister)
+	stream := event.NewStream(constants.QemuProgram, id)
 	defer stream.Shutdown()
 
 	l.events[id] = stream
 
+	fmt.Println("removing stream")
 	err := l.removeStream(id)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if _, ok := l.events[id]; ok {
@@ -341,12 +342,12 @@ func TestRemoveStream(t *testing.T) {
 }
 
 func TestStream(t *testing.T) {
-	id := uint32(1)
+	id := int32(1)
 	stream := event.NewStream(constants.Program, 1)
 	defer stream.Shutdown()
 
 	l := &Libvirt{}
-	l.events = map[uint32]*event.Stream{
+	l.events = map[int32]*event.Stream{
 		id: stream,
 	}
 
@@ -365,7 +366,7 @@ func TestStream(t *testing.T) {
 }
 
 func TestSerial(t *testing.T) {
-	count := uint32(10)
+	count := int32(10)
 	l := &Libvirt{}
 
 	var wg sync.WaitGroup
@@ -379,7 +380,7 @@ func TestSerial(t *testing.T) {
 
 	wg.Wait()
 
-	expected := count + uint32(1)
+	expected := count + int32(1)
 	actual := l.serial()
 	if expected != actual {
 		t.Errorf("expected serial to be %d, got %d", expected, actual)
@@ -387,7 +388,7 @@ func TestSerial(t *testing.T) {
 }
 
 func TestLookup(t *testing.T) {
-	id := uint32(1)
+	id := int32(1)
 	c := make(chan response)
 	name := "test"
 
@@ -433,24 +434,23 @@ func TestDeregisterAll(t *testing.T) {
 // TestRouteDeadlock ensures that go-libvirt doesn't hang when trying to send
 // both an event and a response (to a request) at the same time.
 //
-// Events are inherently asyncronous - the client may not be ready to receive an
-// event when it arrives. We don't want that to prevent go-libvirt from
+// Events are inherently asynchronous - the client may not be ready to receive
+// an event when it arrives. We don't want that to prevent go-libvirt from
 // continuing to receive responses to outstanding requests. This test checks for
 // deadlocks where the client doesn't immediately consume incoming events.
 func TestRouteDeadlock(t *testing.T) {
-	id := uint32(1)
-	// ech := make(chan event, 1)
+	id := int32(1)
 	rch := make(chan response, 1)
 
 	l := &Libvirt{
-		callbacks: map[uint32]chan response{
+		callbacks: map[int32]chan response{
 			id: rch,
 		},
-		events: make(map[uint32]*event.Stream),
+		events: make(map[int32]*event.Stream),
 	}
-	stream := event.NewStream(constants.Program, constants.ProcConnectDomainEventCallbackDeregisterAny)
+	stream := event.NewStream(constants.Program, id)
 
-	l.addStream(id, stream)
+	l.addStream(stream)
 
 	respHeader := &header{constants.Program, 0, 0, 0, id, StatusOK}
 	eventHeader := &header{constants.Program, 0, constants.ProcDomainEventCallbackLifecycle, 0, 0, StatusOK}

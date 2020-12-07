@@ -199,6 +199,19 @@ func (l *Lexer) acceptRun(valid string) {
 	l.backup()
 }
 
+// procIdent checks whether an identifier matches the pattern for a procedure
+// enum.
+func procIdent(ident string) bool {
+	// The pattern we're looking for is "<PROGRAM>_PROC_<NAME>", like
+	// "REMOTE_PROC_DOMAIN_OPEN_CONSOLE"
+	if ix := strings.Index(ident, "_PROC_"); ix != -1 {
+		if strings.Index(ident[:ix], "_") == -1 {
+			return true
+		}
+	}
+	return false
+}
+
 // keyword checks whether the current lexeme is a keyword or not. If so it
 // returns the keyword's token id, otherwise it returns IDENTIFIER.
 func (l *Lexer) keyword() int {
@@ -206,6 +219,9 @@ func (l *Lexer) keyword() int {
 	tok, ok := keywords[ident]
 	if ok == true {
 		return int(tok)
+	}
+	if procIdent(ident) {
+		return PROCIDENTIFIER
 	}
 	return IDENTIFIER
 }

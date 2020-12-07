@@ -22,89 +22,19 @@ package libvirt
 
 import (
 	"bytes"
-	"fmt"
 	"io"
-	"reflect"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
 	"github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 )
 
-const (
-	VirUUIDBuflen = 16
+// References to prevent "imported and not used" errors.
+var (
+	_ = bytes.Buffer{}
+	_ = io.Copy
+	_ = constants.Program
+	_ = xdr.Unmarshal
 )
-
-type typedParamDecoder struct {}
-
-// Decode decodes a TypedParam. These are part of the libvirt spec, and not xdr
-// proper. TypedParams contain a name, which is called Field for some reason,
-// and a Value, which itself has a "discriminant" - an integer enum encoding the
-// actual type, and a value, the length of which varies based on the actual
-// type.
-func (tpd typedParamDecoder) Decode(d *xdr.Decoder, v reflect.Value) (int, error) {
-	// Get the name of the typed param first
-	name, n, err := d.DecodeString()
-	if err != nil {
-		return n, err
-	}
-	val, n2, err := tpd.decodeTypedParamValue(d)
-	n += n2
-	if err != nil {
-		return n, err
-	}
-	tp := &TypedParam{Field: name, Value: *val}
-	v.Set(reflect.ValueOf(*tp))
-
-	return n, nil
-}
-
-// decodeTypedParamValue decodes the Value part of a TypedParam.
-func (typedParamDecoder) decodeTypedParamValue(d *xdr.Decoder) (*TypedParamValue, int, error) {
-	// All TypedParamValues begin with a uint32 discriminant that tells us what
-	// type they are.
-	discriminant, n, err := d.DecodeUint()
-	if err != nil {
-		return nil, n, err
-	}
-	var n2 int
-	var tpv *TypedParamValue
-	switch discriminant {
-	case 1:
-		var val int32
-		n2, err = d.Decode(&val)
-		tpv = &TypedParamValue{D: discriminant, I: val}
-	case 2:
-		var val uint32
-		n2, err = d.Decode(&val)
-		tpv = &TypedParamValue{D: discriminant, I: val}
-	case 3:
-		var val int64
-		n2, err = d.Decode(&val)
-		tpv = &TypedParamValue{D: discriminant, I: val}
-	case 4:
-		var val uint64
-		n2, err = d.Decode(&val)
-		tpv = &TypedParamValue{D: discriminant, I: val}
-	case 5:
-		var val float64
-		n2, err = d.Decode(&val)
-		tpv = &TypedParamValue{D: discriminant, I: val}
-	case 6:
-		var val int32
-		n2, err = d.Decode(&val)
-		tpv = &TypedParamValue{D: discriminant, I: val}
-	case 7:
-		var val string
-		n2, err = d.Decode(&val)
-		tpv = &TypedParamValue{D: discriminant, I: val}
-
-	default:
-		err = fmt.Errorf("invalid parameter type %v", discriminant)
-	}
-	n += n2
-
-	return tpv, n, err
-}
 
 //
 // Typedefs:
@@ -128,13 +58,12 @@ type {{.Name}} struct {
 }
 
 {{end}}
-
 {{range .Unions}}// {{.Name}} is a discriminated union.
 type {{.Name}} struct {
 	D uint32
 	I interface{}
-{{end -}}
 }
+{{end -}}
 {{range .Unions}}{{$uname := .Name}}{{range .Cases}}{{$casetype := printf "%v%v" $uname .CaseName}}
 // New{{$casetype}} creates a discriminated union value satisfying
 // the {{$uname}} interface.
@@ -164,7 +93,7 @@ func (l *Libvirt) {{.Name}}(
 	}
 {{end}}
 {{if .RetStruct}}	var r response{{end}}
-	{{if .RetStruct}}r{{else}}_{{end}}, err = l.requestStream({{.Num}}, constants.Program, buf,
+	{{if .RetStruct}}r{{else}}_{{end}}, err = l.requestStream({{.Num}}, constants.{{.Program}}Program, buf,
     {{- if (ne .WriteStreamIdx -1)}} outStream,{{else}} nil,{{end}}
     {{- if (ne .ReadStreamIdx -1)}} inStream{{else}} nil{{end -}}
     )

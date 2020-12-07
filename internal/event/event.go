@@ -16,5 +16,5 @@ package event
 
 // Event represents an internal Event.
 type Event interface {
-	GetCallbackID() uint32
+	GetCallbackID() int32
 }

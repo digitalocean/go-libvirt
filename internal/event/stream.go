@@ -20,11 +20,11 @@ import "context"
 // consists of a pair of unbuffered channels and a goroutine to manage them.
 // Client behavior will not cause incoming events to block.
 type Stream struct {
-	// Procedure is the remote procedure identifier
-	Procedure uint32
-
 	// Program specifies the source of the events - libvirt or QEMU.
 	Program uint32
+
+	// CallbackID is returned by the event registration call.
+	CallbackID int32
 
 	// manage unbounded channel behavior.
 	queue   []Event
@@ -131,12 +131,12 @@ func (s *Stream) send(ctx context.Context) <-chan struct{} {
 // queue, which is then relayed to the listening client. Client behavior will
 // not cause incoming events to block. It is the responsibility of the caller
 // to terminate the Stream via Shutdown() when no longer in use.
-func NewStream(program, procedure uint32) *Stream {
+func NewStream(program uint32, cbID int32) *Stream {
 	ic := &Stream{
-		Program:   program,
-		Procedure: procedure,
-		in:        make(chan Event),
-		out:       make(chan Event),
+		Program:    program,
+		CallbackID: cbID,
+		in:         make(chan Event),
+		out:        make(chan Event),
 	}
 
 	ic.shutdown = ic.start()
