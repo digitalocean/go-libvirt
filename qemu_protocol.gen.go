@@ -43,67 +43,67 @@ var (
 //
 // Enums:
 //
-// QemuProcedure is libvirt's qemu_procedure
-type QemuProcedure int32
+// QEMUProcedure is libvirt's qemu_procedure
+type QEMUProcedure int32
 
 //
 // Structs:
 //
-// QemuDomainMonitorCommandArgs is libvirt's qemu_domain_monitor_command_args
-type QemuDomainMonitorCommandArgs struct {
+// QEMUDomainMonitorCommandArgs is libvirt's qemu_domain_monitor_command_args
+type QEMUDomainMonitorCommandArgs struct {
 	Dom Domain
 	Cmd string
 	Flags uint32
 }
 
-// QemuDomainMonitorCommandRet is libvirt's qemu_domain_monitor_command_ret
-type QemuDomainMonitorCommandRet struct {
+// QEMUDomainMonitorCommandRet is libvirt's qemu_domain_monitor_command_ret
+type QEMUDomainMonitorCommandRet struct {
 	Result string
 }
 
-// QemuDomainAttachArgs is libvirt's qemu_domain_attach_args
-type QemuDomainAttachArgs struct {
+// QEMUDomainAttachArgs is libvirt's qemu_domain_attach_args
+type QEMUDomainAttachArgs struct {
 	PidValue uint32
 	Flags uint32
 }
 
-// QemuDomainAttachRet is libvirt's qemu_domain_attach_ret
-type QemuDomainAttachRet struct {
+// QEMUDomainAttachRet is libvirt's qemu_domain_attach_ret
+type QEMUDomainAttachRet struct {
 	Dom Domain
 }
 
-// QemuDomainAgentCommandArgs is libvirt's qemu_domain_agent_command_args
-type QemuDomainAgentCommandArgs struct {
+// QEMUDomainAgentCommandArgs is libvirt's qemu_domain_agent_command_args
+type QEMUDomainAgentCommandArgs struct {
 	Dom Domain
 	Cmd string
 	Timeout int32
 	Flags uint32
 }
 
-// QemuDomainAgentCommandRet is libvirt's qemu_domain_agent_command_ret
-type QemuDomainAgentCommandRet struct {
+// QEMUDomainAgentCommandRet is libvirt's qemu_domain_agent_command_ret
+type QEMUDomainAgentCommandRet struct {
 	Result OptString
 }
 
-// QemuConnectDomainMonitorEventRegisterArgs is libvirt's qemu_connect_domain_monitor_event_register_args
-type QemuConnectDomainMonitorEventRegisterArgs struct {
+// QEMUConnectDomainMonitorEventRegisterArgs is libvirt's qemu_connect_domain_monitor_event_register_args
+type QEMUConnectDomainMonitorEventRegisterArgs struct {
 	Dom OptDomain
 	Event OptString
 	Flags uint32
 }
 
-// QemuConnectDomainMonitorEventRegisterRet is libvirt's qemu_connect_domain_monitor_event_register_ret
-type QemuConnectDomainMonitorEventRegisterRet struct {
+// QEMUConnectDomainMonitorEventRegisterRet is libvirt's qemu_connect_domain_monitor_event_register_ret
+type QEMUConnectDomainMonitorEventRegisterRet struct {
 	CallbackID int32
 }
 
-// QemuConnectDomainMonitorEventDeregisterArgs is libvirt's qemu_connect_domain_monitor_event_deregister_args
-type QemuConnectDomainMonitorEventDeregisterArgs struct {
+// QEMUConnectDomainMonitorEventDeregisterArgs is libvirt's qemu_connect_domain_monitor_event_deregister_args
+type QEMUConnectDomainMonitorEventDeregisterArgs struct {
 	CallbackID int32
 }
 
-// QemuDomainMonitorEventMsg is libvirt's qemu_domain_monitor_event_msg
-type QemuDomainMonitorEventMsg struct {
+// QEMUDomainMonitorEventMsg is libvirt's qemu_domain_monitor_event_msg
+type QEMUDomainMonitorEventMsg struct {
 	CallbackID int32
 	Dom Domain
 	Event string
@@ -115,11 +115,11 @@ type QemuDomainMonitorEventMsg struct {
 
 
 
-// QemuDomainMonitorCommand is the go wrapper for QEMU_PROC_DOMAIN_MONITOR_COMMAND.
-func (l *Libvirt) QemuDomainMonitorCommand(Dom Domain, Cmd string, Flags uint32) (rResult string, err error) {
+// QEMUDomainMonitorCommand is the go wrapper for QEMU_PROC_DOMAIN_MONITOR_COMMAND.
+func (l *Libvirt) QEMUDomainMonitorCommand(Dom Domain, Cmd string, Flags uint32) (rResult string, err error) {
 	var buf []byte
 
-	args := QemuDomainMonitorCommandArgs {
+	args := QEMUDomainMonitorCommandArgs {
 		Dom: Dom,
 		Cmd: Cmd,
 		Flags: Flags,
@@ -131,7 +131,7 @@ func (l *Libvirt) QemuDomainMonitorCommand(Dom Domain, Cmd string, Flags uint32)
 	}
 
 	var r response
-	r, err = l.requestStream(1, constants.QemuProgram, buf, nil, nil)
+	r, err = l.requestStream(1, constants.QEMUProgram, buf, nil, nil)
 	if err != nil {
 		return
 	}
@@ -150,11 +150,11 @@ func (l *Libvirt) QemuDomainMonitorCommand(Dom Domain, Cmd string, Flags uint32)
 	return
 }
 
-// QemuDomainAttach is the go wrapper for QEMU_PROC_DOMAIN_ATTACH.
-func (l *Libvirt) QemuDomainAttach(PidValue uint32, Flags uint32) (rDom Domain, err error) {
+// QEMUDomainAttach is the go wrapper for QEMU_PROC_DOMAIN_ATTACH.
+func (l *Libvirt) QEMUDomainAttach(PidValue uint32, Flags uint32) (rDom Domain, err error) {
 	var buf []byte
 
-	args := QemuDomainAttachArgs {
+	args := QEMUDomainAttachArgs {
 		PidValue: PidValue,
 		Flags: Flags,
 	}
@@ -165,7 +165,7 @@ func (l *Libvirt) QemuDomainAttach(PidValue uint32, Flags uint32) (rDom Domain, 
 	}
 
 	var r response
-	r, err = l.requestStream(2, constants.QemuProgram, buf, nil, nil)
+	r, err = l.requestStream(2, constants.QEMUProgram, buf, nil, nil)
 	if err != nil {
 		return
 	}
@@ -184,11 +184,11 @@ func (l *Libvirt) QemuDomainAttach(PidValue uint32, Flags uint32) (rDom Domain, 
 	return
 }
 
-// QemuDomainAgentCommand is the go wrapper for QEMU_PROC_DOMAIN_AGENT_COMMAND.
-func (l *Libvirt) QemuDomainAgentCommand(Dom Domain, Cmd string, Timeout int32, Flags uint32) (rResult OptString, err error) {
+// QEMUDomainAgentCommand is the go wrapper for QEMU_PROC_DOMAIN_AGENT_COMMAND.
+func (l *Libvirt) QEMUDomainAgentCommand(Dom Domain, Cmd string, Timeout int32, Flags uint32) (rResult OptString, err error) {
 	var buf []byte
 
-	args := QemuDomainAgentCommandArgs {
+	args := QEMUDomainAgentCommandArgs {
 		Dom: Dom,
 		Cmd: Cmd,
 		Timeout: Timeout,
@@ -201,7 +201,7 @@ func (l *Libvirt) QemuDomainAgentCommand(Dom Domain, Cmd string, Timeout int32, 
 	}
 
 	var r response
-	r, err = l.requestStream(3, constants.QemuProgram, buf, nil, nil)
+	r, err = l.requestStream(3, constants.QEMUProgram, buf, nil, nil)
 	if err != nil {
 		return
 	}
@@ -220,11 +220,11 @@ func (l *Libvirt) QemuDomainAgentCommand(Dom Domain, Cmd string, Timeout int32, 
 	return
 }
 
-// QemuConnectDomainMonitorEventRegister is the go wrapper for QEMU_PROC_CONNECT_DOMAIN_MONITOR_EVENT_REGISTER.
-func (l *Libvirt) QemuConnectDomainMonitorEventRegister(Dom OptDomain, Event OptString, Flags uint32) (rCallbackID int32, err error) {
+// QEMUConnectDomainMonitorEventRegister is the go wrapper for QEMU_PROC_CONNECT_DOMAIN_MONITOR_EVENT_REGISTER.
+func (l *Libvirt) QEMUConnectDomainMonitorEventRegister(Dom OptDomain, Event OptString, Flags uint32) (rCallbackID int32, err error) {
 	var buf []byte
 
-	args := QemuConnectDomainMonitorEventRegisterArgs {
+	args := QEMUConnectDomainMonitorEventRegisterArgs {
 		Dom: Dom,
 		Event: Event,
 		Flags: Flags,
@@ -236,7 +236,7 @@ func (l *Libvirt) QemuConnectDomainMonitorEventRegister(Dom OptDomain, Event Opt
 	}
 
 	var r response
-	r, err = l.requestStream(4, constants.QemuProgram, buf, nil, nil)
+	r, err = l.requestStream(4, constants.QEMUProgram, buf, nil, nil)
 	if err != nil {
 		return
 	}
@@ -255,11 +255,11 @@ func (l *Libvirt) QemuConnectDomainMonitorEventRegister(Dom OptDomain, Event Opt
 	return
 }
 
-// QemuConnectDomainMonitorEventDeregister is the go wrapper for QEMU_PROC_CONNECT_DOMAIN_MONITOR_EVENT_DEREGISTER.
-func (l *Libvirt) QemuConnectDomainMonitorEventDeregister(CallbackID int32) (err error) {
+// QEMUConnectDomainMonitorEventDeregister is the go wrapper for QEMU_PROC_CONNECT_DOMAIN_MONITOR_EVENT_DEREGISTER.
+func (l *Libvirt) QEMUConnectDomainMonitorEventDeregister(CallbackID int32) (err error) {
 	var buf []byte
 
-	args := QemuConnectDomainMonitorEventDeregisterArgs {
+	args := QEMUConnectDomainMonitorEventDeregisterArgs {
 		CallbackID: CallbackID,
 	}
 
@@ -269,7 +269,7 @@ func (l *Libvirt) QemuConnectDomainMonitorEventDeregister(CallbackID int32) (err
 	}
 
 
-	_, err = l.requestStream(5, constants.QemuProgram, buf, nil, nil)
+	_, err = l.requestStream(5, constants.QEMUProgram, buf, nil, nil)
 	if err != nil {
 		return
 	}
@@ -277,12 +277,12 @@ func (l *Libvirt) QemuConnectDomainMonitorEventDeregister(CallbackID int32) (err
 	return
 }
 
-// QemuDomainMonitorEvent is the go wrapper for QEMU_PROC_DOMAIN_MONITOR_EVENT.
-func (l *Libvirt) QemuDomainMonitorEvent() (err error) {
+// QEMUDomainMonitorEvent is the go wrapper for QEMU_PROC_DOMAIN_MONITOR_EVENT.
+func (l *Libvirt) QEMUDomainMonitorEvent() (err error) {
 	var buf []byte
 
 
-	_, err = l.requestStream(6, constants.QemuProgram, buf, nil, nil)
+	_, err = l.requestStream(6, constants.QEMUProgram, buf, nil, nil)
 	if err != nil {
 		return
 	}

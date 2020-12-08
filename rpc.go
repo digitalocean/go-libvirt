@@ -197,7 +197,7 @@ func (l *Libvirt) route(h *header, buf []byte) {
 	var event event.Event
 
 	switch {
-	case h.Program == constants.QemuProgram && h.Procedure == constants.QemuProcDomainMonitorEvent:
+	case h.Program == constants.QEMUProgram && h.Procedure == constants.QEMUProcDomainMonitorEvent:
 		event = &DomainEvent{}
 	case h.Program == constants.Program && h.Procedure == constants.ProcDomainEventCallbackLifecycle:
 		event = &DomainEventCallbackLifecycleMsg{}

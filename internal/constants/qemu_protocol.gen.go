@@ -25,23 +25,23 @@ package constants
 // identified by a unique number.
 const (
 	// From enums:
-	// QemuProcDomainMonitorCommand is libvirt's QEMU_PROC_DOMAIN_MONITOR_COMMAND
-	QemuProcDomainMonitorCommand = 1
-	// QemuProcDomainAttach is libvirt's QEMU_PROC_DOMAIN_ATTACH
-	QemuProcDomainAttach = 2
-	// QemuProcDomainAgentCommand is libvirt's QEMU_PROC_DOMAIN_AGENT_COMMAND
-	QemuProcDomainAgentCommand = 3
-	// QemuProcConnectDomainMonitorEventRegister is libvirt's QEMU_PROC_CONNECT_DOMAIN_MONITOR_EVENT_REGISTER
-	QemuProcConnectDomainMonitorEventRegister = 4
-	// QemuProcConnectDomainMonitorEventDeregister is libvirt's QEMU_PROC_CONNECT_DOMAIN_MONITOR_EVENT_DEREGISTER
-	QemuProcConnectDomainMonitorEventDeregister = 5
-	// QemuProcDomainMonitorEvent is libvirt's QEMU_PROC_DOMAIN_MONITOR_EVENT
-	QemuProcDomainMonitorEvent = 6
+	// QEMUProcDomainMonitorCommand is libvirt's QEMU_PROC_DOMAIN_MONITOR_COMMAND
+	QEMUProcDomainMonitorCommand = 1
+	// QEMUProcDomainAttach is libvirt's QEMU_PROC_DOMAIN_ATTACH
+	QEMUProcDomainAttach = 2
+	// QEMUProcDomainAgentCommand is libvirt's QEMU_PROC_DOMAIN_AGENT_COMMAND
+	QEMUProcDomainAgentCommand = 3
+	// QEMUProcConnectDomainMonitorEventRegister is libvirt's QEMU_PROC_CONNECT_DOMAIN_MONITOR_EVENT_REGISTER
+	QEMUProcConnectDomainMonitorEventRegister = 4
+	// QEMUProcConnectDomainMonitorEventDeregister is libvirt's QEMU_PROC_CONNECT_DOMAIN_MONITOR_EVENT_DEREGISTER
+	QEMUProcConnectDomainMonitorEventDeregister = 5
+	// QEMUProcDomainMonitorEvent is libvirt's QEMU_PROC_DOMAIN_MONITOR_EVENT
+	QEMUProcDomainMonitorEvent = 6
 
 
 	// From consts:
-	// QemuProgram is libvirt's QEMU_PROGRAM
-	QemuProgram = 0x20008087
-	// QemuProtocolVersion is libvirt's QEMU_PROTOCOL_VERSION
-	QemuProtocolVersion = 1
+	// QEMUProgram is libvirt's QEMU_PROGRAM
+	QEMUProgram = 0x20008087
+	// QEMUProtocolVersion is libvirt's QEMU_PROTOCOL_VERSION
+	QEMUProtocolVersion = 1
 )

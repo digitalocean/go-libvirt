@@ -1371,7 +1371,7 @@ type DomainGetCPUStatsRet struct {
 // DomainGetHostnameArgs is libvirt's remote_domain_get_hostname_args
 type DomainGetHostnameArgs struct {
 	Dom Domain
-	Flags DomainGetHostnameFlags
+	Flags uint32
 }
 
 // DomainGetHostnameRet is libvirt's remote_domain_get_hostname_ret
@@ -12387,7 +12387,7 @@ func (l *Libvirt) DomainEventBalloonChange() (err error) {
 }
 
 // DomainGetHostname is the go wrapper for REMOTE_PROC_DOMAIN_GET_HOSTNAME.
-func (l *Libvirt) DomainGetHostname(Dom Domain, Flags DomainGetHostnameFlags) (rHostname string, err error) {
+func (l *Libvirt) DomainGetHostname(Dom Domain, Flags uint32) (rHostname string, err error) {
 	var buf []byte
 
 	args := DomainGetHostnameArgs {

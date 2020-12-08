@@ -325,7 +325,7 @@ func TestRemoveStream(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	stream := event.NewStream(constants.QemuProgram, id)
+	stream := event.NewStream(constants.QEMUProgram, id)
 	defer stream.Shutdown()
 
 	l.events[id] = stream
