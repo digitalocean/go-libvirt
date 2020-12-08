@@ -323,7 +323,7 @@ func TestRemoveStream(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 	ctx := context.Background()
-	l.events[id] = newEventStream(ctx, constants.QemuProgram, id)
+	l.events[id] = newEventStream(ctx, constants.QEMUProgram, id)
 
 	fmt.Println("removing stream")
 	err := l.removeStream(id)

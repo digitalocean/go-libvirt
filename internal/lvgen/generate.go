@@ -382,7 +382,7 @@ func fromSnakeToCamel(s string) string {
 // abbrevs is a list of abbreviations which should be all upper-case in a name.
 // (This is really just to keep the go linters happy and to produce names that
 // are intuitive to a go developer.)
-var abbrevs = []string{"Xml", "Io", "Uuid", "Cpu", "Id", "Ip"}
+var abbrevs = []string{"Xml", "Io", "Uuid", "Cpu", "Id", "Ip", "Qemu"}
 
 // fixAbbrevs up-cases all instances of anything in the 'abbrevs' array. This
 // would be a simple matter, but we don't want to upcase an abbreviation if it's

@@ -316,7 +316,7 @@ func (l *Libvirt) route(h *header, buf []byte) {
 	// route events to their respective listener
 	var streamEvent event
 	switch {
-	case h.Program == constants.QemuProgram && h.Procedure == constants.QemuProcDomainMonitorEvent:
+	case h.Program == constants.QEMUProgram && h.Procedure == constants.QEMUProcDomainMonitorEvent:
 		streamEvent = &DomainEvent{}
 	case h.Program == constants.Program && h.Procedure == constants.ProcDomainEventCallbackLifecycle:
 		streamEvent = &DomainEventCallbackLifecycleMsg{}

@@ -173,24 +173,24 @@ func (l *Libvirt) DomainState(dom string) (DomainState, error) {
 	return DomainState(state), err
 }
 
-// SubscribeQemuEvents returns a channel which the caller can use to receive
+// SubscribeQEMUEvents returns a channel which the caller can use to receive
 // QEMU domain events.
-func (l *Libvirt) SubscribeQemuEvents(ctx context.Context, dom string) (<-chan DomainEvent, error) {
+func (l *Libvirt) SubscribeQEMUEvents(ctx context.Context, dom string) (<-chan DomainEvent, error) {
 	d, err := l.lookup(dom)
 	if err != nil {
 		return nil, err
 	}
 
-	callbackID, err := l.QemuConnectDomainMonitorEventRegister([]Domain{d}, nil, 0)
+	callbackID, err := l.QEMUConnectDomainMonitorEventRegister([]Domain{d}, nil, 0)
 	if err != nil {
 		return nil, err
 	}
 
-	stream := newEventStream(ctx, constants.QemuProgram, callbackID)
+	stream := newEventStream(ctx, constants.QEMUProgram, callbackID)
 	l.addStream(stream)
 	c := make(chan DomainEvent)
 	go func() {
-		defer l.unsubscribeQemuEvents(stream)
+		defer l.unsubscribeQEMUEvents(stream)
 		defer close(c)
 
 		for {
@@ -209,9 +209,9 @@ func (l *Libvirt) SubscribeQemuEvents(ctx context.Context, dom string) (<-chan D
 	return c, nil
 }
 
-// unsubscribeQemuEvents stops the flow of events from QEMU through libvirt.
-func (l *Libvirt) unsubscribeQemuEvents(stream eventStream) error {
-	err := l.QemuConnectDomainMonitorEventDeregister(stream.CallbackID)
+// unsubscribeQEMUEvents stops the flow of events from QEMU through libvirt.
+func (l *Libvirt) unsubscribeQEMUEvents(stream eventStream) error {
+	err := l.QEMUConnectDomainMonitorEventDeregister(stream.CallbackID)
 	l.removeStream(stream.CallbackID)
 
 	return err
@@ -324,7 +324,7 @@ func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	res, err := l.request(constants.QemuProcDomainMonitorCommand, constants.QemuProgram, buf)
+	res, err := l.request(constants.QEMUProcDomainMonitorCommand, constants.QEMUProgram, buf)
 	if err != nil {
 		return nil, err
 	}

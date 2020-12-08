@@ -614,7 +614,7 @@ func (m *MockLibvirt) handle(conn net.Conn) {
 		switch prog {
 		case constants.Program:
 			m.handleRemote(proc, conn)
-		case constants.QemuProgram:
+		case constants.QEMUProgram:
 			m.handleQEMU(proc, conn)
 		}
 	}
@@ -677,11 +677,11 @@ func (m *MockLibvirt) handleRemote(procedure uint32, conn net.Conn) {
 
 func (m *MockLibvirt) handleQEMU(procedure uint32, conn net.Conn) {
 	switch procedure {
-	case constants.QemuProcConnectDomainMonitorEventRegister:
+	case constants.QEMUProcConnectDomainMonitorEventRegister:
 		conn.Write(m.reply(testRegisterEvent))
-	case constants.QemuProcConnectDomainMonitorEventDeregister:
+	case constants.QEMUProcConnectDomainMonitorEventDeregister:
 		conn.Write(m.reply(testDeregisterEvent))
-	case constants.QemuProcDomainMonitorCommand:
+	case constants.QEMUProcDomainMonitorCommand:
 		if m.Fail {
 			conn.Write(m.reply(testRunReplyFail))
 		} else {
