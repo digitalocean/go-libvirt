@@ -15,13 +15,13 @@
 package libvirt
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
 	"github.com/digitalocean/go-libvirt/libvirttest"
-	"golang.org/x/net/context"
 )
 
 func TestConnect(t *testing.T) {
@@ -150,8 +150,6 @@ func TestDomainMemoryStats(t *testing.T) {
 		t.Error(err)
 	}
 
-	t.Log(gotDomainMemoryStats)
-
 	if len(gotDomainMemoryStats) == 0 {
 		t.Error("No memory stats returned!")
 	}
@@ -177,10 +175,11 @@ func TestEvents(t *testing.T) {
 
 	go func() {
 		var e DomainEvent
+
 		select {
 		case e = <-stream:
 		case <-time.After(time.Second * 5):
-			t.Error("expected event, received timeout")
+			t.Fatal("expected event, received timeout")
 		}
 
 		result := struct {

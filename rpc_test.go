@@ -16,12 +16,12 @@ package libvirt
 
 import (
 	"bytes"
-	"context"
 	"fmt"
 	"sync"
 	"testing"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/digitalocean/go-libvirt/internal/event"
 	xdr "github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/libvirttest"
 	"github.com/stretchr/testify/assert"
@@ -308,10 +308,12 @@ func TestAddStream(t *testing.T) {
 	id := int32(1)
 
 	l := &Libvirt{}
-	l.events = make(map[int32]eventStream)
+	l.events = make(map[int32]*event.Stream)
 
-	ctx := context.Background()
-	l.addStream(newEventStream(ctx, 0, id))
+	stream := event.NewStream(0, id)
+	defer stream.Shutdown()
+
+	l.addStream(stream)
 	if _, ok := l.events[id]; !ok {
 		t.Error("expected event stream to exist")
 	}
@@ -322,8 +324,11 @@ func TestRemoveStream(t *testing.T) {
 
 	conn := libvirttest.New()
 	l := New(conn)
-	ctx := context.Background()
-	l.events[id] = newEventStream(ctx, constants.QEMUProgram, id)
+
+	stream := event.NewStream(constants.QEMUProgram, id)
+	defer stream.Shutdown()
+
+	l.events[id] = stream
 
 	fmt.Println("removing stream")
 	err := l.removeStream(id)
@@ -338,12 +343,12 @@ func TestRemoveStream(t *testing.T) {
 
 func TestStream(t *testing.T) {
 	id := int32(1)
-	ctx := context.Background()
-	c := newEventStream(ctx, constants.Program, 1)
+	stream := event.NewStream(constants.Program, 1)
+	defer stream.Shutdown()
 
 	l := &Libvirt{}
-	l.events = map[int32]eventStream{
-		id: c,
+	l.events = map[int32]*event.Stream{
+		id: stream,
 	}
 
 	var streamEvent DomainEvent
@@ -353,7 +358,7 @@ func TestStream(t *testing.T) {
 	}
 
 	l.stream(streamEvent)
-	e, _ := c.Recv()
+	e := <-stream.Recv()
 
 	if e.(DomainEvent).Event != "BLOCK_JOB_COMPLETED" {
 		t.Error("expected event")
@@ -441,10 +446,10 @@ func TestRouteDeadlock(t *testing.T) {
 		callbacks: map[int32]chan response{
 			id: rch,
 		},
-		events: map[int32]eventStream{},
+		events: make(map[int32]*event.Stream),
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	stream := newEventStream(ctx, constants.Program, id)
+	stream := event.NewStream(constants.Program, id)
+
 	l.addStream(stream)
 
 	respHeader := &header{constants.Program, 0, 0, 0, id, StatusOK}
@@ -478,7 +483,7 @@ func TestRouteDeadlock(t *testing.T) {
 			assert.Equal(t, r.Status, uint32(StatusOK))
 		}
 		for i := 0; i < tc.eCount; i++ {
-			e, _ := stream.Recv()
+			e := <-stream.Recv()
 			fmt.Printf("event %v/%v received\n", i, len(cases))
 			assert.Equal(t, "test", e.(*DomainEventCallbackLifecycleMsg).Msg.Dom.Name)
 		}
@@ -486,6 +491,5 @@ func TestRouteDeadlock(t *testing.T) {
 
 	// finally verify that canceling the context doesn't cause a deadlock.
 	fmt.Println("checking for deadlock after context cancellation")
-	cancel()
 	send(0, 50)
 }
