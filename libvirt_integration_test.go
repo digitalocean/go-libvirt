@@ -23,10 +23,10 @@ import (
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/digitalocean/go-libvirt/internal/constants"
 )
 
+// In order for this test to work, libvirtd must be running and listening for
+// tcp connections.
 const testAddr = "127.0.0.1:16509"
 
 func TestConnectIntegration(t *testing.T) {
@@ -106,7 +106,7 @@ func TestSecretsIntegration(t *testing.T) {
 	}
 
 	// 19fdc2f2-fa64-46f3-bacf-42a8aafca6dd
-	wantUUID := [constants.UUIDSize]byte{
+	wantUUID := [UUIDBuflen]byte{
 		0x19, 0xfd, 0xc2, 0xf2, 0xfa, 0x64, 0x46, 0xf3,
 		0xba, 0xcf, 0x42, 0xa8, 0xaa, 0xfc, 0xa6, 0xdd,
 	}
