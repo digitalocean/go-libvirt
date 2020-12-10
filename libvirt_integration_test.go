@@ -38,6 +38,15 @@ func TestConnectIntegration(t *testing.T) {
 	}
 }
 
+func TestConnectToURIIntegration(t *testing.T) {
+	l := New(testConn(t))
+	defer l.Disconnect()
+
+	if err := l.ConnectToURI(TestDefault); err != nil {
+		t.Error(err)
+	}
+}
+
 func TestDisconnectIntegration(t *testing.T) {
 	l := New(testConn(t))
 	if err := l.Disconnect(); err != nil {
