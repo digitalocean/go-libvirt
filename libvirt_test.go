@@ -34,6 +34,42 @@ func TestConnect(t *testing.T) {
 	}
 }
 
+func TestLibvirt_ConnectToURI(t *testing.T) {
+	type args struct {
+		uri ConnectURI
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "connect to test:///default socket",
+			args: args{
+				uri: TestDefault,
+			},
+			wantErr: false,
+		},
+		{
+			name: "connect to qemu:///session socket",
+			args: args{
+				uri: QEMUSession,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conn := libvirttest.New()
+			libvirtConn := New(conn)
+
+			if err := libvirtConn.ConnectToURI(tt.args.uri); (err != nil) != tt.wantErr {
+				t.Errorf("ConnectToURI() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 func TestDisconnect(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
