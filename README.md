@@ -191,27 +191,27 @@ func main() {
         // This dials libvirt on the local machine
         // It connects to libvirt via TLS over TCP
         // To connect to a remote machine, you need to have the ca/cert/key of it.
-        keyfilexml, err := ioutil.ReadFile("/etc/pki/libvirt/private/clientkey.pem")
+        keyFileXML, err := ioutil.ReadFile("/etc/pki/libvirt/private/clientkey.pem")
         if err != nil {
                 log.Fatalf("%v", err)
         }
 
-        certfilexml, err := ioutil.ReadFile("/etc/pki/libvirt/clientcert.pem")
+        certFileXML, err := ioutil.ReadFile("/etc/pki/libvirt/clientcert.pem")
         if err != nil {
                 log.Fatalf("%v", err)
         }
 
-        cafilexml, err := ioutil.ReadFile("/etc/pki/CA/cacert.pem")
+        caFileXML, err := ioutil.ReadFile("/etc/pki/CA/cacert.pem")
         if err != nil {
                 log.Fatalf("%v", err)
         }
-        cert, err := tls.X509KeyPair([]byte(certfilexml), []byte(keyfilexml))
+        cert, err := tls.X509KeyPair([]byte(certFileXML), []byte(keyFileXML))
         if err != nil {
                 log.Fatalf("%v", err)
         }
 
         roots := x509.NewCertPool()
-        roots.AppendCertsFromPEM([]byte(cafilexml))
+        roots.AppendCertsFromPEM([]byte(caFileXML))
 
         config := &tls.Config{
                 Certificates: []tls.Certificate{cert},
@@ -240,13 +240,15 @@ func main() {
         }
         fmt.Println("Version:", v)
 
-        domains, err := l.Domains()
+        // Return both running and stopped VMs
+        flags := libvirt.ConnectListDomainsActive | libvirt.ConnectListDomainsInactive
+        domains, _, err := l.ConnectListAllDomains(1, flags)
         if err != nil {
                 log.Fatalf("failed to retrieve domains: %v", err)
         }
 
         fmt.Println("ID\tName\t\tUUID")
-        fmt.Printf("--------------------------------------------------------\n")
+        fmt.Println("--------------------------------------------------------")
         for _, d := range domains {
                 fmt.Printf("%d\t%s\t%x\n", d.ID, d.Name, d.UUID)
         }
