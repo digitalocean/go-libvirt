@@ -219,7 +219,9 @@ func main() {
         }
 
         // Use host name or IP which is valid in certificate
-        c, err := tls.Dial("tcp", "10.10.10.10", config)
+        addr := "10.10.10.10"
+        port := "16514"
+        c, err := tls.Dial("tcp", addr + ":" + port, config)
         if err != nil {
                 log.Fatalf("failed to dial libvirt: %v", err)
         }
