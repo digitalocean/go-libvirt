@@ -243,19 +243,18 @@ func (l *Libvirt) addStream(s *event.Stream) {
 	l.events[s.CallbackID] = s
 }
 
-// removeStream notifies the libvirt server to stop sending events for the
-// provided callback ID. Upon successful de-registration the callback handler
-// is destroyed. Subsequent calls to removeStream are idempotent and return
-// nil.
-// TODO: Fix this comment
+// removeStream deletes an event stream. The caller should first notify libvirt
+// to stop sending events for this stream. Subsequent calls to removeStream are
+// idempotent and return nil.
 func (l *Libvirt) removeStream(id int32) error {
 	l.emux.Lock()
 	defer l.emux.Unlock()
 
 	// if the event is already removed, just return nil
-	_, ok := l.events[id]
+	q, ok := l.events[id]
 	if ok {
 		delete(l.events, id)
+		q.Shutdown()
 	}
 
 	return nil
