@@ -149,10 +149,11 @@ func (l *Libvirt) Connect() error {
 }
 
 // Disconnect shuts down communication with the libvirt server and closes the
-// underlying net.Conn. Ordering is important here. We want to make sure the
-// connection is closed before unsubscribing and deregistering the events and
-// requests, to prevent new requests from racing.
+// underlying net.Conn.
 func (l *Libvirt) Disconnect() error {
+	// Ordering is important here. We want to make sure the connection is closed
+	// before unsubscribing and deregistering the events and requests, to
+	// prevent new requests from racing.
 	_, err := l.request(constants.ProcConnectClose, constants.Program, nil)
 	if err != nil {
 		return err
