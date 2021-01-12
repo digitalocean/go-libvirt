@@ -149,8 +149,17 @@ func (l *Libvirt) Connect() error {
 }
 
 // Disconnect shuts down communication with the libvirt server and closes the
-// underlying net.Conn.
+// underlying net.Conn. Ordering is important here. We want to make sure the
+// connection is closed before unsubscribing and deregistering the events and
+// requests, to prevent new requests from racing.
 func (l *Libvirt) Disconnect() error {
+	_, err := l.request(constants.ProcConnectClose, constants.Program, nil)
+	if err != nil {
+		return err
+	}
+
+	err = l.conn.Close()
+
 	// close event streams
 	for _, ev := range l.events {
 		l.unsubscribeEvents(ev)
@@ -160,12 +169,7 @@ func (l *Libvirt) Disconnect() error {
 	// outstanding requests
 	l.deregisterAll()
 
-	_, err := l.request(constants.ProcConnectClose, constants.Program, nil)
-	if err != nil {
-		return err
-	}
-
-	return l.conn.Close()
+	return err
 }
 
 // Domains returns a list of all domains managed by libvirt.
@@ -312,7 +316,6 @@ func (l *Libvirt) LifecycleEvents(ctx context.Context) (<-chan DomainEventLifecy
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer l.unsubscribeEvents(stream)
-		defer stream.Shutdown()
 		defer func() { close(ch) }()
 
 		for {
