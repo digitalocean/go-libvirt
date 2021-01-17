@@ -63,6 +63,13 @@ type Generator struct {
 	Procs []Proc
 }
 
+func newGenerator() Generator {
+	return Generator{
+		StructMap: make(map[string]int),
+		UnionMap:  make(map[string]int),
+	}
+}
+
 // Gen accumulates items as the parser runs, and is then used to produce the
 // output.
 var Gen Generator
@@ -159,13 +166,23 @@ type Case struct {
 
 // Proc holds information about a libvirt procedure the parser has found.
 type Proc struct {
-	Num        int64  // The libvirt procedure number.
-	Name       string // The name of the go func.
-	LVName     string // The name of the libvirt proc this wraps.
-	Args       []Decl // The contents of the args struct for this procedure.
-	Ret        []Decl // The contents of the ret struct for this procedure.
-	ArgsStruct string // The name of the args struct for this procedure.
-	RetStruct  string // The name of the ret struct for this procedure.
+	Program        string // The program name. Blank for REMOTE_ procs.
+	Num            int64  // The libvirt procedure number.
+	Name           string // The name of the go func.
+	LVName         string // The name of the libvirt proc this wraps.
+	Args           []Decl // The contents of the args struct for this procedure.
+	Ret            []Decl // The contents of the ret struct for this procedure.
+	ArgsStruct     string // The name of the args struct for this procedure.
+	RetStruct      string // The name of the ret struct for this procedure.
+	ReadStreamIdx  int    // The index of read stream in function argument list
+	WriteStreamIdx int    // The index of read stream in function argument list
+}
+
+// ProcMeta holds information about a libvirt procedure, and is used during code
+// generation.
+type ProcMeta struct {
+	ReadStream  int
+	WriteStream int
 }
 
 type structStack []*Structure
@@ -213,9 +230,10 @@ var CurrentCase *Case
 // Generate will output go bindings for libvirt. The lvPath parameter should be
 // the path to the root of the libvirt source directory to use for the
 // generation.
-func Generate(proto io.Reader) error {
-	Gen.StructMap = make(map[string]int)
-	Gen.UnionMap = make(map[string]int)
+func Generate(name string, proto io.Reader) error {
+	// Start with a clean state
+	Gen = newGenerator()
+
 	lexer, err := NewLexer(proto)
 	if err != nil {
 		return err
@@ -235,20 +253,20 @@ func Generate(proto io.Reader) error {
 	procLink()
 
 	// Generate and write the output.
-	constFile, err := os.Create("../constants/constants.gen.go")
+	constsName := fmt.Sprintf("../constants/%v.gen.go", name)
+	constFile, err := os.Create(constsName)
 	if err != nil {
 		return err
 	}
 	defer constFile.Close()
-	procFile, err := os.Create("../../libvirt.gen.go")
+	procName := fmt.Sprintf("../../%v.gen.go", name)
+	procFile, err := os.Create(procName)
 	if err != nil {
 		return err
 	}
 	defer procFile.Close()
 
-	err = genGo(constFile, procFile)
-
-	return err
+	return genGo(constFile, procFile)
 }
 
 // genGo is called when the parsing is done; it generates the golang output
@@ -275,17 +293,34 @@ func genGo(constFile, procFile io.Writer) error {
 // DomainGetXML, not DomainGetXml.
 func constNameTransform(name string) string {
 	decamelize := strings.ContainsRune(name, '_')
-	nn := strings.TrimPrefix(name, "REMOTE_")
+	name = strings.TrimPrefix(name, "REMOTE_")
 	if decamelize {
-		nn = fromSnakeToCamel(nn)
+		name = fromSnakeToCamel(name)
 	}
-	nn = fixAbbrevs(nn)
-	return nn
+	name = fixAbbrevs(name)
+	return name
+}
+
+// procNameTransform returns a Go name for a remote procedure.
+func procNameTransform(name string) string {
+	// Remove "PROC_" from the name, then transform it like a const name.
+	nn := strings.Replace(name, "PROC_", "", 1)
+	return constNameTransform(nn)
+}
+
+// procProgramName returns the program associated with a remote procedure.
+// Procedure names follow the pattern, "<PROGRAM>_PROC_<PROCEDURE>". This
+// returns the <PROGRAM> part, as a camel-cased value. This value will be empty
+// for REMOTE_PROC procedures because we trim REMOTE_, but that's OK.
+func procProgramName(name string) string {
+	ix := strings.Index(name, "PROC_")
+	return constNameTransform(name[:ix])
 }
 
 func identifierTransform(name string) string {
 	decamelize := strings.ContainsRune(name, '_')
 	nn := strings.TrimPrefix(name, "remote_")
+	nn = strings.TrimPrefix(nn, "VIR_")
 	if decamelize {
 		nn = fromSnakeToCamel(nn)
 	} else {
@@ -347,7 +382,7 @@ func fromSnakeToCamel(s string) string {
 // abbrevs is a list of abbreviations which should be all upper-case in a name.
 // (This is really just to keep the go linters happy and to produce names that
 // are intuitive to a go developer.)
-var abbrevs = []string{"Xml", "Io", "Uuid", "Cpu", "Id", "Ip"}
+var abbrevs = []string{"Xml", "Io", "Uuid", "Cpu", "Id", "Ip", "Qemu"}
 
 // fixAbbrevs up-cases all instances of anything in the 'abbrevs' array. This
 // would be a simple matter, but we don't want to upcase an abbreviation if it's
@@ -473,6 +508,7 @@ var flagMap = map[string]string{
 	"DomainSetVcpu":                "DomainModificationImpact",
 	"DomainShutdownFlags":          "DomainShutdownFlagValues",
 	"DomainUndefineFlags":          "DomainUndefineFlagsValues",
+	"DomainUpdateDeviceFlags":      "DomainDeviceModifyFlags",
 	"StoragePoolCreateXML":         "StoragePoolCreateFlags",
 	"StoragePoolGetXMLDesc":        "StorageXMLFlags",
 	"StorageVolCreateXML":          "StorageVolCreateFlags",
@@ -551,7 +587,52 @@ func AddEnumVal(name, val string) error {
 	if err != nil {
 		return fmt.Errorf("invalid enum value %v = %v", name, val)
 	}
-	return addEnumVal(name, ev)
+	return addEnumVal(name, ev, nil)
+}
+
+// AddProcEnumVal adds a procedure enum to our list of remote procedures which
+// we will later generate code for. These declarations look like enums, but have
+// a (currently optional) comment block above them which we partially parse for
+// information about the procedure's in/output streams. Metadata is parsed from
+// annotations in libvirt RPC description file that are in block comment
+// preceding every function in enum, it looks like this:
+//
+// /**
+//  * @generate: both
+//  * @readstream: 1
+//  * @sparseflag: VIR_STORAGE_VOL_DOWNLOAD_SPARSE_STREAM
+//  * @acl: storage_vol:data_read
+//  */
+//
+// See full description of possible annotations in libvirt's
+// src/remote/remote_protocol.x at the top of remote_procedure enum. We're
+// parsing only @readstream and @writestream annotations at the moment.
+func AddProcEnumVal(name, val string, meta string) error {
+	ev, err := parseNumber(val)
+	if err != nil {
+		return fmt.Errorf("invalid enum value %v = %v", name, val)
+	}
+	metaObj, err := parseMeta(meta)
+	if err != nil {
+		return fmt.Errorf("invalid metadata for enum value %v: %v", name, err)
+	}
+
+	// Confusingly, the procedure name we use for generating code has "Proc"
+	// stripped, but the name of the enum does not.
+	program := procProgramName(name)
+	procName := procNameTransform(name)
+	enumName := constNameTransform(name)
+	Gen.EnumVals = append(Gen.EnumVals, ConstItem{enumName, name, strconv.FormatInt(ev, 10)})
+	CurrentEnumVal = ev
+
+	proc := &Proc{Program: program, Num: ev, Name: procName,
+		LVName: name, ReadStreamIdx: -1, WriteStreamIdx: -1}
+	if metaObj != nil {
+		proc.ReadStreamIdx = metaObj.ReadStream
+		proc.WriteStreamIdx = metaObj.WriteStream
+	}
+	Gen.Procs = append(Gen.Procs, *proc)
+	return nil
 }
 
 // AddEnumAutoVal adds an enum to the list, using the automatically-incremented
@@ -559,14 +640,13 @@ func AddEnumVal(name, val string) error {
 // explicit value.
 func AddEnumAutoVal(name string) error {
 	CurrentEnumVal++
-	return addEnumVal(name, CurrentEnumVal)
+	return addEnumVal(name, CurrentEnumVal, nil)
 }
 
-func addEnumVal(name string, val int64) error {
+func addEnumVal(name string, val int64, meta *ProcMeta) error {
 	goname := constNameTransform(name)
 	Gen.EnumVals = append(Gen.EnumVals, ConstItem{goname, name, fmt.Sprintf("%d", val)})
 	CurrentEnumVal = val
-	addProc(goname, name, val)
 	return nil
 }
 
@@ -581,17 +661,6 @@ func AddConst(name, val string) error {
 	return nil
 }
 
-// addProc checks an enum value to see if it's a procedure number. If so, we
-// add the procedure to our list for later generation.
-func addProc(goname, lvname string, val int64) {
-	if !strings.HasPrefix(goname, "Proc") {
-		return
-	}
-	goname = goname[4:]
-	proc := &Proc{Num: val, Name: goname, LVName: lvname}
-	Gen.Procs = append(Gen.Procs, *proc)
-}
-
 // parseNumber makes sure that a parsed numerical value can be parsed to a 64-
 // bit integer.
 func parseNumber(val string) (int64, error) {
@@ -602,6 +671,41 @@ func parseNumber(val string) (int64, error) {
 	}
 	n, err := strconv.ParseInt(val, base, 64)
 	return n, err
+}
+
+// parseMeta parses procedure metadata to simple string mapping
+func parseMeta(meta string) (*ProcMeta, error) {
+	res := &ProcMeta{
+		ReadStream:  -1,
+		WriteStream: -1,
+	}
+	for _, line := range strings.Split(meta, "\n") {
+		atInd := strings.Index(line, "@")
+		if atInd == -1 {
+			// Should be only first and last line of comment
+			continue
+		}
+		spl := strings.SplitN(line[atInd+1:], ":", 2)
+		if len(spl) != 2 {
+			return nil, fmt.Errorf("invalid annotation: %s", meta)
+		}
+		spl[1] = strings.Trim(spl[1], " ")
+		switch spl[0] {
+		case "readstream":
+			var err error
+			res.ReadStream, err = strconv.Atoi(spl[1])
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for readstream: %s", spl[1])
+			}
+		case "writestream":
+			var err error
+			res.WriteStream, err = strconv.Atoi(spl[1])
+			if err != nil {
+				return nil, fmt.Errorf("invalid value for writestream: %s", spl[1])
+			}
+		}
+	}
+	return res, nil
 }
 
 // StartStruct is called from the parser when a struct definition is found, but

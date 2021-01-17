@@ -1,4 +1,4 @@
-// Copyright 2017 The go-libvirt Authors.
+// Copyright 2018 The go-libvirt Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -22,14 +22,18 @@ package libvirt
 
 import (
 	"bytes"
-	"fmt"
+	"io"
 
-	"github.com/davecgh/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 )
 
-const (
-	VirUUIDBuflen = 16
+// References to prevent "imported and not used" errors.
+var (
+	_ = bytes.Buffer{}
+	_ = io.Copy
+	_ = constants.Program
+	_ = xdr.Unmarshal
 )
 
 //
@@ -38,13 +42,17 @@ const (
 // OptString is libvirt's remote_string
 type OptString []string
 // UUID is libvirt's remote_uuid
-type UUID [VirUUIDBuflen]byte
+type UUID [UUIDBuflen]byte
 // OptDomain is libvirt's remote_domain
 type OptDomain []Domain
 // OptNetwork is libvirt's remote_network
 type OptNetwork []Network
+// OptNetworkPort is libvirt's remote_network_port
+type OptNetworkPort []NetworkPort
 // OptNwfilter is libvirt's remote_nwfilter
 type OptNwfilter []Nwfilter
+// OptNwfilterBinding is libvirt's remote_nwfilter_binding
+type OptNwfilterBinding []NwfilterBinding
 // OptStoragePool is libvirt's remote_storage_pool
 type OptStoragePool []StoragePool
 // OptStorageVol is libvirt's remote_storage_vol
@@ -78,10 +86,22 @@ type Network struct {
 	UUID UUID
 }
 
+// NetworkPort is libvirt's remote_nonnull_network_port
+type NetworkPort struct {
+	Net Network
+	UUID UUID
+}
+
 // Nwfilter is libvirt's remote_nonnull_nwfilter
 type Nwfilter struct {
 	Name string
 	UUID UUID
+}
+
+// NwfilterBinding is libvirt's remote_nonnull_nwfilter_binding
+type NwfilterBinding struct {
+	Portdev string
+	Filtername string
 }
 
 // Interface is libvirt's remote_nonnull_interface
@@ -113,6 +133,12 @@ type Secret struct {
 	UUID UUID
 	UsageType int32
 	UsageID string
+}
+
+// DomainCheckpoint is libvirt's remote_nonnull_domain_checkpoint
+type DomainCheckpoint struct {
+	Name string
+	Dom Domain
 }
 
 // DomainSnapshot is libvirt's remote_nonnull_domain_snapshot
@@ -467,7 +493,7 @@ type DomainBlockStatsFlagsRet struct {
 // DomainInterfaceStatsArgs is libvirt's remote_domain_interface_stats_args
 type DomainInterfaceStatsArgs struct {
 	Dom Domain
-	Path string
+	Device string
 }
 
 // DomainInterfaceStatsRet is libvirt's remote_domain_interface_stats_ret
@@ -1123,6 +1149,14 @@ type DomainDelIothreadArgs struct {
 	Flags DomainModificationImpact
 }
 
+// DomainSetIothreadParamsArgs is libvirt's remote_domain_set_iothread_params_args
+type DomainSetIothreadParamsArgs struct {
+	Dom Domain
+	IothreadID uint32
+	Params []TypedParam
+	Flags uint32
+}
+
 // DomainGetSecurityLabelArgs is libvirt's remote_domain_get_security_label_args
 type DomainGetSecurityLabelArgs struct {
 	Dom Domain
@@ -1181,6 +1215,13 @@ type DomainDetachDeviceFlagsArgs struct {
 type DomainUpdateDeviceFlagsArgs struct {
 	Dom Domain
 	XML string
+	Flags DomainDeviceModifyFlags
+}
+
+// DomainDetachDeviceAliasArgs is libvirt's remote_domain_detach_device_alias_args
+type DomainDetachDeviceAliasArgs struct {
+	Dom Domain
+	Alias string
 	Flags uint32
 }
 
@@ -1749,6 +1790,16 @@ type StoragePoolLookupByVolumeRet struct {
 	Pool StoragePool
 }
 
+// StoragePoolLookupByTargetPathArgs is libvirt's remote_storage_pool_lookup_by_target_path_args
+type StoragePoolLookupByTargetPathArgs struct {
+	Path string
+}
+
+// StoragePoolLookupByTargetPathRet is libvirt's remote_storage_pool_lookup_by_target_path_ret
+type StoragePoolLookupByTargetPathRet struct {
+	Pool StoragePool
+}
+
 // StoragePoolCreateXMLArgs is libvirt's remote_storage_pool_create_xml_args
 type StoragePoolCreateXMLArgs struct {
 	XML string
@@ -2057,7 +2108,7 @@ type NodeDeviceGetParentArgs struct {
 
 // NodeDeviceGetParentRet is libvirt's remote_node_device_get_parent_ret
 type NodeDeviceGetParentRet struct {
-	Parent OptString
+	ParentName OptString
 }
 
 // NodeDeviceNumOfCapsArgs is libvirt's remote_node_device_num_of_caps_args
@@ -2400,6 +2451,17 @@ type DomainAbortJobArgs struct {
 	Dom Domain
 }
 
+// DomainMigrateGetMaxDowntimeArgs is libvirt's remote_domain_migrate_get_max_downtime_args
+type DomainMigrateGetMaxDowntimeArgs struct {
+	Dom Domain
+	Flags uint32
+}
+
+// DomainMigrateGetMaxDowntimeRet is libvirt's remote_domain_migrate_get_max_downtime_ret
+type DomainMigrateGetMaxDowntimeRet struct {
+	Downtime uint64
+}
+
 // DomainMigrateSetMaxDowntimeArgs is libvirt's remote_domain_migrate_set_max_downtime_args
 type DomainMigrateSetMaxDowntimeArgs struct {
 	Dom Domain
@@ -2675,6 +2737,24 @@ type DomainManagedSaveRemoveArgs struct {
 	Flags uint32
 }
 
+// DomainManagedSaveGetXMLDescArgs is libvirt's remote_domain_managed_save_get_xml_desc_args
+type DomainManagedSaveGetXMLDescArgs struct {
+	Dom Domain
+	Flags DomainXMLFlags
+}
+
+// DomainManagedSaveGetXMLDescRet is libvirt's remote_domain_managed_save_get_xml_desc_ret
+type DomainManagedSaveGetXMLDescRet struct {
+	XML string
+}
+
+// DomainManagedSaveDefineXMLArgs is libvirt's remote_domain_managed_save_define_xml_args
+type DomainManagedSaveDefineXMLArgs struct {
+	Dom Domain
+	Dxml OptString
+	Flags DomainSaveRestoreFlags
+}
+
 // DomainSnapshotCreateXMLArgs is libvirt's remote_domain_snapshot_create_xml_args
 type DomainSnapshotCreateXMLArgs struct {
 	Dom Domain
@@ -2868,7 +2948,7 @@ type StorageVolUploadArgs struct {
 	Vol StorageVol
 	Offset uint64
 	Length uint64
-	Flags uint32
+	Flags StorageVolUploadFlags
 }
 
 // StorageVolDownloadArgs is libvirt's remote_storage_vol_download_args
@@ -2876,7 +2956,7 @@ type StorageVolDownloadArgs struct {
 	Vol StorageVol
 	Offset uint64
 	Length uint64
-	Flags uint32
+	Flags StorageVolDownloadFlags
 }
 
 // DomainGetStateArgs is libvirt's remote_domain_get_state_args
@@ -3294,6 +3374,16 @@ type DomainEventBlockJob2Msg struct {
 	Status int32
 }
 
+// DomainEventBlockThresholdMsg is libvirt's remote_domain_event_block_threshold_msg
+type DomainEventBlockThresholdMsg struct {
+	CallbackID int32
+	Dom Domain
+	Dev string
+	Path OptString
+	Threshold uint64
+	Excess uint64
+}
+
 // DomainEventCallbackTunableMsg is libvirt's remote_domain_event_callback_tunable_msg
 type DomainEventCallbackTunableMsg struct {
 	CallbackID int32
@@ -3642,6 +3732,15 @@ type DomainEventCallbackMetadataChangeMsg struct {
 	Nsuri OptString
 }
 
+// DomainEventMemoryFailureMsg is libvirt's remote_domain_event_memory_failure_msg
+type DomainEventMemoryFailureMsg struct {
+	CallbackID int32
+	Dom Domain
+	Recipient int32
+	Action int32
+	Flags uint32
+}
+
 // ConnectSecretEventRegisterAnyArgs is libvirt's remote_connect_secret_event_register_any_args
 type ConnectSecretEventRegisterAnyArgs struct {
 	EventID int32
@@ -3672,219 +3771,407 @@ type SecretEventValueChangedMsg struct {
 	OptSecret Secret
 }
 
+// DomainSetBlockThresholdArgs is libvirt's remote_domain_set_block_threshold_args
+type DomainSetBlockThresholdArgs struct {
+	Dom Domain
+	Dev string
+	Threshold uint64
+	Flags uint32
+}
+
+// DomainSetLifecycleActionArgs is libvirt's remote_domain_set_lifecycle_action_args
+type DomainSetLifecycleActionArgs struct {
+	Dom Domain
+	Type uint32
+	Action uint32
+	Flags DomainModificationImpact
+}
+
+// ConnectCompareHypervisorCPUArgs is libvirt's remote_connect_compare_hypervisor_cpu_args
+type ConnectCompareHypervisorCPUArgs struct {
+	Emulator OptString
+	Arch OptString
+	Machine OptString
+	Virttype OptString
+	XMLCPU string
+	Flags uint32
+}
+
+// ConnectCompareHypervisorCPURet is libvirt's remote_connect_compare_hypervisor_cpu_ret
+type ConnectCompareHypervisorCPURet struct {
+	Result int32
+}
+
+// ConnectBaselineHypervisorCPUArgs is libvirt's remote_connect_baseline_hypervisor_cpu_args
+type ConnectBaselineHypervisorCPUArgs struct {
+	Emulator OptString
+	Arch OptString
+	Machine OptString
+	Virttype OptString
+	XMLCPUs []string
+	Flags uint32
+}
+
+// ConnectBaselineHypervisorCPURet is libvirt's remote_connect_baseline_hypervisor_cpu_ret
+type ConnectBaselineHypervisorCPURet struct {
+	CPU string
+}
+
+// NodeGetSevInfoArgs is libvirt's remote_node_get_sev_info_args
+type NodeGetSevInfoArgs struct {
+	Nparams int32
+	Flags uint32
+}
+
+// NodeGetSevInfoRet is libvirt's remote_node_get_sev_info_ret
+type NodeGetSevInfoRet struct {
+	Params []TypedParam
+	Nparams int32
+}
+
+// DomainGetLaunchSecurityInfoArgs is libvirt's remote_domain_get_launch_security_info_args
+type DomainGetLaunchSecurityInfoArgs struct {
+	Dom Domain
+	Flags uint32
+}
+
+// DomainGetLaunchSecurityInfoRet is libvirt's remote_domain_get_launch_security_info_ret
+type DomainGetLaunchSecurityInfoRet struct {
+	Params []TypedParam
+}
+
+// NwfilterBindingLookupByPortDevArgs is libvirt's remote_nwfilter_binding_lookup_by_port_dev_args
+type NwfilterBindingLookupByPortDevArgs struct {
+	Name string
+}
+
+// NwfilterBindingLookupByPortDevRet is libvirt's remote_nwfilter_binding_lookup_by_port_dev_ret
+type NwfilterBindingLookupByPortDevRet struct {
+	OptNwfilter NwfilterBinding
+}
+
+// NwfilterBindingCreateXMLArgs is libvirt's remote_nwfilter_binding_create_xml_args
+type NwfilterBindingCreateXMLArgs struct {
+	XML string
+	Flags uint32
+}
+
+// NwfilterBindingCreateXMLRet is libvirt's remote_nwfilter_binding_create_xml_ret
+type NwfilterBindingCreateXMLRet struct {
+	OptNwfilter NwfilterBinding
+}
+
+// NwfilterBindingDeleteArgs is libvirt's remote_nwfilter_binding_delete_args
+type NwfilterBindingDeleteArgs struct {
+	OptNwfilter NwfilterBinding
+}
+
+// NwfilterBindingGetXMLDescArgs is libvirt's remote_nwfilter_binding_get_xml_desc_args
+type NwfilterBindingGetXMLDescArgs struct {
+	OptNwfilter NwfilterBinding
+	Flags uint32
+}
+
+// NwfilterBindingGetXMLDescRet is libvirt's remote_nwfilter_binding_get_xml_desc_ret
+type NwfilterBindingGetXMLDescRet struct {
+	XML string
+}
+
+// ConnectListAllNwfilterBindingsArgs is libvirt's remote_connect_list_all_nwfilter_bindings_args
+type ConnectListAllNwfilterBindingsArgs struct {
+	NeedResults int32
+	Flags uint32
+}
+
+// ConnectListAllNwfilterBindingsRet is libvirt's remote_connect_list_all_nwfilter_bindings_ret
+type ConnectListAllNwfilterBindingsRet struct {
+	Bindings []NwfilterBinding
+	Ret uint32
+}
+
+// ConnectGetStoragePoolCapabilitiesArgs is libvirt's remote_connect_get_storage_pool_capabilities_args
+type ConnectGetStoragePoolCapabilitiesArgs struct {
+	Flags uint32
+}
+
+// ConnectGetStoragePoolCapabilitiesRet is libvirt's remote_connect_get_storage_pool_capabilities_ret
+type ConnectGetStoragePoolCapabilitiesRet struct {
+	Capabilities string
+}
+
+// NetworkListAllPortsArgs is libvirt's remote_network_list_all_ports_args
+type NetworkListAllPortsArgs struct {
+	OptNetwork Network
+	NeedResults int32
+	Flags uint32
+}
+
+// NetworkListAllPortsRet is libvirt's remote_network_list_all_ports_ret
+type NetworkListAllPortsRet struct {
+	Ports []NetworkPort
+	Ret uint32
+}
+
+// NetworkPortLookupByUUIDArgs is libvirt's remote_network_port_lookup_by_uuid_args
+type NetworkPortLookupByUUIDArgs struct {
+	OptNetwork Network
+	UUID UUID
+}
+
+// NetworkPortLookupByUUIDRet is libvirt's remote_network_port_lookup_by_uuid_ret
+type NetworkPortLookupByUUIDRet struct {
+	Port NetworkPort
+}
+
+// NetworkPortCreateXMLArgs is libvirt's remote_network_port_create_xml_args
+type NetworkPortCreateXMLArgs struct {
+	OptNetwork Network
+	XML string
+	Flags uint32
+}
+
+// NetworkPortCreateXMLRet is libvirt's remote_network_port_create_xml_ret
+type NetworkPortCreateXMLRet struct {
+	Port NetworkPort
+}
+
+// NetworkPortSetParametersArgs is libvirt's remote_network_port_set_parameters_args
+type NetworkPortSetParametersArgs struct {
+	Port NetworkPort
+	Params []TypedParam
+	Flags uint32
+}
+
+// NetworkPortGetParametersArgs is libvirt's remote_network_port_get_parameters_args
+type NetworkPortGetParametersArgs struct {
+	Port NetworkPort
+	Nparams int32
+	Flags uint32
+}
+
+// NetworkPortGetParametersRet is libvirt's remote_network_port_get_parameters_ret
+type NetworkPortGetParametersRet struct {
+	Params []TypedParam
+	Nparams int32
+}
+
+// NetworkPortGetXMLDescArgs is libvirt's remote_network_port_get_xml_desc_args
+type NetworkPortGetXMLDescArgs struct {
+	Port NetworkPort
+	Flags uint32
+}
+
+// NetworkPortGetXMLDescRet is libvirt's remote_network_port_get_xml_desc_ret
+type NetworkPortGetXMLDescRet struct {
+	XML string
+}
+
+// NetworkPortDeleteArgs is libvirt's remote_network_port_delete_args
+type NetworkPortDeleteArgs struct {
+	Port NetworkPort
+	Flags uint32
+}
+
+// DomainCheckpointCreateXMLArgs is libvirt's remote_domain_checkpoint_create_xml_args
+type DomainCheckpointCreateXMLArgs struct {
+	Dom Domain
+	XMLDesc string
+	Flags uint32
+}
+
+// DomainCheckpointCreateXMLRet is libvirt's remote_domain_checkpoint_create_xml_ret
+type DomainCheckpointCreateXMLRet struct {
+	Checkpoint DomainCheckpoint
+}
+
+// DomainCheckpointGetXMLDescArgs is libvirt's remote_domain_checkpoint_get_xml_desc_args
+type DomainCheckpointGetXMLDescArgs struct {
+	Checkpoint DomainCheckpoint
+	Flags uint32
+}
+
+// DomainCheckpointGetXMLDescRet is libvirt's remote_domain_checkpoint_get_xml_desc_ret
+type DomainCheckpointGetXMLDescRet struct {
+	XML string
+}
+
+// DomainListAllCheckpointsArgs is libvirt's remote_domain_list_all_checkpoints_args
+type DomainListAllCheckpointsArgs struct {
+	Dom Domain
+	NeedResults int32
+	Flags uint32
+}
+
+// DomainListAllCheckpointsRet is libvirt's remote_domain_list_all_checkpoints_ret
+type DomainListAllCheckpointsRet struct {
+	Checkpoints []DomainCheckpoint
+	Ret int32
+}
+
+// DomainCheckpointListAllChildrenArgs is libvirt's remote_domain_checkpoint_list_all_children_args
+type DomainCheckpointListAllChildrenArgs struct {
+	Checkpoint DomainCheckpoint
+	NeedResults int32
+	Flags uint32
+}
+
+// DomainCheckpointListAllChildrenRet is libvirt's remote_domain_checkpoint_list_all_children_ret
+type DomainCheckpointListAllChildrenRet struct {
+	Checkpoints []DomainCheckpoint
+	Ret int32
+}
+
+// DomainCheckpointLookupByNameArgs is libvirt's remote_domain_checkpoint_lookup_by_name_args
+type DomainCheckpointLookupByNameArgs struct {
+	Dom Domain
+	Name string
+	Flags uint32
+}
+
+// DomainCheckpointLookupByNameRet is libvirt's remote_domain_checkpoint_lookup_by_name_ret
+type DomainCheckpointLookupByNameRet struct {
+	Checkpoint DomainCheckpoint
+}
+
+// DomainCheckpointGetParentArgs is libvirt's remote_domain_checkpoint_get_parent_args
+type DomainCheckpointGetParentArgs struct {
+	Checkpoint DomainCheckpoint
+	Flags uint32
+}
+
+// DomainCheckpointGetParentRet is libvirt's remote_domain_checkpoint_get_parent_ret
+type DomainCheckpointGetParentRet struct {
+	Parent DomainCheckpoint
+}
+
+// DomainCheckpointDeleteArgs is libvirt's remote_domain_checkpoint_delete_args
+type DomainCheckpointDeleteArgs struct {
+	Checkpoint DomainCheckpoint
+	Flags DomainCheckpointDeleteFlags
+}
+
+// DomainGetGuestInfoArgs is libvirt's remote_domain_get_guest_info_args
+type DomainGetGuestInfoArgs struct {
+	Dom Domain
+	Types uint32
+	Flags uint32
+}
+
+// DomainGetGuestInfoRet is libvirt's remote_domain_get_guest_info_ret
+type DomainGetGuestInfoRet struct {
+	Params []TypedParam
+}
+
+// ConnectSetIdentityArgs is libvirt's remote_connect_set_identity_args
+type ConnectSetIdentityArgs struct {
+	Params []TypedParam
+	Flags uint32
+}
+
+// DomainAgentSetResponseTimeoutArgs is libvirt's remote_domain_agent_set_response_timeout_args
+type DomainAgentSetResponseTimeoutArgs struct {
+	Dom Domain
+	Timeout int32
+	Flags uint32
+}
+
+// DomainAgentSetResponseTimeoutRet is libvirt's remote_domain_agent_set_response_timeout_ret
+type DomainAgentSetResponseTimeoutRet struct {
+	Result int32
+}
+
+// DomainBackupBeginArgs is libvirt's remote_domain_backup_begin_args
+type DomainBackupBeginArgs struct {
+	Dom Domain
+	BackupXML string
+	CheckpointXML OptString
+	Flags DomainBackupBeginFlags
+}
+
+// DomainBackupGetXMLDescArgs is libvirt's remote_domain_backup_get_xml_desc_args
+type DomainBackupGetXMLDescArgs struct {
+	Dom Domain
+	Flags uint32
+}
+
+// DomainBackupGetXMLDescRet is libvirt's remote_domain_backup_get_xml_desc_ret
+type DomainBackupGetXMLDescRet struct {
+	XML string
+}
+
+// DomainAuthorizedSshKeysGetArgs is libvirt's remote_domain_authorized_ssh_keys_get_args
+type DomainAuthorizedSshKeysGetArgs struct {
+	Dom Domain
+	User string
+	Flags uint32
+}
+
+// DomainAuthorizedSshKeysGetRet is libvirt's remote_domain_authorized_ssh_keys_get_ret
+type DomainAuthorizedSshKeysGetRet struct {
+	Keys []string
+}
+
+// DomainAuthorizedSshKeysSetArgs is libvirt's remote_domain_authorized_ssh_keys_set_args
+type DomainAuthorizedSshKeysSetArgs struct {
+	Dom Domain
+	User string
+	Keys []string
+	Flags uint32
+}
+
 
 // TypedParamValue is a discriminated union.
-type TypedParamValue interface {
-	Get() interface{}
+type TypedParamValue struct {
+	D uint32
+	I interface{}
 }
 
-// TypedParamValueInt is one of the possible values of the TypedParamValue union.
-type TypedParamValueInt struct {
-	DVal uint32
-	I int32
-}
 // NewTypedParamValueInt creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueInt(v int32) *TypedParamValueInt {
-	return &TypedParamValueInt{DVal: 1, I: v}
+func NewTypedParamValueInt(v int32) *TypedParamValue {
+	return &TypedParamValue{D: 1, I: v}
 }
-func decodeTypedParamValueInt(dec *xdr.Decoder) (*TypedParamValueInt, error) {
-	var v int32
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueInt(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueInt) Get() interface{} { return c.I }
 
-// TypedParamValueUint is one of the possible values of the TypedParamValue union.
-type TypedParamValueUint struct {
-	DVal uint32
-	Ui uint32
-}
 // NewTypedParamValueUint creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueUint(v uint32) *TypedParamValueUint {
-	return &TypedParamValueUint{DVal: 2, Ui: v}
+func NewTypedParamValueUint(v uint32) *TypedParamValue {
+	return &TypedParamValue{D: 2, I: v}
 }
-func decodeTypedParamValueUint(dec *xdr.Decoder) (*TypedParamValueUint, error) {
-	var v uint32
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueUint(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueUint) Get() interface{} { return c.Ui }
 
-// TypedParamValueLlong is one of the possible values of the TypedParamValue union.
-type TypedParamValueLlong struct {
-	DVal uint32
-	L int64
-}
 // NewTypedParamValueLlong creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueLlong(v int64) *TypedParamValueLlong {
-	return &TypedParamValueLlong{DVal: 3, L: v}
+func NewTypedParamValueLlong(v int64) *TypedParamValue {
+	return &TypedParamValue{D: 3, I: v}
 }
-func decodeTypedParamValueLlong(dec *xdr.Decoder) (*TypedParamValueLlong, error) {
-	var v int64
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueLlong(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueLlong) Get() interface{} { return c.L }
 
-// TypedParamValueUllong is one of the possible values of the TypedParamValue union.
-type TypedParamValueUllong struct {
-	DVal uint32
-	Ul uint64
-}
 // NewTypedParamValueUllong creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueUllong(v uint64) *TypedParamValueUllong {
-	return &TypedParamValueUllong{DVal: 4, Ul: v}
+func NewTypedParamValueUllong(v uint64) *TypedParamValue {
+	return &TypedParamValue{D: 4, I: v}
 }
-func decodeTypedParamValueUllong(dec *xdr.Decoder) (*TypedParamValueUllong, error) {
-	var v uint64
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueUllong(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueUllong) Get() interface{} { return c.Ul }
 
-// TypedParamValueDouble is one of the possible values of the TypedParamValue union.
-type TypedParamValueDouble struct {
-	DVal uint32
-	D float64
-}
 // NewTypedParamValueDouble creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueDouble(v float64) *TypedParamValueDouble {
-	return &TypedParamValueDouble{DVal: 5, D: v}
+func NewTypedParamValueDouble(v float64) *TypedParamValue {
+	return &TypedParamValue{D: 5, I: v}
 }
-func decodeTypedParamValueDouble(dec *xdr.Decoder) (*TypedParamValueDouble, error) {
-	var v float64
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueDouble(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueDouble) Get() interface{} { return c.D }
 
-// TypedParamValueBoolean is one of the possible values of the TypedParamValue union.
-type TypedParamValueBoolean struct {
-	DVal uint32
-	B int32
-}
 // NewTypedParamValueBoolean creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueBoolean(v int32) *TypedParamValueBoolean {
-	return &TypedParamValueBoolean{DVal: 6, B: v}
+func NewTypedParamValueBoolean(v int32) *TypedParamValue {
+	return &TypedParamValue{D: 6, I: v}
 }
-func decodeTypedParamValueBoolean(dec *xdr.Decoder) (*TypedParamValueBoolean, error) {
-	var v int32
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueBoolean(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueBoolean) Get() interface{} { return c.B }
 
-// TypedParamValueString is one of the possible values of the TypedParamValue union.
-type TypedParamValueString struct {
-	DVal uint32
-	S string
-}
 // NewTypedParamValueString creates a discriminated union value satisfying
 // the TypedParamValue interface.
-func NewTypedParamValueString(v string) *TypedParamValueString {
-	return &TypedParamValueString{DVal: 7, S: v}
-}
-func decodeTypedParamValueString(dec *xdr.Decoder) (*TypedParamValueString, error) {
-	var v string
-	_, err := dec.Decode(&v)
-	if err != nil {
-		return nil, err
-	}
-	return NewTypedParamValueString(v), nil
-}
-// Get satisfies the TypedParamValue interface.
-func (c *TypedParamValueString) Get() interface{} { return c.S }
-
-func decodeTypedParamValue(dec *xdr.Decoder) (TypedParamValue, error) {
-	discriminant, _, err := dec.DecodeInt()
-	if err != nil {
-		return nil, err
-	}
-	var caseval TypedParamValue
-	switch discriminant {
-	case 1:
-		caseval, err = decodeTypedParamValueInt(dec)
-	case 2:
-		caseval, err = decodeTypedParamValueUint(dec)
-	case 3:
-		caseval, err = decodeTypedParamValueLlong(dec)
-	case 4:
-		caseval, err = decodeTypedParamValueUllong(dec)
-	case 5:
-		caseval, err = decodeTypedParamValueDouble(dec)
-	case 6:
-		caseval, err = decodeTypedParamValueBoolean(dec)
-	case 7:
-		caseval, err = decodeTypedParamValueString(dec)
-
-	default:
-		err = fmt.Errorf("invalid parameter type %v", discriminant)
-	}
-
-	return caseval, err
-}
-
-// TODO: Generate these.
-func decodeTypedParam(dec *xdr.Decoder) (*TypedParam, error) {
-	name, _, err := dec.DecodeString()
-	if err != nil {
-		return nil, err
-	}
-	val, err := decodeTypedParamValue(dec)
-	return &TypedParam{name, val}, nil
-}
-
-func decodeTypedParams(dec *xdr.Decoder) ([]TypedParam, error) {
-	count, _, err := dec.DecodeInt()
-	if err != nil {
-		return nil, err
-	}
-	params := make([]TypedParam, count)
-	for ix := int32(0); ix < count; ix++ {
-		p, err := decodeTypedParam(dec)
-		if err != nil {
-			return nil, err
-		}
-		params[ix] = *p
-	}
-
-	return params, nil
+func NewTypedParamValueString(v string) *TypedParamValue {
+	return &TypedParamValue{D: 7, I: v}
 }
 
 
 // ConnectOpen is the go wrapper for REMOTE_PROC_CONNECT_OPEN.
 func (l *Libvirt) ConnectOpen(Name OptString, Flags ConnectFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectOpenArgs {
 		Name: Name,
@@ -3896,15 +4183,9 @@ func (l *Libvirt) ConnectOpen(Name OptString, Flags ConnectFlags) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(1, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(1, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -3913,17 +4194,11 @@ func (l *Libvirt) ConnectOpen(Name OptString, Flags ConnectFlags) (err error) {
 
 // ConnectClose is the go wrapper for REMOTE_PROC_CONNECT_CLOSE.
 func (l *Libvirt) ConnectClose() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(2, constants.Program, &buf)
+
+	_, err = l.requestStream(2, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -3932,23 +4207,19 @@ func (l *Libvirt) ConnectClose() (err error) {
 
 // ConnectGetType is the go wrapper for REMOTE_PROC_CONNECT_GET_TYPE.
 func (l *Libvirt) ConnectGetType() (rType string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(3, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(3, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: string
 	_, err = dec.Decode(&rType)
 	if err != nil {
@@ -3960,23 +4231,19 @@ func (l *Libvirt) ConnectGetType() (rType string, err error) {
 
 // ConnectGetVersion is the go wrapper for REMOTE_PROC_CONNECT_GET_VERSION.
 func (l *Libvirt) ConnectGetVersion() (rHvVer uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(4, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(4, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// HvVer: uint64
 	_, err = dec.Decode(&rHvVer)
 	if err != nil {
@@ -3988,7 +4255,7 @@ func (l *Libvirt) ConnectGetVersion() (rHvVer uint64, err error) {
 
 // ConnectGetMaxVcpus is the go wrapper for REMOTE_PROC_CONNECT_GET_MAX_VCPUS.
 func (l *Libvirt) ConnectGetMaxVcpus(Type OptString) (rMaxVcpus int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectGetMaxVcpusArgs {
 		Type: Type,
@@ -3999,21 +4266,17 @@ func (l *Libvirt) ConnectGetMaxVcpus(Type OptString) (rMaxVcpus int32, err error
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(5, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(5, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// MaxVcpus: int32
 	_, err = dec.Decode(&rMaxVcpus)
 	if err != nil {
@@ -4025,23 +4288,19 @@ func (l *Libvirt) ConnectGetMaxVcpus(Type OptString) (rMaxVcpus int32, err error
 
 // NodeGetInfo is the go wrapper for REMOTE_PROC_NODE_GET_INFO.
 func (l *Libvirt) NodeGetInfo() (rModel [32]int8, rMemory uint64, rCpus int32, rMhz int32, rNodes int32, rSockets int32, rCores int32, rThreads int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(6, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(6, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Model: [32]int8
 	_, err = dec.Decode(&rModel)
 	if err != nil {
@@ -4088,23 +4347,19 @@ func (l *Libvirt) NodeGetInfo() (rModel [32]int8, rMemory uint64, rCpus int32, r
 
 // ConnectGetCapabilities is the go wrapper for REMOTE_PROC_CONNECT_GET_CAPABILITIES.
 func (l *Libvirt) ConnectGetCapabilities() (rCapabilities string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(7, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(7, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Capabilities: string
 	_, err = dec.Decode(&rCapabilities)
 	if err != nil {
@@ -4116,7 +4371,7 @@ func (l *Libvirt) ConnectGetCapabilities() (rCapabilities string, err error) {
 
 // DomainAttachDevice is the go wrapper for REMOTE_PROC_DOMAIN_ATTACH_DEVICE.
 func (l *Libvirt) DomainAttachDevice(Dom Domain, XML string) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainAttachDeviceArgs {
 		Dom: Dom,
@@ -4128,15 +4383,9 @@ func (l *Libvirt) DomainAttachDevice(Dom Domain, XML string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(8, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(8, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -4145,7 +4394,7 @@ func (l *Libvirt) DomainAttachDevice(Dom Domain, XML string) (err error) {
 
 // DomainCreate is the go wrapper for REMOTE_PROC_DOMAIN_CREATE.
 func (l *Libvirt) DomainCreate(Dom Domain) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainCreateArgs {
 		Dom: Dom,
@@ -4156,15 +4405,9 @@ func (l *Libvirt) DomainCreate(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(9, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(9, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -4173,7 +4416,7 @@ func (l *Libvirt) DomainCreate(Dom Domain) (err error) {
 
 // DomainCreateXML is the go wrapper for REMOTE_PROC_DOMAIN_CREATE_XML.
 func (l *Libvirt) DomainCreateXML(XMLDesc string, Flags DomainCreateFlags) (rDom Domain, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainCreateXMLArgs {
 		XMLDesc: XMLDesc,
@@ -4185,21 +4428,17 @@ func (l *Libvirt) DomainCreateXML(XMLDesc string, Flags DomainCreateFlags) (rDom
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(10, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(10, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -4211,7 +4450,7 @@ func (l *Libvirt) DomainCreateXML(XMLDesc string, Flags DomainCreateFlags) (rDom
 
 // DomainDefineXML is the go wrapper for REMOTE_PROC_DOMAIN_DEFINE_XML.
 func (l *Libvirt) DomainDefineXML(XML string) (rDom Domain, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainDefineXMLArgs {
 		XML: XML,
@@ -4222,21 +4461,17 @@ func (l *Libvirt) DomainDefineXML(XML string) (rDom Domain, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(11, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(11, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -4248,7 +4483,7 @@ func (l *Libvirt) DomainDefineXML(XML string) (rDom Domain, err error) {
 
 // DomainDestroy is the go wrapper for REMOTE_PROC_DOMAIN_DESTROY.
 func (l *Libvirt) DomainDestroy(Dom Domain) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainDestroyArgs {
 		Dom: Dom,
@@ -4259,15 +4494,9 @@ func (l *Libvirt) DomainDestroy(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(12, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(12, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -4276,7 +4505,7 @@ func (l *Libvirt) DomainDestroy(Dom Domain) (err error) {
 
 // DomainDetachDevice is the go wrapper for REMOTE_PROC_DOMAIN_DETACH_DEVICE.
 func (l *Libvirt) DomainDetachDevice(Dom Domain, XML string) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainDetachDeviceArgs {
 		Dom: Dom,
@@ -4288,15 +4517,9 @@ func (l *Libvirt) DomainDetachDevice(Dom Domain, XML string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(13, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(13, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -4305,7 +4528,7 @@ func (l *Libvirt) DomainDetachDevice(Dom Domain, XML string) (err error) {
 
 // DomainGetXMLDesc is the go wrapper for REMOTE_PROC_DOMAIN_GET_XML_DESC.
 func (l *Libvirt) DomainGetXMLDesc(Dom Domain, Flags DomainXMLFlags) (rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetXMLDescArgs {
 		Dom: Dom,
@@ -4317,21 +4540,17 @@ func (l *Libvirt) DomainGetXMLDesc(Dom Domain, Flags DomainXMLFlags) (rXML strin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(14, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(14, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -4343,7 +4562,7 @@ func (l *Libvirt) DomainGetXMLDesc(Dom Domain, Flags DomainXMLFlags) (rXML strin
 
 // DomainGetAutostart is the go wrapper for REMOTE_PROC_DOMAIN_GET_AUTOSTART.
 func (l *Libvirt) DomainGetAutostart(Dom Domain) (rAutostart int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetAutostartArgs {
 		Dom: Dom,
@@ -4354,21 +4573,17 @@ func (l *Libvirt) DomainGetAutostart(Dom Domain) (rAutostart int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(15, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(15, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Autostart: int32
 	_, err = dec.Decode(&rAutostart)
 	if err != nil {
@@ -4380,7 +4595,7 @@ func (l *Libvirt) DomainGetAutostart(Dom Domain) (rAutostart int32, err error) {
 
 // DomainGetInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_INFO.
 func (l *Libvirt) DomainGetInfo(Dom Domain) (rState uint8, rMaxMem uint64, rMemory uint64, rNrVirtCPU uint16, rCPUTime uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetInfoArgs {
 		Dom: Dom,
@@ -4391,21 +4606,17 @@ func (l *Libvirt) DomainGetInfo(Dom Domain) (rState uint8, rMaxMem uint64, rMemo
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(16, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(16, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// State: uint8
 	_, err = dec.Decode(&rState)
 	if err != nil {
@@ -4437,7 +4648,7 @@ func (l *Libvirt) DomainGetInfo(Dom Domain) (rState uint8, rMaxMem uint64, rMemo
 
 // DomainGetMaxMemory is the go wrapper for REMOTE_PROC_DOMAIN_GET_MAX_MEMORY.
 func (l *Libvirt) DomainGetMaxMemory(Dom Domain) (rMemory uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetMaxMemoryArgs {
 		Dom: Dom,
@@ -4448,21 +4659,17 @@ func (l *Libvirt) DomainGetMaxMemory(Dom Domain) (rMemory uint64, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(17, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(17, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Memory: uint64
 	_, err = dec.Decode(&rMemory)
 	if err != nil {
@@ -4474,7 +4681,7 @@ func (l *Libvirt) DomainGetMaxMemory(Dom Domain) (rMemory uint64, err error) {
 
 // DomainGetMaxVcpus is the go wrapper for REMOTE_PROC_DOMAIN_GET_MAX_VCPUS.
 func (l *Libvirt) DomainGetMaxVcpus(Dom Domain) (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetMaxVcpusArgs {
 		Dom: Dom,
@@ -4485,21 +4692,17 @@ func (l *Libvirt) DomainGetMaxVcpus(Dom Domain) (rNum int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(18, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(18, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -4511,7 +4714,7 @@ func (l *Libvirt) DomainGetMaxVcpus(Dom Domain) (rNum int32, err error) {
 
 // DomainGetOsType is the go wrapper for REMOTE_PROC_DOMAIN_GET_OS_TYPE.
 func (l *Libvirt) DomainGetOsType(Dom Domain) (rType string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetOsTypeArgs {
 		Dom: Dom,
@@ -4522,21 +4725,17 @@ func (l *Libvirt) DomainGetOsType(Dom Domain) (rType string, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(19, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(19, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: string
 	_, err = dec.Decode(&rType)
 	if err != nil {
@@ -4548,7 +4747,7 @@ func (l *Libvirt) DomainGetOsType(Dom Domain) (rType string, err error) {
 
 // DomainGetVcpus is the go wrapper for REMOTE_PROC_DOMAIN_GET_VCPUS.
 func (l *Libvirt) DomainGetVcpus(Dom Domain, Maxinfo int32, Maplen int32) (rInfo []VcpuInfo, rCpumaps []byte, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetVcpusArgs {
 		Dom: Dom,
@@ -4561,21 +4760,17 @@ func (l *Libvirt) DomainGetVcpus(Dom Domain, Maxinfo int32, Maplen int32) (rInfo
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(20, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(20, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Info: []VcpuInfo
 	_, err = dec.Decode(&rInfo)
 	if err != nil {
@@ -4592,7 +4787,7 @@ func (l *Libvirt) DomainGetVcpus(Dom Domain, Maxinfo int32, Maplen int32) (rInfo
 
 // ConnectListDefinedDomains is the go wrapper for REMOTE_PROC_CONNECT_LIST_DEFINED_DOMAINS.
 func (l *Libvirt) ConnectListDefinedDomains(Maxnames int32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListDefinedDomainsArgs {
 		Maxnames: Maxnames,
@@ -4603,21 +4798,17 @@ func (l *Libvirt) ConnectListDefinedDomains(Maxnames int32) (rNames []string, er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(21, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(21, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -4629,7 +4820,7 @@ func (l *Libvirt) ConnectListDefinedDomains(Maxnames int32) (rNames []string, er
 
 // DomainLookupByID is the go wrapper for REMOTE_PROC_DOMAIN_LOOKUP_BY_ID.
 func (l *Libvirt) DomainLookupByID(ID int32) (rDom Domain, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainLookupByIDArgs {
 		ID: ID,
@@ -4640,21 +4831,17 @@ func (l *Libvirt) DomainLookupByID(ID int32) (rDom Domain, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(22, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(22, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -4666,7 +4853,7 @@ func (l *Libvirt) DomainLookupByID(ID int32) (rDom Domain, err error) {
 
 // DomainLookupByName is the go wrapper for REMOTE_PROC_DOMAIN_LOOKUP_BY_NAME.
 func (l *Libvirt) DomainLookupByName(Name string) (rDom Domain, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainLookupByNameArgs {
 		Name: Name,
@@ -4677,21 +4864,17 @@ func (l *Libvirt) DomainLookupByName(Name string) (rDom Domain, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(23, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(23, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -4703,7 +4886,7 @@ func (l *Libvirt) DomainLookupByName(Name string) (rDom Domain, err error) {
 
 // DomainLookupByUUID is the go wrapper for REMOTE_PROC_DOMAIN_LOOKUP_BY_UUID.
 func (l *Libvirt) DomainLookupByUUID(UUID UUID) (rDom Domain, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainLookupByUUIDArgs {
 		UUID: UUID,
@@ -4714,21 +4897,17 @@ func (l *Libvirt) DomainLookupByUUID(UUID UUID) (rDom Domain, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(24, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(24, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -4740,23 +4919,19 @@ func (l *Libvirt) DomainLookupByUUID(UUID UUID) (rDom Domain, err error) {
 
 // ConnectNumOfDefinedDomains is the go wrapper for REMOTE_PROC_CONNECT_NUM_OF_DEFINED_DOMAINS.
 func (l *Libvirt) ConnectNumOfDefinedDomains() (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(25, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(25, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -4768,7 +4943,7 @@ func (l *Libvirt) ConnectNumOfDefinedDomains() (rNum int32, err error) {
 
 // DomainPinVcpu is the go wrapper for REMOTE_PROC_DOMAIN_PIN_VCPU.
 func (l *Libvirt) DomainPinVcpu(Dom Domain, Vcpu uint32, Cpumap []byte) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainPinVcpuArgs {
 		Dom: Dom,
@@ -4781,15 +4956,9 @@ func (l *Libvirt) DomainPinVcpu(Dom Domain, Vcpu uint32, Cpumap []byte) (err err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(26, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(26, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -4798,7 +4967,7 @@ func (l *Libvirt) DomainPinVcpu(Dom Domain, Vcpu uint32, Cpumap []byte) (err err
 
 // DomainReboot is the go wrapper for REMOTE_PROC_DOMAIN_REBOOT.
 func (l *Libvirt) DomainReboot(Dom Domain, Flags DomainRebootFlagValues) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainRebootArgs {
 		Dom: Dom,
@@ -4810,15 +4979,9 @@ func (l *Libvirt) DomainReboot(Dom Domain, Flags DomainRebootFlagValues) (err er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(27, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(27, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -4827,7 +4990,7 @@ func (l *Libvirt) DomainReboot(Dom Domain, Flags DomainRebootFlagValues) (err er
 
 // DomainResume is the go wrapper for REMOTE_PROC_DOMAIN_RESUME.
 func (l *Libvirt) DomainResume(Dom Domain) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainResumeArgs {
 		Dom: Dom,
@@ -4838,15 +5001,9 @@ func (l *Libvirt) DomainResume(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(28, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(28, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -4855,7 +5012,7 @@ func (l *Libvirt) DomainResume(Dom Domain) (err error) {
 
 // DomainSetAutostart is the go wrapper for REMOTE_PROC_DOMAIN_SET_AUTOSTART.
 func (l *Libvirt) DomainSetAutostart(Dom Domain, Autostart int32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetAutostartArgs {
 		Dom: Dom,
@@ -4867,15 +5024,9 @@ func (l *Libvirt) DomainSetAutostart(Dom Domain, Autostart int32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(29, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(29, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -4884,7 +5035,7 @@ func (l *Libvirt) DomainSetAutostart(Dom Domain, Autostart int32) (err error) {
 
 // DomainSetMaxMemory is the go wrapper for REMOTE_PROC_DOMAIN_SET_MAX_MEMORY.
 func (l *Libvirt) DomainSetMaxMemory(Dom Domain, Memory uint64) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetMaxMemoryArgs {
 		Dom: Dom,
@@ -4896,15 +5047,9 @@ func (l *Libvirt) DomainSetMaxMemory(Dom Domain, Memory uint64) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(30, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(30, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -4913,7 +5058,7 @@ func (l *Libvirt) DomainSetMaxMemory(Dom Domain, Memory uint64) (err error) {
 
 // DomainSetMemory is the go wrapper for REMOTE_PROC_DOMAIN_SET_MEMORY.
 func (l *Libvirt) DomainSetMemory(Dom Domain, Memory uint64) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetMemoryArgs {
 		Dom: Dom,
@@ -4925,15 +5070,9 @@ func (l *Libvirt) DomainSetMemory(Dom Domain, Memory uint64) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(31, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(31, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -4942,7 +5081,7 @@ func (l *Libvirt) DomainSetMemory(Dom Domain, Memory uint64) (err error) {
 
 // DomainSetVcpus is the go wrapper for REMOTE_PROC_DOMAIN_SET_VCPUS.
 func (l *Libvirt) DomainSetVcpus(Dom Domain, Nvcpus uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetVcpusArgs {
 		Dom: Dom,
@@ -4954,15 +5093,9 @@ func (l *Libvirt) DomainSetVcpus(Dom Domain, Nvcpus uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(32, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(32, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -4971,7 +5104,7 @@ func (l *Libvirt) DomainSetVcpus(Dom Domain, Nvcpus uint32) (err error) {
 
 // DomainShutdown is the go wrapper for REMOTE_PROC_DOMAIN_SHUTDOWN.
 func (l *Libvirt) DomainShutdown(Dom Domain) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainShutdownArgs {
 		Dom: Dom,
@@ -4982,15 +5115,9 @@ func (l *Libvirt) DomainShutdown(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(33, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(33, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -4999,7 +5126,7 @@ func (l *Libvirt) DomainShutdown(Dom Domain) (err error) {
 
 // DomainSuspend is the go wrapper for REMOTE_PROC_DOMAIN_SUSPEND.
 func (l *Libvirt) DomainSuspend(Dom Domain) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSuspendArgs {
 		Dom: Dom,
@@ -5010,15 +5137,9 @@ func (l *Libvirt) DomainSuspend(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(34, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(34, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -5027,7 +5148,7 @@ func (l *Libvirt) DomainSuspend(Dom Domain) (err error) {
 
 // DomainUndefine is the go wrapper for REMOTE_PROC_DOMAIN_UNDEFINE.
 func (l *Libvirt) DomainUndefine(Dom Domain) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainUndefineArgs {
 		Dom: Dom,
@@ -5038,15 +5159,9 @@ func (l *Libvirt) DomainUndefine(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(35, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(35, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -5055,7 +5170,7 @@ func (l *Libvirt) DomainUndefine(Dom Domain) (err error) {
 
 // ConnectListDefinedNetworks is the go wrapper for REMOTE_PROC_CONNECT_LIST_DEFINED_NETWORKS.
 func (l *Libvirt) ConnectListDefinedNetworks(Maxnames int32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListDefinedNetworksArgs {
 		Maxnames: Maxnames,
@@ -5066,21 +5181,17 @@ func (l *Libvirt) ConnectListDefinedNetworks(Maxnames int32) (rNames []string, e
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(36, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(36, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -5092,7 +5203,7 @@ func (l *Libvirt) ConnectListDefinedNetworks(Maxnames int32) (rNames []string, e
 
 // ConnectListDomains is the go wrapper for REMOTE_PROC_CONNECT_LIST_DOMAINS.
 func (l *Libvirt) ConnectListDomains(Maxids int32) (rIds []int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListDomainsArgs {
 		Maxids: Maxids,
@@ -5103,21 +5214,17 @@ func (l *Libvirt) ConnectListDomains(Maxids int32) (rIds []int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(37, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(37, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Ids: []int32
 	_, err = dec.Decode(&rIds)
 	if err != nil {
@@ -5129,7 +5236,7 @@ func (l *Libvirt) ConnectListDomains(Maxids int32) (rIds []int32, err error) {
 
 // ConnectListNetworks is the go wrapper for REMOTE_PROC_CONNECT_LIST_NETWORKS.
 func (l *Libvirt) ConnectListNetworks(Maxnames int32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListNetworksArgs {
 		Maxnames: Maxnames,
@@ -5140,21 +5247,17 @@ func (l *Libvirt) ConnectListNetworks(Maxnames int32) (rNames []string, err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(38, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(38, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -5166,7 +5269,7 @@ func (l *Libvirt) ConnectListNetworks(Maxnames int32) (rNames []string, err erro
 
 // NetworkCreate is the go wrapper for REMOTE_PROC_NETWORK_CREATE.
 func (l *Libvirt) NetworkCreate(Net Network) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkCreateArgs {
 		Net: Net,
@@ -5177,15 +5280,9 @@ func (l *Libvirt) NetworkCreate(Net Network) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(39, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(39, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -5194,7 +5291,7 @@ func (l *Libvirt) NetworkCreate(Net Network) (err error) {
 
 // NetworkCreateXML is the go wrapper for REMOTE_PROC_NETWORK_CREATE_XML.
 func (l *Libvirt) NetworkCreateXML(XML string) (rNet Network, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkCreateXMLArgs {
 		XML: XML,
@@ -5205,21 +5302,17 @@ func (l *Libvirt) NetworkCreateXML(XML string) (rNet Network, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(40, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(40, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Net: Network
 	_, err = dec.Decode(&rNet)
 	if err != nil {
@@ -5231,7 +5324,7 @@ func (l *Libvirt) NetworkCreateXML(XML string) (rNet Network, err error) {
 
 // NetworkDefineXML is the go wrapper for REMOTE_PROC_NETWORK_DEFINE_XML.
 func (l *Libvirt) NetworkDefineXML(XML string) (rNet Network, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkDefineXMLArgs {
 		XML: XML,
@@ -5242,21 +5335,17 @@ func (l *Libvirt) NetworkDefineXML(XML string) (rNet Network, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(41, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(41, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Net: Network
 	_, err = dec.Decode(&rNet)
 	if err != nil {
@@ -5268,7 +5357,7 @@ func (l *Libvirt) NetworkDefineXML(XML string) (rNet Network, err error) {
 
 // NetworkDestroy is the go wrapper for REMOTE_PROC_NETWORK_DESTROY.
 func (l *Libvirt) NetworkDestroy(Net Network) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkDestroyArgs {
 		Net: Net,
@@ -5279,15 +5368,9 @@ func (l *Libvirt) NetworkDestroy(Net Network) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(42, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(42, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -5296,7 +5379,7 @@ func (l *Libvirt) NetworkDestroy(Net Network) (err error) {
 
 // NetworkGetXMLDesc is the go wrapper for REMOTE_PROC_NETWORK_GET_XML_DESC.
 func (l *Libvirt) NetworkGetXMLDesc(Net Network, Flags uint32) (rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkGetXMLDescArgs {
 		Net: Net,
@@ -5308,21 +5391,17 @@ func (l *Libvirt) NetworkGetXMLDesc(Net Network, Flags uint32) (rXML string, err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(43, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(43, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -5334,7 +5413,7 @@ func (l *Libvirt) NetworkGetXMLDesc(Net Network, Flags uint32) (rXML string, err
 
 // NetworkGetAutostart is the go wrapper for REMOTE_PROC_NETWORK_GET_AUTOSTART.
 func (l *Libvirt) NetworkGetAutostart(Net Network) (rAutostart int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkGetAutostartArgs {
 		Net: Net,
@@ -5345,21 +5424,17 @@ func (l *Libvirt) NetworkGetAutostart(Net Network) (rAutostart int32, err error)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(44, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(44, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Autostart: int32
 	_, err = dec.Decode(&rAutostart)
 	if err != nil {
@@ -5371,7 +5446,7 @@ func (l *Libvirt) NetworkGetAutostart(Net Network) (rAutostart int32, err error)
 
 // NetworkGetBridgeName is the go wrapper for REMOTE_PROC_NETWORK_GET_BRIDGE_NAME.
 func (l *Libvirt) NetworkGetBridgeName(Net Network) (rName string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkGetBridgeNameArgs {
 		Net: Net,
@@ -5382,21 +5457,17 @@ func (l *Libvirt) NetworkGetBridgeName(Net Network) (rName string, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(45, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(45, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Name: string
 	_, err = dec.Decode(&rName)
 	if err != nil {
@@ -5408,7 +5479,7 @@ func (l *Libvirt) NetworkGetBridgeName(Net Network) (rName string, err error) {
 
 // NetworkLookupByName is the go wrapper for REMOTE_PROC_NETWORK_LOOKUP_BY_NAME.
 func (l *Libvirt) NetworkLookupByName(Name string) (rNet Network, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkLookupByNameArgs {
 		Name: Name,
@@ -5419,21 +5490,17 @@ func (l *Libvirt) NetworkLookupByName(Name string) (rNet Network, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(46, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(46, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Net: Network
 	_, err = dec.Decode(&rNet)
 	if err != nil {
@@ -5445,7 +5512,7 @@ func (l *Libvirt) NetworkLookupByName(Name string) (rNet Network, err error) {
 
 // NetworkLookupByUUID is the go wrapper for REMOTE_PROC_NETWORK_LOOKUP_BY_UUID.
 func (l *Libvirt) NetworkLookupByUUID(UUID UUID) (rNet Network, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkLookupByUUIDArgs {
 		UUID: UUID,
@@ -5456,21 +5523,17 @@ func (l *Libvirt) NetworkLookupByUUID(UUID UUID) (rNet Network, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(47, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(47, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Net: Network
 	_, err = dec.Decode(&rNet)
 	if err != nil {
@@ -5482,7 +5545,7 @@ func (l *Libvirt) NetworkLookupByUUID(UUID UUID) (rNet Network, err error) {
 
 // NetworkSetAutostart is the go wrapper for REMOTE_PROC_NETWORK_SET_AUTOSTART.
 func (l *Libvirt) NetworkSetAutostart(Net Network, Autostart int32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkSetAutostartArgs {
 		Net: Net,
@@ -5494,15 +5557,9 @@ func (l *Libvirt) NetworkSetAutostart(Net Network, Autostart int32) (err error) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(48, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(48, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -5511,7 +5568,7 @@ func (l *Libvirt) NetworkSetAutostart(Net Network, Autostart int32) (err error) 
 
 // NetworkUndefine is the go wrapper for REMOTE_PROC_NETWORK_UNDEFINE.
 func (l *Libvirt) NetworkUndefine(Net Network) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkUndefineArgs {
 		Net: Net,
@@ -5522,15 +5579,9 @@ func (l *Libvirt) NetworkUndefine(Net Network) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(49, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(49, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -5539,23 +5590,19 @@ func (l *Libvirt) NetworkUndefine(Net Network) (err error) {
 
 // ConnectNumOfDefinedNetworks is the go wrapper for REMOTE_PROC_CONNECT_NUM_OF_DEFINED_NETWORKS.
 func (l *Libvirt) ConnectNumOfDefinedNetworks() (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(50, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(50, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -5567,23 +5614,19 @@ func (l *Libvirt) ConnectNumOfDefinedNetworks() (rNum int32, err error) {
 
 // ConnectNumOfDomains is the go wrapper for REMOTE_PROC_CONNECT_NUM_OF_DOMAINS.
 func (l *Libvirt) ConnectNumOfDomains() (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(51, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(51, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -5595,23 +5638,19 @@ func (l *Libvirt) ConnectNumOfDomains() (rNum int32, err error) {
 
 // ConnectNumOfNetworks is the go wrapper for REMOTE_PROC_CONNECT_NUM_OF_NETWORKS.
 func (l *Libvirt) ConnectNumOfNetworks() (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(52, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(52, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -5623,7 +5662,7 @@ func (l *Libvirt) ConnectNumOfNetworks() (rNum int32, err error) {
 
 // DomainCoreDump is the go wrapper for REMOTE_PROC_DOMAIN_CORE_DUMP.
 func (l *Libvirt) DomainCoreDump(Dom Domain, To string, Flags DomainCoreDumpFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainCoreDumpArgs {
 		Dom: Dom,
@@ -5636,15 +5675,9 @@ func (l *Libvirt) DomainCoreDump(Dom Domain, To string, Flags DomainCoreDumpFlag
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(53, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(53, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -5653,7 +5686,7 @@ func (l *Libvirt) DomainCoreDump(Dom Domain, To string, Flags DomainCoreDumpFlag
 
 // DomainRestore is the go wrapper for REMOTE_PROC_DOMAIN_RESTORE.
 func (l *Libvirt) DomainRestore(From string) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainRestoreArgs {
 		From: From,
@@ -5664,15 +5697,9 @@ func (l *Libvirt) DomainRestore(From string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(54, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(54, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -5681,7 +5708,7 @@ func (l *Libvirt) DomainRestore(From string) (err error) {
 
 // DomainSave is the go wrapper for REMOTE_PROC_DOMAIN_SAVE.
 func (l *Libvirt) DomainSave(Dom Domain, To string) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSaveArgs {
 		Dom: Dom,
@@ -5693,15 +5720,9 @@ func (l *Libvirt) DomainSave(Dom Domain, To string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(55, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(55, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -5710,7 +5731,7 @@ func (l *Libvirt) DomainSave(Dom Domain, To string) (err error) {
 
 // DomainGetSchedulerType is the go wrapper for REMOTE_PROC_DOMAIN_GET_SCHEDULER_TYPE.
 func (l *Libvirt) DomainGetSchedulerType(Dom Domain) (rType string, rNparams int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetSchedulerTypeArgs {
 		Dom: Dom,
@@ -5721,21 +5742,17 @@ func (l *Libvirt) DomainGetSchedulerType(Dom Domain) (rType string, rNparams int
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(56, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(56, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: string
 	_, err = dec.Decode(&rType)
 	if err != nil {
@@ -5752,7 +5769,7 @@ func (l *Libvirt) DomainGetSchedulerType(Dom Domain) (rType string, rNparams int
 
 // DomainGetSchedulerParameters is the go wrapper for REMOTE_PROC_DOMAIN_GET_SCHEDULER_PARAMETERS.
 func (l *Libvirt) DomainGetSchedulerParameters(Dom Domain, Nparams int32) (rParams []TypedParam, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetSchedulerParametersArgs {
 		Dom: Dom,
@@ -5764,25 +5781,20 @@ func (l *Libvirt) DomainGetSchedulerParameters(Dom Domain, Nparams int32) (rPara
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(57, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(57, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 
@@ -5791,7 +5803,7 @@ func (l *Libvirt) DomainGetSchedulerParameters(Dom Domain, Nparams int32) (rPara
 
 // DomainSetSchedulerParameters is the go wrapper for REMOTE_PROC_DOMAIN_SET_SCHEDULER_PARAMETERS.
 func (l *Libvirt) DomainSetSchedulerParameters(Dom Domain, Params []TypedParam) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetSchedulerParametersArgs {
 		Dom: Dom,
@@ -5803,15 +5815,9 @@ func (l *Libvirt) DomainSetSchedulerParameters(Dom Domain, Params []TypedParam) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(58, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(58, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -5820,23 +5826,19 @@ func (l *Libvirt) DomainSetSchedulerParameters(Dom Domain, Params []TypedParam) 
 
 // ConnectGetHostname is the go wrapper for REMOTE_PROC_CONNECT_GET_HOSTNAME.
 func (l *Libvirt) ConnectGetHostname() (rHostname string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(59, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(59, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Hostname: string
 	_, err = dec.Decode(&rHostname)
 	if err != nil {
@@ -5848,7 +5850,7 @@ func (l *Libvirt) ConnectGetHostname() (rHostname string, err error) {
 
 // ConnectSupportsFeature is the go wrapper for REMOTE_PROC_CONNECT_SUPPORTS_FEATURE.
 func (l *Libvirt) ConnectSupportsFeature(Feature int32) (rSupported int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectSupportsFeatureArgs {
 		Feature: Feature,
@@ -5859,21 +5861,17 @@ func (l *Libvirt) ConnectSupportsFeature(Feature int32) (rSupported int32, err e
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(60, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(60, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Supported: int32
 	_, err = dec.Decode(&rSupported)
 	if err != nil {
@@ -5885,7 +5883,7 @@ func (l *Libvirt) ConnectSupportsFeature(Feature int32) (rSupported int32, err e
 
 // DomainMigratePrepare is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PREPARE.
 func (l *Libvirt) DomainMigratePrepare(UriIn OptString, Flags uint64, Dname OptString, Resource uint64) (rCookie []byte, rUriOut OptString, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigratePrepareArgs {
 		UriIn: UriIn,
@@ -5899,21 +5897,17 @@ func (l *Libvirt) DomainMigratePrepare(UriIn OptString, Flags uint64, Dname OptS
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(61, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(61, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Cookie: []byte
 	_, err = dec.Decode(&rCookie)
 	if err != nil {
@@ -5930,7 +5924,7 @@ func (l *Libvirt) DomainMigratePrepare(UriIn OptString, Flags uint64, Dname OptS
 
 // DomainMigratePerform is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PERFORM.
 func (l *Libvirt) DomainMigratePerform(Dom Domain, Cookie []byte, Uri string, Flags uint64, Dname OptString, Resource uint64) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigratePerformArgs {
 		Dom: Dom,
@@ -5946,15 +5940,9 @@ func (l *Libvirt) DomainMigratePerform(Dom Domain, Cookie []byte, Uri string, Fl
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(62, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(62, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -5963,7 +5951,7 @@ func (l *Libvirt) DomainMigratePerform(Dom Domain, Cookie []byte, Uri string, Fl
 
 // DomainMigrateFinish is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_FINISH.
 func (l *Libvirt) DomainMigrateFinish(Dname string, Cookie []byte, Uri string, Flags uint64) (rDdom Domain, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateFinishArgs {
 		Dname: Dname,
@@ -5977,21 +5965,17 @@ func (l *Libvirt) DomainMigrateFinish(Dname string, Cookie []byte, Uri string, F
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(63, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(63, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Ddom: Domain
 	_, err = dec.Decode(&rDdom)
 	if err != nil {
@@ -6003,7 +5987,7 @@ func (l *Libvirt) DomainMigrateFinish(Dname string, Cookie []byte, Uri string, F
 
 // DomainBlockStats is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_STATS.
 func (l *Libvirt) DomainBlockStats(Dom Domain, Path string) (rRdReq int64, rRdBytes int64, rWrReq int64, rWrBytes int64, rErrs int64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainBlockStatsArgs {
 		Dom: Dom,
@@ -6015,21 +5999,17 @@ func (l *Libvirt) DomainBlockStats(Dom Domain, Path string) (rRdReq int64, rRdBy
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(64, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(64, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// RdReq: int64
 	_, err = dec.Decode(&rRdReq)
 	if err != nil {
@@ -6060,12 +6040,12 @@ func (l *Libvirt) DomainBlockStats(Dom Domain, Path string) (rRdReq int64, rRdBy
 }
 
 // DomainInterfaceStats is the go wrapper for REMOTE_PROC_DOMAIN_INTERFACE_STATS.
-func (l *Libvirt) DomainInterfaceStats(Dom Domain, Path string) (rRxBytes int64, rRxPackets int64, rRxErrs int64, rRxDrop int64, rTxBytes int64, rTxPackets int64, rTxErrs int64, rTxDrop int64, err error) {
-	var buf bytes.Buffer
+func (l *Libvirt) DomainInterfaceStats(Dom Domain, Device string) (rRxBytes int64, rRxPackets int64, rRxErrs int64, rRxDrop int64, rTxBytes int64, rTxPackets int64, rTxErrs int64, rTxDrop int64, err error) {
+	var buf []byte
 
 	args := DomainInterfaceStatsArgs {
 		Dom: Dom,
-		Path: Path,
+		Device: Device,
 	}
 
 	buf, err = encode(&args)
@@ -6073,21 +6053,17 @@ func (l *Libvirt) DomainInterfaceStats(Dom Domain, Path string) (rRxBytes int64,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(65, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(65, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// RxBytes: int64
 	_, err = dec.Decode(&rRxBytes)
 	if err != nil {
@@ -6134,23 +6110,19 @@ func (l *Libvirt) DomainInterfaceStats(Dom Domain, Path string) (rRxBytes int64,
 
 // AuthList is the go wrapper for REMOTE_PROC_AUTH_LIST.
 func (l *Libvirt) AuthList() (rTypes []AuthType, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(66, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(66, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Types: []AuthType
 	_, err = dec.Decode(&rTypes)
 	if err != nil {
@@ -6162,23 +6134,19 @@ func (l *Libvirt) AuthList() (rTypes []AuthType, err error) {
 
 // AuthSaslInit is the go wrapper for REMOTE_PROC_AUTH_SASL_INIT.
 func (l *Libvirt) AuthSaslInit() (rMechlist string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(67, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(67, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Mechlist: string
 	_, err = dec.Decode(&rMechlist)
 	if err != nil {
@@ -6190,7 +6158,7 @@ func (l *Libvirt) AuthSaslInit() (rMechlist string, err error) {
 
 // AuthSaslStart is the go wrapper for REMOTE_PROC_AUTH_SASL_START.
 func (l *Libvirt) AuthSaslStart(Mech string, Nil int32, Data []int8) (rComplete int32, rNil int32, rData []int8, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := AuthSaslStartArgs {
 		Mech: Mech,
@@ -6203,21 +6171,17 @@ func (l *Libvirt) AuthSaslStart(Mech string, Nil int32, Data []int8) (rComplete 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(68, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(68, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Complete: int32
 	_, err = dec.Decode(&rComplete)
 	if err != nil {
@@ -6239,7 +6203,7 @@ func (l *Libvirt) AuthSaslStart(Mech string, Nil int32, Data []int8) (rComplete 
 
 // AuthSaslStep is the go wrapper for REMOTE_PROC_AUTH_SASL_STEP.
 func (l *Libvirt) AuthSaslStep(Nil int32, Data []int8) (rComplete int32, rNil int32, rData []int8, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := AuthSaslStepArgs {
 		Nil: Nil,
@@ -6251,21 +6215,17 @@ func (l *Libvirt) AuthSaslStep(Nil int32, Data []int8) (rComplete int32, rNil in
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(69, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(69, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Complete: int32
 	_, err = dec.Decode(&rComplete)
 	if err != nil {
@@ -6287,23 +6247,19 @@ func (l *Libvirt) AuthSaslStep(Nil int32, Data []int8) (rComplete int32, rNil in
 
 // AuthPolkit is the go wrapper for REMOTE_PROC_AUTH_POLKIT.
 func (l *Libvirt) AuthPolkit() (rComplete int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(70, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(70, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Complete: int32
 	_, err = dec.Decode(&rComplete)
 	if err != nil {
@@ -6315,23 +6271,19 @@ func (l *Libvirt) AuthPolkit() (rComplete int32, err error) {
 
 // ConnectNumOfStoragePools is the go wrapper for REMOTE_PROC_CONNECT_NUM_OF_STORAGE_POOLS.
 func (l *Libvirt) ConnectNumOfStoragePools() (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(71, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(71, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -6343,7 +6295,7 @@ func (l *Libvirt) ConnectNumOfStoragePools() (rNum int32, err error) {
 
 // ConnectListStoragePools is the go wrapper for REMOTE_PROC_CONNECT_LIST_STORAGE_POOLS.
 func (l *Libvirt) ConnectListStoragePools(Maxnames int32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListStoragePoolsArgs {
 		Maxnames: Maxnames,
@@ -6354,21 +6306,17 @@ func (l *Libvirt) ConnectListStoragePools(Maxnames int32) (rNames []string, err 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(72, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(72, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -6380,23 +6328,19 @@ func (l *Libvirt) ConnectListStoragePools(Maxnames int32) (rNames []string, err 
 
 // ConnectNumOfDefinedStoragePools is the go wrapper for REMOTE_PROC_CONNECT_NUM_OF_DEFINED_STORAGE_POOLS.
 func (l *Libvirt) ConnectNumOfDefinedStoragePools() (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(73, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(73, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -6408,7 +6352,7 @@ func (l *Libvirt) ConnectNumOfDefinedStoragePools() (rNum int32, err error) {
 
 // ConnectListDefinedStoragePools is the go wrapper for REMOTE_PROC_CONNECT_LIST_DEFINED_STORAGE_POOLS.
 func (l *Libvirt) ConnectListDefinedStoragePools(Maxnames int32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListDefinedStoragePoolsArgs {
 		Maxnames: Maxnames,
@@ -6419,21 +6363,17 @@ func (l *Libvirt) ConnectListDefinedStoragePools(Maxnames int32) (rNames []strin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(74, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(74, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -6445,7 +6385,7 @@ func (l *Libvirt) ConnectListDefinedStoragePools(Maxnames int32) (rNames []strin
 
 // ConnectFindStoragePoolSources is the go wrapper for REMOTE_PROC_CONNECT_FIND_STORAGE_POOL_SOURCES.
 func (l *Libvirt) ConnectFindStoragePoolSources(Type string, SrcSpec OptString, Flags uint32) (rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectFindStoragePoolSourcesArgs {
 		Type: Type,
@@ -6458,21 +6398,17 @@ func (l *Libvirt) ConnectFindStoragePoolSources(Type string, SrcSpec OptString, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(75, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(75, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -6484,7 +6420,7 @@ func (l *Libvirt) ConnectFindStoragePoolSources(Type string, SrcSpec OptString, 
 
 // StoragePoolCreateXML is the go wrapper for REMOTE_PROC_STORAGE_POOL_CREATE_XML.
 func (l *Libvirt) StoragePoolCreateXML(XML string, Flags StoragePoolCreateFlags) (rPool StoragePool, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolCreateXMLArgs {
 		XML: XML,
@@ -6496,21 +6432,17 @@ func (l *Libvirt) StoragePoolCreateXML(XML string, Flags StoragePoolCreateFlags)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(76, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(76, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Pool: StoragePool
 	_, err = dec.Decode(&rPool)
 	if err != nil {
@@ -6522,7 +6454,7 @@ func (l *Libvirt) StoragePoolCreateXML(XML string, Flags StoragePoolCreateFlags)
 
 // StoragePoolDefineXML is the go wrapper for REMOTE_PROC_STORAGE_POOL_DEFINE_XML.
 func (l *Libvirt) StoragePoolDefineXML(XML string, Flags uint32) (rPool StoragePool, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolDefineXMLArgs {
 		XML: XML,
@@ -6534,21 +6466,17 @@ func (l *Libvirt) StoragePoolDefineXML(XML string, Flags uint32) (rPool StorageP
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(77, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(77, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Pool: StoragePool
 	_, err = dec.Decode(&rPool)
 	if err != nil {
@@ -6560,7 +6488,7 @@ func (l *Libvirt) StoragePoolDefineXML(XML string, Flags uint32) (rPool StorageP
 
 // StoragePoolCreate is the go wrapper for REMOTE_PROC_STORAGE_POOL_CREATE.
 func (l *Libvirt) StoragePoolCreate(Pool StoragePool, Flags StoragePoolCreateFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolCreateArgs {
 		Pool: Pool,
@@ -6572,15 +6500,9 @@ func (l *Libvirt) StoragePoolCreate(Pool StoragePool, Flags StoragePoolCreateFla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(78, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(78, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -6589,7 +6511,7 @@ func (l *Libvirt) StoragePoolCreate(Pool StoragePool, Flags StoragePoolCreateFla
 
 // StoragePoolBuild is the go wrapper for REMOTE_PROC_STORAGE_POOL_BUILD.
 func (l *Libvirt) StoragePoolBuild(Pool StoragePool, Flags StoragePoolBuildFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolBuildArgs {
 		Pool: Pool,
@@ -6601,15 +6523,9 @@ func (l *Libvirt) StoragePoolBuild(Pool StoragePool, Flags StoragePoolBuildFlags
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(79, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(79, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -6618,7 +6534,7 @@ func (l *Libvirt) StoragePoolBuild(Pool StoragePool, Flags StoragePoolBuildFlags
 
 // StoragePoolDestroy is the go wrapper for REMOTE_PROC_STORAGE_POOL_DESTROY.
 func (l *Libvirt) StoragePoolDestroy(Pool StoragePool) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolDestroyArgs {
 		Pool: Pool,
@@ -6629,15 +6545,9 @@ func (l *Libvirt) StoragePoolDestroy(Pool StoragePool) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(80, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(80, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -6646,7 +6556,7 @@ func (l *Libvirt) StoragePoolDestroy(Pool StoragePool) (err error) {
 
 // StoragePoolDelete is the go wrapper for REMOTE_PROC_STORAGE_POOL_DELETE.
 func (l *Libvirt) StoragePoolDelete(Pool StoragePool, Flags StoragePoolDeleteFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolDeleteArgs {
 		Pool: Pool,
@@ -6658,15 +6568,9 @@ func (l *Libvirt) StoragePoolDelete(Pool StoragePool, Flags StoragePoolDeleteFla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(81, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(81, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -6675,7 +6579,7 @@ func (l *Libvirt) StoragePoolDelete(Pool StoragePool, Flags StoragePoolDeleteFla
 
 // StoragePoolUndefine is the go wrapper for REMOTE_PROC_STORAGE_POOL_UNDEFINE.
 func (l *Libvirt) StoragePoolUndefine(Pool StoragePool) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolUndefineArgs {
 		Pool: Pool,
@@ -6686,15 +6590,9 @@ func (l *Libvirt) StoragePoolUndefine(Pool StoragePool) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(82, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(82, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -6703,7 +6601,7 @@ func (l *Libvirt) StoragePoolUndefine(Pool StoragePool) (err error) {
 
 // StoragePoolRefresh is the go wrapper for REMOTE_PROC_STORAGE_POOL_REFRESH.
 func (l *Libvirt) StoragePoolRefresh(Pool StoragePool, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolRefreshArgs {
 		Pool: Pool,
@@ -6715,15 +6613,9 @@ func (l *Libvirt) StoragePoolRefresh(Pool StoragePool, Flags uint32) (err error)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(83, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(83, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -6732,7 +6624,7 @@ func (l *Libvirt) StoragePoolRefresh(Pool StoragePool, Flags uint32) (err error)
 
 // StoragePoolLookupByName is the go wrapper for REMOTE_PROC_STORAGE_POOL_LOOKUP_BY_NAME.
 func (l *Libvirt) StoragePoolLookupByName(Name string) (rPool StoragePool, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolLookupByNameArgs {
 		Name: Name,
@@ -6743,21 +6635,17 @@ func (l *Libvirt) StoragePoolLookupByName(Name string) (rPool StoragePool, err e
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(84, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(84, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Pool: StoragePool
 	_, err = dec.Decode(&rPool)
 	if err != nil {
@@ -6769,7 +6657,7 @@ func (l *Libvirt) StoragePoolLookupByName(Name string) (rPool StoragePool, err e
 
 // StoragePoolLookupByUUID is the go wrapper for REMOTE_PROC_STORAGE_POOL_LOOKUP_BY_UUID.
 func (l *Libvirt) StoragePoolLookupByUUID(UUID UUID) (rPool StoragePool, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolLookupByUUIDArgs {
 		UUID: UUID,
@@ -6780,21 +6668,17 @@ func (l *Libvirt) StoragePoolLookupByUUID(UUID UUID) (rPool StoragePool, err err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(85, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(85, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Pool: StoragePool
 	_, err = dec.Decode(&rPool)
 	if err != nil {
@@ -6806,7 +6690,7 @@ func (l *Libvirt) StoragePoolLookupByUUID(UUID UUID) (rPool StoragePool, err err
 
 // StoragePoolLookupByVolume is the go wrapper for REMOTE_PROC_STORAGE_POOL_LOOKUP_BY_VOLUME.
 func (l *Libvirt) StoragePoolLookupByVolume(Vol StorageVol) (rPool StoragePool, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolLookupByVolumeArgs {
 		Vol: Vol,
@@ -6817,21 +6701,17 @@ func (l *Libvirt) StoragePoolLookupByVolume(Vol StorageVol) (rPool StoragePool, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(86, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(86, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Pool: StoragePool
 	_, err = dec.Decode(&rPool)
 	if err != nil {
@@ -6843,7 +6723,7 @@ func (l *Libvirt) StoragePoolLookupByVolume(Vol StorageVol) (rPool StoragePool, 
 
 // StoragePoolGetInfo is the go wrapper for REMOTE_PROC_STORAGE_POOL_GET_INFO.
 func (l *Libvirt) StoragePoolGetInfo(Pool StoragePool) (rState uint8, rCapacity uint64, rAllocation uint64, rAvailable uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolGetInfoArgs {
 		Pool: Pool,
@@ -6854,21 +6734,17 @@ func (l *Libvirt) StoragePoolGetInfo(Pool StoragePool) (rState uint8, rCapacity 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(87, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(87, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// State: uint8
 	_, err = dec.Decode(&rState)
 	if err != nil {
@@ -6895,7 +6771,7 @@ func (l *Libvirt) StoragePoolGetInfo(Pool StoragePool) (rState uint8, rCapacity 
 
 // StoragePoolGetXMLDesc is the go wrapper for REMOTE_PROC_STORAGE_POOL_GET_XML_DESC.
 func (l *Libvirt) StoragePoolGetXMLDesc(Pool StoragePool, Flags StorageXMLFlags) (rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolGetXMLDescArgs {
 		Pool: Pool,
@@ -6907,21 +6783,17 @@ func (l *Libvirt) StoragePoolGetXMLDesc(Pool StoragePool, Flags StorageXMLFlags)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(88, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(88, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -6933,7 +6805,7 @@ func (l *Libvirt) StoragePoolGetXMLDesc(Pool StoragePool, Flags StorageXMLFlags)
 
 // StoragePoolGetAutostart is the go wrapper for REMOTE_PROC_STORAGE_POOL_GET_AUTOSTART.
 func (l *Libvirt) StoragePoolGetAutostart(Pool StoragePool) (rAutostart int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolGetAutostartArgs {
 		Pool: Pool,
@@ -6944,21 +6816,17 @@ func (l *Libvirt) StoragePoolGetAutostart(Pool StoragePool) (rAutostart int32, e
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(89, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(89, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Autostart: int32
 	_, err = dec.Decode(&rAutostart)
 	if err != nil {
@@ -6970,7 +6838,7 @@ func (l *Libvirt) StoragePoolGetAutostart(Pool StoragePool) (rAutostart int32, e
 
 // StoragePoolSetAutostart is the go wrapper for REMOTE_PROC_STORAGE_POOL_SET_AUTOSTART.
 func (l *Libvirt) StoragePoolSetAutostart(Pool StoragePool, Autostart int32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolSetAutostartArgs {
 		Pool: Pool,
@@ -6982,15 +6850,9 @@ func (l *Libvirt) StoragePoolSetAutostart(Pool StoragePool, Autostart int32) (er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(90, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(90, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -6999,7 +6861,7 @@ func (l *Libvirt) StoragePoolSetAutostart(Pool StoragePool, Autostart int32) (er
 
 // StoragePoolNumOfVolumes is the go wrapper for REMOTE_PROC_STORAGE_POOL_NUM_OF_VOLUMES.
 func (l *Libvirt) StoragePoolNumOfVolumes(Pool StoragePool) (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolNumOfVolumesArgs {
 		Pool: Pool,
@@ -7010,21 +6872,17 @@ func (l *Libvirt) StoragePoolNumOfVolumes(Pool StoragePool) (rNum int32, err err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(91, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(91, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -7036,7 +6894,7 @@ func (l *Libvirt) StoragePoolNumOfVolumes(Pool StoragePool) (rNum int32, err err
 
 // StoragePoolListVolumes is the go wrapper for REMOTE_PROC_STORAGE_POOL_LIST_VOLUMES.
 func (l *Libvirt) StoragePoolListVolumes(Pool StoragePool, Maxnames int32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolListVolumesArgs {
 		Pool: Pool,
@@ -7048,21 +6906,17 @@ func (l *Libvirt) StoragePoolListVolumes(Pool StoragePool, Maxnames int32) (rNam
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(92, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(92, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -7074,7 +6928,7 @@ func (l *Libvirt) StoragePoolListVolumes(Pool StoragePool, Maxnames int32) (rNam
 
 // StorageVolCreateXML is the go wrapper for REMOTE_PROC_STORAGE_VOL_CREATE_XML.
 func (l *Libvirt) StorageVolCreateXML(Pool StoragePool, XML string, Flags StorageVolCreateFlags) (rVol StorageVol, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolCreateXMLArgs {
 		Pool: Pool,
@@ -7087,21 +6941,17 @@ func (l *Libvirt) StorageVolCreateXML(Pool StoragePool, XML string, Flags Storag
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(93, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(93, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Vol: StorageVol
 	_, err = dec.Decode(&rVol)
 	if err != nil {
@@ -7113,7 +6963,7 @@ func (l *Libvirt) StorageVolCreateXML(Pool StoragePool, XML string, Flags Storag
 
 // StorageVolDelete is the go wrapper for REMOTE_PROC_STORAGE_VOL_DELETE.
 func (l *Libvirt) StorageVolDelete(Vol StorageVol, Flags StorageVolDeleteFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolDeleteArgs {
 		Vol: Vol,
@@ -7125,15 +6975,9 @@ func (l *Libvirt) StorageVolDelete(Vol StorageVol, Flags StorageVolDeleteFlags) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(94, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(94, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -7142,7 +6986,7 @@ func (l *Libvirt) StorageVolDelete(Vol StorageVol, Flags StorageVolDeleteFlags) 
 
 // StorageVolLookupByName is the go wrapper for REMOTE_PROC_STORAGE_VOL_LOOKUP_BY_NAME.
 func (l *Libvirt) StorageVolLookupByName(Pool StoragePool, Name string) (rVol StorageVol, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolLookupByNameArgs {
 		Pool: Pool,
@@ -7154,21 +6998,17 @@ func (l *Libvirt) StorageVolLookupByName(Pool StoragePool, Name string) (rVol St
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(95, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(95, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Vol: StorageVol
 	_, err = dec.Decode(&rVol)
 	if err != nil {
@@ -7180,7 +7020,7 @@ func (l *Libvirt) StorageVolLookupByName(Pool StoragePool, Name string) (rVol St
 
 // StorageVolLookupByKey is the go wrapper for REMOTE_PROC_STORAGE_VOL_LOOKUP_BY_KEY.
 func (l *Libvirt) StorageVolLookupByKey(Key string) (rVol StorageVol, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolLookupByKeyArgs {
 		Key: Key,
@@ -7191,21 +7031,17 @@ func (l *Libvirt) StorageVolLookupByKey(Key string) (rVol StorageVol, err error)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(96, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(96, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Vol: StorageVol
 	_, err = dec.Decode(&rVol)
 	if err != nil {
@@ -7217,7 +7053,7 @@ func (l *Libvirt) StorageVolLookupByKey(Key string) (rVol StorageVol, err error)
 
 // StorageVolLookupByPath is the go wrapper for REMOTE_PROC_STORAGE_VOL_LOOKUP_BY_PATH.
 func (l *Libvirt) StorageVolLookupByPath(Path string) (rVol StorageVol, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolLookupByPathArgs {
 		Path: Path,
@@ -7228,21 +7064,17 @@ func (l *Libvirt) StorageVolLookupByPath(Path string) (rVol StorageVol, err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(97, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(97, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Vol: StorageVol
 	_, err = dec.Decode(&rVol)
 	if err != nil {
@@ -7254,7 +7086,7 @@ func (l *Libvirt) StorageVolLookupByPath(Path string) (rVol StorageVol, err erro
 
 // StorageVolGetInfo is the go wrapper for REMOTE_PROC_STORAGE_VOL_GET_INFO.
 func (l *Libvirt) StorageVolGetInfo(Vol StorageVol) (rType int8, rCapacity uint64, rAllocation uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolGetInfoArgs {
 		Vol: Vol,
@@ -7265,21 +7097,17 @@ func (l *Libvirt) StorageVolGetInfo(Vol StorageVol) (rType int8, rCapacity uint6
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(98, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(98, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: int8
 	_, err = dec.Decode(&rType)
 	if err != nil {
@@ -7301,7 +7129,7 @@ func (l *Libvirt) StorageVolGetInfo(Vol StorageVol) (rType int8, rCapacity uint6
 
 // StorageVolGetXMLDesc is the go wrapper for REMOTE_PROC_STORAGE_VOL_GET_XML_DESC.
 func (l *Libvirt) StorageVolGetXMLDesc(Vol StorageVol, Flags uint32) (rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolGetXMLDescArgs {
 		Vol: Vol,
@@ -7313,21 +7141,17 @@ func (l *Libvirt) StorageVolGetXMLDesc(Vol StorageVol, Flags uint32) (rXML strin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(99, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(99, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -7339,7 +7163,7 @@ func (l *Libvirt) StorageVolGetXMLDesc(Vol StorageVol, Flags uint32) (rXML strin
 
 // StorageVolGetPath is the go wrapper for REMOTE_PROC_STORAGE_VOL_GET_PATH.
 func (l *Libvirt) StorageVolGetPath(Vol StorageVol) (rName string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolGetPathArgs {
 		Vol: Vol,
@@ -7350,21 +7174,17 @@ func (l *Libvirt) StorageVolGetPath(Vol StorageVol) (rName string, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(100, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(100, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Name: string
 	_, err = dec.Decode(&rName)
 	if err != nil {
@@ -7376,7 +7196,7 @@ func (l *Libvirt) StorageVolGetPath(Vol StorageVol) (rName string, err error) {
 
 // NodeGetCellsFreeMemory is the go wrapper for REMOTE_PROC_NODE_GET_CELLS_FREE_MEMORY.
 func (l *Libvirt) NodeGetCellsFreeMemory(StartCell int32, Maxcells int32) (rCells []uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeGetCellsFreeMemoryArgs {
 		StartCell: StartCell,
@@ -7388,21 +7208,17 @@ func (l *Libvirt) NodeGetCellsFreeMemory(StartCell int32, Maxcells int32) (rCell
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(101, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(101, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Cells: []uint64
 	_, err = dec.Decode(&rCells)
 	if err != nil {
@@ -7414,23 +7230,19 @@ func (l *Libvirt) NodeGetCellsFreeMemory(StartCell int32, Maxcells int32) (rCell
 
 // NodeGetFreeMemory is the go wrapper for REMOTE_PROC_NODE_GET_FREE_MEMORY.
 func (l *Libvirt) NodeGetFreeMemory() (rFreeMem uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(102, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(102, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// FreeMem: uint64
 	_, err = dec.Decode(&rFreeMem)
 	if err != nil {
@@ -7442,7 +7254,7 @@ func (l *Libvirt) NodeGetFreeMemory() (rFreeMem uint64, err error) {
 
 // DomainBlockPeek is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_PEEK.
 func (l *Libvirt) DomainBlockPeek(Dom Domain, Path string, Offset uint64, Size uint32, Flags uint32) (rBuffer []byte, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainBlockPeekArgs {
 		Dom: Dom,
@@ -7457,21 +7269,17 @@ func (l *Libvirt) DomainBlockPeek(Dom Domain, Path string, Offset uint64, Size u
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(103, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(103, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Buffer: []byte
 	_, err = dec.Decode(&rBuffer)
 	if err != nil {
@@ -7483,7 +7291,7 @@ func (l *Libvirt) DomainBlockPeek(Dom Domain, Path string, Offset uint64, Size u
 
 // DomainMemoryPeek is the go wrapper for REMOTE_PROC_DOMAIN_MEMORY_PEEK.
 func (l *Libvirt) DomainMemoryPeek(Dom Domain, Offset uint64, Size uint32, Flags DomainMemoryFlags) (rBuffer []byte, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMemoryPeekArgs {
 		Dom: Dom,
@@ -7497,21 +7305,17 @@ func (l *Libvirt) DomainMemoryPeek(Dom Domain, Offset uint64, Size uint32, Flags
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(104, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(104, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Buffer: []byte
 	_, err = dec.Decode(&rBuffer)
 	if err != nil {
@@ -7523,23 +7327,19 @@ func (l *Libvirt) DomainMemoryPeek(Dom Domain, Offset uint64, Size uint32, Flags
 
 // ConnectDomainEventRegister is the go wrapper for REMOTE_PROC_CONNECT_DOMAIN_EVENT_REGISTER.
 func (l *Libvirt) ConnectDomainEventRegister() (rCbRegistered int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(105, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(105, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CbRegistered: int32
 	_, err = dec.Decode(&rCbRegistered)
 	if err != nil {
@@ -7551,23 +7351,19 @@ func (l *Libvirt) ConnectDomainEventRegister() (rCbRegistered int32, err error) 
 
 // ConnectDomainEventDeregister is the go wrapper for REMOTE_PROC_CONNECT_DOMAIN_EVENT_DEREGISTER.
 func (l *Libvirt) ConnectDomainEventDeregister() (rCbRegistered int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(106, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(106, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CbRegistered: int32
 	_, err = dec.Decode(&rCbRegistered)
 	if err != nil {
@@ -7579,17 +7375,11 @@ func (l *Libvirt) ConnectDomainEventDeregister() (rCbRegistered int32, err error
 
 // DomainEventLifecycle is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_LIFECYCLE.
 func (l *Libvirt) DomainEventLifecycle() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(107, constants.Program, &buf)
+
+	_, err = l.requestStream(107, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -7598,7 +7388,7 @@ func (l *Libvirt) DomainEventLifecycle() (err error) {
 
 // DomainMigratePrepare2 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PREPARE2.
 func (l *Libvirt) DomainMigratePrepare2(UriIn OptString, Flags uint64, Dname OptString, Resource uint64, DomXML string) (rCookie []byte, rUriOut OptString, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigratePrepare2Args {
 		UriIn: UriIn,
@@ -7613,21 +7403,17 @@ func (l *Libvirt) DomainMigratePrepare2(UriIn OptString, Flags uint64, Dname Opt
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(108, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(108, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Cookie: []byte
 	_, err = dec.Decode(&rCookie)
 	if err != nil {
@@ -7644,7 +7430,7 @@ func (l *Libvirt) DomainMigratePrepare2(UriIn OptString, Flags uint64, Dname Opt
 
 // DomainMigrateFinish2 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_FINISH2.
 func (l *Libvirt) DomainMigrateFinish2(Dname string, Cookie []byte, Uri string, Flags uint64, Retcode int32) (rDdom Domain, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateFinish2Args {
 		Dname: Dname,
@@ -7659,21 +7445,17 @@ func (l *Libvirt) DomainMigrateFinish2(Dname string, Cookie []byte, Uri string, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(109, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(109, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Ddom: Domain
 	_, err = dec.Decode(&rDdom)
 	if err != nil {
@@ -7685,23 +7467,19 @@ func (l *Libvirt) DomainMigrateFinish2(Dname string, Cookie []byte, Uri string, 
 
 // ConnectGetUri is the go wrapper for REMOTE_PROC_CONNECT_GET_URI.
 func (l *Libvirt) ConnectGetUri() (rUri string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(110, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(110, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Uri: string
 	_, err = dec.Decode(&rUri)
 	if err != nil {
@@ -7713,7 +7491,7 @@ func (l *Libvirt) ConnectGetUri() (rUri string, err error) {
 
 // NodeNumOfDevices is the go wrapper for REMOTE_PROC_NODE_NUM_OF_DEVICES.
 func (l *Libvirt) NodeNumOfDevices(Cap OptString, Flags uint32) (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeNumOfDevicesArgs {
 		Cap: Cap,
@@ -7725,21 +7503,17 @@ func (l *Libvirt) NodeNumOfDevices(Cap OptString, Flags uint32) (rNum int32, err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(111, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(111, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -7751,7 +7525,7 @@ func (l *Libvirt) NodeNumOfDevices(Cap OptString, Flags uint32) (rNum int32, err
 
 // NodeListDevices is the go wrapper for REMOTE_PROC_NODE_LIST_DEVICES.
 func (l *Libvirt) NodeListDevices(Cap OptString, Maxnames int32, Flags uint32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeListDevicesArgs {
 		Cap: Cap,
@@ -7764,21 +7538,17 @@ func (l *Libvirt) NodeListDevices(Cap OptString, Maxnames int32, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(112, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(112, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -7790,7 +7560,7 @@ func (l *Libvirt) NodeListDevices(Cap OptString, Maxnames int32, Flags uint32) (
 
 // NodeDeviceLookupByName is the go wrapper for REMOTE_PROC_NODE_DEVICE_LOOKUP_BY_NAME.
 func (l *Libvirt) NodeDeviceLookupByName(Name string) (rDev NodeDevice, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeDeviceLookupByNameArgs {
 		Name: Name,
@@ -7801,21 +7571,17 @@ func (l *Libvirt) NodeDeviceLookupByName(Name string) (rDev NodeDevice, err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(113, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(113, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dev: NodeDevice
 	_, err = dec.Decode(&rDev)
 	if err != nil {
@@ -7827,7 +7593,7 @@ func (l *Libvirt) NodeDeviceLookupByName(Name string) (rDev NodeDevice, err erro
 
 // NodeDeviceGetXMLDesc is the go wrapper for REMOTE_PROC_NODE_DEVICE_GET_XML_DESC.
 func (l *Libvirt) NodeDeviceGetXMLDesc(Name string, Flags uint32) (rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeDeviceGetXMLDescArgs {
 		Name: Name,
@@ -7839,21 +7605,17 @@ func (l *Libvirt) NodeDeviceGetXMLDesc(Name string, Flags uint32) (rXML string, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(114, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(114, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -7864,8 +7626,8 @@ func (l *Libvirt) NodeDeviceGetXMLDesc(Name string, Flags uint32) (rXML string, 
 }
 
 // NodeDeviceGetParent is the go wrapper for REMOTE_PROC_NODE_DEVICE_GET_PARENT.
-func (l *Libvirt) NodeDeviceGetParent(Name string) (rParent OptString, err error) {
-	var buf bytes.Buffer
+func (l *Libvirt) NodeDeviceGetParent(Name string) (rParentName OptString, err error) {
+	var buf []byte
 
 	args := NodeDeviceGetParentArgs {
 		Name: Name,
@@ -7876,23 +7638,19 @@ func (l *Libvirt) NodeDeviceGetParent(Name string) (rParent OptString, err error
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(115, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(115, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
-	// Parent: OptString
-	_, err = dec.Decode(&rParent)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// ParentName: OptString
+	_, err = dec.Decode(&rParentName)
 	if err != nil {
 		return
 	}
@@ -7902,7 +7660,7 @@ func (l *Libvirt) NodeDeviceGetParent(Name string) (rParent OptString, err error
 
 // NodeDeviceNumOfCaps is the go wrapper for REMOTE_PROC_NODE_DEVICE_NUM_OF_CAPS.
 func (l *Libvirt) NodeDeviceNumOfCaps(Name string) (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeDeviceNumOfCapsArgs {
 		Name: Name,
@@ -7913,21 +7671,17 @@ func (l *Libvirt) NodeDeviceNumOfCaps(Name string) (rNum int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(116, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(116, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -7939,7 +7693,7 @@ func (l *Libvirt) NodeDeviceNumOfCaps(Name string) (rNum int32, err error) {
 
 // NodeDeviceListCaps is the go wrapper for REMOTE_PROC_NODE_DEVICE_LIST_CAPS.
 func (l *Libvirt) NodeDeviceListCaps(Name string, Maxnames int32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeDeviceListCapsArgs {
 		Name: Name,
@@ -7951,21 +7705,17 @@ func (l *Libvirt) NodeDeviceListCaps(Name string, Maxnames int32) (rNames []stri
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(117, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(117, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -7977,7 +7727,7 @@ func (l *Libvirt) NodeDeviceListCaps(Name string, Maxnames int32) (rNames []stri
 
 // NodeDeviceDettach is the go wrapper for REMOTE_PROC_NODE_DEVICE_DETTACH.
 func (l *Libvirt) NodeDeviceDettach(Name string) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeDeviceDettachArgs {
 		Name: Name,
@@ -7988,15 +7738,9 @@ func (l *Libvirt) NodeDeviceDettach(Name string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(118, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(118, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -8005,7 +7749,7 @@ func (l *Libvirt) NodeDeviceDettach(Name string) (err error) {
 
 // NodeDeviceReAttach is the go wrapper for REMOTE_PROC_NODE_DEVICE_RE_ATTACH.
 func (l *Libvirt) NodeDeviceReAttach(Name string) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeDeviceReAttachArgs {
 		Name: Name,
@@ -8016,15 +7760,9 @@ func (l *Libvirt) NodeDeviceReAttach(Name string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(119, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(119, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -8033,7 +7771,7 @@ func (l *Libvirt) NodeDeviceReAttach(Name string) (err error) {
 
 // NodeDeviceReset is the go wrapper for REMOTE_PROC_NODE_DEVICE_RESET.
 func (l *Libvirt) NodeDeviceReset(Name string) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeDeviceResetArgs {
 		Name: Name,
@@ -8044,15 +7782,9 @@ func (l *Libvirt) NodeDeviceReset(Name string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(120, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(120, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -8061,7 +7793,7 @@ func (l *Libvirt) NodeDeviceReset(Name string) (err error) {
 
 // DomainGetSecurityLabel is the go wrapper for REMOTE_PROC_DOMAIN_GET_SECURITY_LABEL.
 func (l *Libvirt) DomainGetSecurityLabel(Dom Domain) (rLabel []int8, rEnforcing int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetSecurityLabelArgs {
 		Dom: Dom,
@@ -8072,21 +7804,17 @@ func (l *Libvirt) DomainGetSecurityLabel(Dom Domain) (rLabel []int8, rEnforcing 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(121, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(121, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Label: []int8
 	_, err = dec.Decode(&rLabel)
 	if err != nil {
@@ -8103,23 +7831,19 @@ func (l *Libvirt) DomainGetSecurityLabel(Dom Domain) (rLabel []int8, rEnforcing 
 
 // NodeGetSecurityModel is the go wrapper for REMOTE_PROC_NODE_GET_SECURITY_MODEL.
 func (l *Libvirt) NodeGetSecurityModel() (rModel []int8, rDoi []int8, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(122, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(122, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Model: []int8
 	_, err = dec.Decode(&rModel)
 	if err != nil {
@@ -8136,7 +7860,7 @@ func (l *Libvirt) NodeGetSecurityModel() (rModel []int8, rDoi []int8, err error)
 
 // NodeDeviceCreateXML is the go wrapper for REMOTE_PROC_NODE_DEVICE_CREATE_XML.
 func (l *Libvirt) NodeDeviceCreateXML(XMLDesc string, Flags uint32) (rDev NodeDevice, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeDeviceCreateXMLArgs {
 		XMLDesc: XMLDesc,
@@ -8148,21 +7872,17 @@ func (l *Libvirt) NodeDeviceCreateXML(XMLDesc string, Flags uint32) (rDev NodeDe
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(123, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(123, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dev: NodeDevice
 	_, err = dec.Decode(&rDev)
 	if err != nil {
@@ -8174,7 +7894,7 @@ func (l *Libvirt) NodeDeviceCreateXML(XMLDesc string, Flags uint32) (rDev NodeDe
 
 // NodeDeviceDestroy is the go wrapper for REMOTE_PROC_NODE_DEVICE_DESTROY.
 func (l *Libvirt) NodeDeviceDestroy(Name string) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeDeviceDestroyArgs {
 		Name: Name,
@@ -8185,15 +7905,9 @@ func (l *Libvirt) NodeDeviceDestroy(Name string) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(124, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(124, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -8202,7 +7916,7 @@ func (l *Libvirt) NodeDeviceDestroy(Name string) (err error) {
 
 // StorageVolCreateXMLFrom is the go wrapper for REMOTE_PROC_STORAGE_VOL_CREATE_XML_FROM.
 func (l *Libvirt) StorageVolCreateXMLFrom(Pool StoragePool, XML string, Clonevol StorageVol, Flags StorageVolCreateFlags) (rVol StorageVol, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolCreateXMLFromArgs {
 		Pool: Pool,
@@ -8216,21 +7930,17 @@ func (l *Libvirt) StorageVolCreateXMLFrom(Pool StoragePool, XML string, Clonevol
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(125, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(125, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Vol: StorageVol
 	_, err = dec.Decode(&rVol)
 	if err != nil {
@@ -8242,23 +7952,19 @@ func (l *Libvirt) StorageVolCreateXMLFrom(Pool StoragePool, XML string, Clonevol
 
 // ConnectNumOfInterfaces is the go wrapper for REMOTE_PROC_CONNECT_NUM_OF_INTERFACES.
 func (l *Libvirt) ConnectNumOfInterfaces() (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(126, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(126, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -8270,7 +7976,7 @@ func (l *Libvirt) ConnectNumOfInterfaces() (rNum int32, err error) {
 
 // ConnectListInterfaces is the go wrapper for REMOTE_PROC_CONNECT_LIST_INTERFACES.
 func (l *Libvirt) ConnectListInterfaces(Maxnames int32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListInterfacesArgs {
 		Maxnames: Maxnames,
@@ -8281,21 +7987,17 @@ func (l *Libvirt) ConnectListInterfaces(Maxnames int32) (rNames []string, err er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(127, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(127, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -8307,7 +8009,7 @@ func (l *Libvirt) ConnectListInterfaces(Maxnames int32) (rNames []string, err er
 
 // InterfaceLookupByName is the go wrapper for REMOTE_PROC_INTERFACE_LOOKUP_BY_NAME.
 func (l *Libvirt) InterfaceLookupByName(Name string) (rIface Interface, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := InterfaceLookupByNameArgs {
 		Name: Name,
@@ -8318,21 +8020,17 @@ func (l *Libvirt) InterfaceLookupByName(Name string) (rIface Interface, err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(128, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(128, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Iface: Interface
 	_, err = dec.Decode(&rIface)
 	if err != nil {
@@ -8344,7 +8042,7 @@ func (l *Libvirt) InterfaceLookupByName(Name string) (rIface Interface, err erro
 
 // InterfaceLookupByMacString is the go wrapper for REMOTE_PROC_INTERFACE_LOOKUP_BY_MAC_STRING.
 func (l *Libvirt) InterfaceLookupByMacString(Mac string) (rIface Interface, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := InterfaceLookupByMacStringArgs {
 		Mac: Mac,
@@ -8355,21 +8053,17 @@ func (l *Libvirt) InterfaceLookupByMacString(Mac string) (rIface Interface, err 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(129, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(129, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Iface: Interface
 	_, err = dec.Decode(&rIface)
 	if err != nil {
@@ -8381,7 +8075,7 @@ func (l *Libvirt) InterfaceLookupByMacString(Mac string) (rIface Interface, err 
 
 // InterfaceGetXMLDesc is the go wrapper for REMOTE_PROC_INTERFACE_GET_XML_DESC.
 func (l *Libvirt) InterfaceGetXMLDesc(Iface Interface, Flags uint32) (rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := InterfaceGetXMLDescArgs {
 		Iface: Iface,
@@ -8393,21 +8087,17 @@ func (l *Libvirt) InterfaceGetXMLDesc(Iface Interface, Flags uint32) (rXML strin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(130, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(130, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -8419,7 +8109,7 @@ func (l *Libvirt) InterfaceGetXMLDesc(Iface Interface, Flags uint32) (rXML strin
 
 // InterfaceDefineXML is the go wrapper for REMOTE_PROC_INTERFACE_DEFINE_XML.
 func (l *Libvirt) InterfaceDefineXML(XML string, Flags uint32) (rIface Interface, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := InterfaceDefineXMLArgs {
 		XML: XML,
@@ -8431,21 +8121,17 @@ func (l *Libvirt) InterfaceDefineXML(XML string, Flags uint32) (rIface Interface
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(131, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(131, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Iface: Interface
 	_, err = dec.Decode(&rIface)
 	if err != nil {
@@ -8457,7 +8143,7 @@ func (l *Libvirt) InterfaceDefineXML(XML string, Flags uint32) (rIface Interface
 
 // InterfaceUndefine is the go wrapper for REMOTE_PROC_INTERFACE_UNDEFINE.
 func (l *Libvirt) InterfaceUndefine(Iface Interface) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := InterfaceUndefineArgs {
 		Iface: Iface,
@@ -8468,15 +8154,9 @@ func (l *Libvirt) InterfaceUndefine(Iface Interface) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(132, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(132, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -8485,7 +8165,7 @@ func (l *Libvirt) InterfaceUndefine(Iface Interface) (err error) {
 
 // InterfaceCreate is the go wrapper for REMOTE_PROC_INTERFACE_CREATE.
 func (l *Libvirt) InterfaceCreate(Iface Interface, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := InterfaceCreateArgs {
 		Iface: Iface,
@@ -8497,15 +8177,9 @@ func (l *Libvirt) InterfaceCreate(Iface Interface, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(133, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(133, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -8514,7 +8188,7 @@ func (l *Libvirt) InterfaceCreate(Iface Interface, Flags uint32) (err error) {
 
 // InterfaceDestroy is the go wrapper for REMOTE_PROC_INTERFACE_DESTROY.
 func (l *Libvirt) InterfaceDestroy(Iface Interface, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := InterfaceDestroyArgs {
 		Iface: Iface,
@@ -8526,15 +8200,9 @@ func (l *Libvirt) InterfaceDestroy(Iface Interface, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(134, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(134, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -8543,7 +8211,7 @@ func (l *Libvirt) InterfaceDestroy(Iface Interface, Flags uint32) (err error) {
 
 // ConnectDomainXMLFromNative is the go wrapper for REMOTE_PROC_CONNECT_DOMAIN_XML_FROM_NATIVE.
 func (l *Libvirt) ConnectDomainXMLFromNative(NativeFormat string, NativeConfig string, Flags uint32) (rDomainXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectDomainXMLFromNativeArgs {
 		NativeFormat: NativeFormat,
@@ -8556,21 +8224,17 @@ func (l *Libvirt) ConnectDomainXMLFromNative(NativeFormat string, NativeConfig s
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(135, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(135, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// DomainXML: string
 	_, err = dec.Decode(&rDomainXML)
 	if err != nil {
@@ -8582,7 +8246,7 @@ func (l *Libvirt) ConnectDomainXMLFromNative(NativeFormat string, NativeConfig s
 
 // ConnectDomainXMLToNative is the go wrapper for REMOTE_PROC_CONNECT_DOMAIN_XML_TO_NATIVE.
 func (l *Libvirt) ConnectDomainXMLToNative(NativeFormat string, DomainXML string, Flags uint32) (rNativeConfig string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectDomainXMLToNativeArgs {
 		NativeFormat: NativeFormat,
@@ -8595,21 +8259,17 @@ func (l *Libvirt) ConnectDomainXMLToNative(NativeFormat string, DomainXML string
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(136, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(136, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// NativeConfig: string
 	_, err = dec.Decode(&rNativeConfig)
 	if err != nil {
@@ -8621,23 +8281,19 @@ func (l *Libvirt) ConnectDomainXMLToNative(NativeFormat string, DomainXML string
 
 // ConnectNumOfDefinedInterfaces is the go wrapper for REMOTE_PROC_CONNECT_NUM_OF_DEFINED_INTERFACES.
 func (l *Libvirt) ConnectNumOfDefinedInterfaces() (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(137, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(137, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -8649,7 +8305,7 @@ func (l *Libvirt) ConnectNumOfDefinedInterfaces() (rNum int32, err error) {
 
 // ConnectListDefinedInterfaces is the go wrapper for REMOTE_PROC_CONNECT_LIST_DEFINED_INTERFACES.
 func (l *Libvirt) ConnectListDefinedInterfaces(Maxnames int32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListDefinedInterfacesArgs {
 		Maxnames: Maxnames,
@@ -8660,21 +8316,17 @@ func (l *Libvirt) ConnectListDefinedInterfaces(Maxnames int32) (rNames []string,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(138, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(138, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -8686,23 +8338,19 @@ func (l *Libvirt) ConnectListDefinedInterfaces(Maxnames int32) (rNames []string,
 
 // ConnectNumOfSecrets is the go wrapper for REMOTE_PROC_CONNECT_NUM_OF_SECRETS.
 func (l *Libvirt) ConnectNumOfSecrets() (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(139, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(139, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -8714,7 +8362,7 @@ func (l *Libvirt) ConnectNumOfSecrets() (rNum int32, err error) {
 
 // ConnectListSecrets is the go wrapper for REMOTE_PROC_CONNECT_LIST_SECRETS.
 func (l *Libvirt) ConnectListSecrets(Maxuuids int32) (rUuids []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListSecretsArgs {
 		Maxuuids: Maxuuids,
@@ -8725,21 +8373,17 @@ func (l *Libvirt) ConnectListSecrets(Maxuuids int32) (rUuids []string, err error
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(140, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(140, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Uuids: []string
 	_, err = dec.Decode(&rUuids)
 	if err != nil {
@@ -8751,7 +8395,7 @@ func (l *Libvirt) ConnectListSecrets(Maxuuids int32) (rUuids []string, err error
 
 // SecretLookupByUUID is the go wrapper for REMOTE_PROC_SECRET_LOOKUP_BY_UUID.
 func (l *Libvirt) SecretLookupByUUID(UUID UUID) (rOptSecret Secret, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := SecretLookupByUUIDArgs {
 		UUID: UUID,
@@ -8762,21 +8406,17 @@ func (l *Libvirt) SecretLookupByUUID(UUID UUID) (rOptSecret Secret, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(141, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(141, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// OptSecret: Secret
 	_, err = dec.Decode(&rOptSecret)
 	if err != nil {
@@ -8788,7 +8428,7 @@ func (l *Libvirt) SecretLookupByUUID(UUID UUID) (rOptSecret Secret, err error) {
 
 // SecretDefineXML is the go wrapper for REMOTE_PROC_SECRET_DEFINE_XML.
 func (l *Libvirt) SecretDefineXML(XML string, Flags uint32) (rOptSecret Secret, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := SecretDefineXMLArgs {
 		XML: XML,
@@ -8800,21 +8440,17 @@ func (l *Libvirt) SecretDefineXML(XML string, Flags uint32) (rOptSecret Secret, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(142, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(142, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// OptSecret: Secret
 	_, err = dec.Decode(&rOptSecret)
 	if err != nil {
@@ -8826,7 +8462,7 @@ func (l *Libvirt) SecretDefineXML(XML string, Flags uint32) (rOptSecret Secret, 
 
 // SecretGetXMLDesc is the go wrapper for REMOTE_PROC_SECRET_GET_XML_DESC.
 func (l *Libvirt) SecretGetXMLDesc(OptSecret Secret, Flags uint32) (rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := SecretGetXMLDescArgs {
 		OptSecret: OptSecret,
@@ -8838,21 +8474,17 @@ func (l *Libvirt) SecretGetXMLDesc(OptSecret Secret, Flags uint32) (rXML string,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(143, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(143, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -8864,7 +8496,7 @@ func (l *Libvirt) SecretGetXMLDesc(OptSecret Secret, Flags uint32) (rXML string,
 
 // SecretSetValue is the go wrapper for REMOTE_PROC_SECRET_SET_VALUE.
 func (l *Libvirt) SecretSetValue(OptSecret Secret, Value []byte, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := SecretSetValueArgs {
 		OptSecret: OptSecret,
@@ -8877,15 +8509,9 @@ func (l *Libvirt) SecretSetValue(OptSecret Secret, Value []byte, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(144, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(144, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -8894,7 +8520,7 @@ func (l *Libvirt) SecretSetValue(OptSecret Secret, Value []byte, Flags uint32) (
 
 // SecretGetValue is the go wrapper for REMOTE_PROC_SECRET_GET_VALUE.
 func (l *Libvirt) SecretGetValue(OptSecret Secret, Flags uint32) (rValue []byte, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := SecretGetValueArgs {
 		OptSecret: OptSecret,
@@ -8906,21 +8532,17 @@ func (l *Libvirt) SecretGetValue(OptSecret Secret, Flags uint32) (rValue []byte,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(145, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(145, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Value: []byte
 	_, err = dec.Decode(&rValue)
 	if err != nil {
@@ -8932,7 +8554,7 @@ func (l *Libvirt) SecretGetValue(OptSecret Secret, Flags uint32) (rValue []byte,
 
 // SecretUndefine is the go wrapper for REMOTE_PROC_SECRET_UNDEFINE.
 func (l *Libvirt) SecretUndefine(OptSecret Secret) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := SecretUndefineArgs {
 		OptSecret: OptSecret,
@@ -8943,15 +8565,9 @@ func (l *Libvirt) SecretUndefine(OptSecret Secret) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(146, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(146, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -8960,7 +8576,7 @@ func (l *Libvirt) SecretUndefine(OptSecret Secret) (err error) {
 
 // SecretLookupByUsage is the go wrapper for REMOTE_PROC_SECRET_LOOKUP_BY_USAGE.
 func (l *Libvirt) SecretLookupByUsage(UsageType int32, UsageID string) (rOptSecret Secret, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := SecretLookupByUsageArgs {
 		UsageType: UsageType,
@@ -8972,21 +8588,17 @@ func (l *Libvirt) SecretLookupByUsage(UsageType int32, UsageID string) (rOptSecr
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(147, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(147, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// OptSecret: Secret
 	_, err = dec.Decode(&rOptSecret)
 	if err != nil {
@@ -8997,8 +8609,8 @@ func (l *Libvirt) SecretLookupByUsage(UsageType int32, UsageID string) (rOptSecr
 }
 
 // DomainMigratePrepareTunnel is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PREPARE_TUNNEL.
-func (l *Libvirt) DomainMigratePrepareTunnel(Flags uint64, Dname OptString, Resource uint64, DomXML string) (err error) {
-	var buf bytes.Buffer
+func (l *Libvirt) DomainMigratePrepareTunnel(Flags uint64, outStream io.Reader, Dname OptString, Resource uint64, DomXML string) (err error) {
+	var buf []byte
 
 	args := DomainMigratePrepareTunnelArgs {
 		Flags: Flags,
@@ -9012,15 +8624,9 @@ func (l *Libvirt) DomainMigratePrepareTunnel(Flags uint64, Dname OptString, Reso
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(148, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(148, constants.Program, buf, outStream, nil)
+	if err != nil {
 		return
 	}
 
@@ -9029,23 +8635,19 @@ func (l *Libvirt) DomainMigratePrepareTunnel(Flags uint64, Dname OptString, Reso
 
 // ConnectIsSecure is the go wrapper for REMOTE_PROC_CONNECT_IS_SECURE.
 func (l *Libvirt) ConnectIsSecure() (rSecure int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(149, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(149, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Secure: int32
 	_, err = dec.Decode(&rSecure)
 	if err != nil {
@@ -9057,7 +8659,7 @@ func (l *Libvirt) ConnectIsSecure() (rSecure int32, err error) {
 
 // DomainIsActive is the go wrapper for REMOTE_PROC_DOMAIN_IS_ACTIVE.
 func (l *Libvirt) DomainIsActive(Dom Domain) (rActive int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainIsActiveArgs {
 		Dom: Dom,
@@ -9068,21 +8670,17 @@ func (l *Libvirt) DomainIsActive(Dom Domain) (rActive int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(150, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(150, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Active: int32
 	_, err = dec.Decode(&rActive)
 	if err != nil {
@@ -9094,7 +8692,7 @@ func (l *Libvirt) DomainIsActive(Dom Domain) (rActive int32, err error) {
 
 // DomainIsPersistent is the go wrapper for REMOTE_PROC_DOMAIN_IS_PERSISTENT.
 func (l *Libvirt) DomainIsPersistent(Dom Domain) (rPersistent int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainIsPersistentArgs {
 		Dom: Dom,
@@ -9105,21 +8703,17 @@ func (l *Libvirt) DomainIsPersistent(Dom Domain) (rPersistent int32, err error) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(151, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(151, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Persistent: int32
 	_, err = dec.Decode(&rPersistent)
 	if err != nil {
@@ -9131,7 +8725,7 @@ func (l *Libvirt) DomainIsPersistent(Dom Domain) (rPersistent int32, err error) 
 
 // NetworkIsActive is the go wrapper for REMOTE_PROC_NETWORK_IS_ACTIVE.
 func (l *Libvirt) NetworkIsActive(Net Network) (rActive int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkIsActiveArgs {
 		Net: Net,
@@ -9142,21 +8736,17 @@ func (l *Libvirt) NetworkIsActive(Net Network) (rActive int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(152, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(152, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Active: int32
 	_, err = dec.Decode(&rActive)
 	if err != nil {
@@ -9168,7 +8758,7 @@ func (l *Libvirt) NetworkIsActive(Net Network) (rActive int32, err error) {
 
 // NetworkIsPersistent is the go wrapper for REMOTE_PROC_NETWORK_IS_PERSISTENT.
 func (l *Libvirt) NetworkIsPersistent(Net Network) (rPersistent int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkIsPersistentArgs {
 		Net: Net,
@@ -9179,21 +8769,17 @@ func (l *Libvirt) NetworkIsPersistent(Net Network) (rPersistent int32, err error
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(153, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(153, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Persistent: int32
 	_, err = dec.Decode(&rPersistent)
 	if err != nil {
@@ -9205,7 +8791,7 @@ func (l *Libvirt) NetworkIsPersistent(Net Network) (rPersistent int32, err error
 
 // StoragePoolIsActive is the go wrapper for REMOTE_PROC_STORAGE_POOL_IS_ACTIVE.
 func (l *Libvirt) StoragePoolIsActive(Pool StoragePool) (rActive int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolIsActiveArgs {
 		Pool: Pool,
@@ -9216,21 +8802,17 @@ func (l *Libvirt) StoragePoolIsActive(Pool StoragePool) (rActive int32, err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(154, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(154, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Active: int32
 	_, err = dec.Decode(&rActive)
 	if err != nil {
@@ -9242,7 +8824,7 @@ func (l *Libvirt) StoragePoolIsActive(Pool StoragePool) (rActive int32, err erro
 
 // StoragePoolIsPersistent is the go wrapper for REMOTE_PROC_STORAGE_POOL_IS_PERSISTENT.
 func (l *Libvirt) StoragePoolIsPersistent(Pool StoragePool) (rPersistent int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolIsPersistentArgs {
 		Pool: Pool,
@@ -9253,21 +8835,17 @@ func (l *Libvirt) StoragePoolIsPersistent(Pool StoragePool) (rPersistent int32, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(155, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(155, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Persistent: int32
 	_, err = dec.Decode(&rPersistent)
 	if err != nil {
@@ -9279,7 +8857,7 @@ func (l *Libvirt) StoragePoolIsPersistent(Pool StoragePool) (rPersistent int32, 
 
 // InterfaceIsActive is the go wrapper for REMOTE_PROC_INTERFACE_IS_ACTIVE.
 func (l *Libvirt) InterfaceIsActive(Iface Interface) (rActive int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := InterfaceIsActiveArgs {
 		Iface: Iface,
@@ -9290,21 +8868,17 @@ func (l *Libvirt) InterfaceIsActive(Iface Interface) (rActive int32, err error) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(156, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(156, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Active: int32
 	_, err = dec.Decode(&rActive)
 	if err != nil {
@@ -9316,23 +8890,19 @@ func (l *Libvirt) InterfaceIsActive(Iface Interface) (rActive int32, err error) 
 
 // ConnectGetLibVersion is the go wrapper for REMOTE_PROC_CONNECT_GET_LIB_VERSION.
 func (l *Libvirt) ConnectGetLibVersion() (rLibVer uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(157, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(157, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// LibVer: uint64
 	_, err = dec.Decode(&rLibVer)
 	if err != nil {
@@ -9344,7 +8914,7 @@ func (l *Libvirt) ConnectGetLibVersion() (rLibVer uint64, err error) {
 
 // ConnectCompareCPU is the go wrapper for REMOTE_PROC_CONNECT_COMPARE_CPU.
 func (l *Libvirt) ConnectCompareCPU(XML string, Flags ConnectCompareCPUFlags) (rResult int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectCompareCPUArgs {
 		XML: XML,
@@ -9356,21 +8926,17 @@ func (l *Libvirt) ConnectCompareCPU(XML string, Flags ConnectCompareCPUFlags) (r
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(158, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(158, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Result: int32
 	_, err = dec.Decode(&rResult)
 	if err != nil {
@@ -9382,7 +8948,7 @@ func (l *Libvirt) ConnectCompareCPU(XML string, Flags ConnectCompareCPUFlags) (r
 
 // DomainMemoryStats is the go wrapper for REMOTE_PROC_DOMAIN_MEMORY_STATS.
 func (l *Libvirt) DomainMemoryStats(Dom Domain, MaxStats uint32, Flags uint32) (rStats []DomainMemoryStat, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMemoryStatsArgs {
 		Dom: Dom,
@@ -9395,21 +8961,17 @@ func (l *Libvirt) DomainMemoryStats(Dom Domain, MaxStats uint32, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(159, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(159, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Stats: []DomainMemoryStat
 	_, err = dec.Decode(&rStats)
 	if err != nil {
@@ -9421,7 +8983,7 @@ func (l *Libvirt) DomainMemoryStats(Dom Domain, MaxStats uint32, Flags uint32) (
 
 // DomainAttachDeviceFlags is the go wrapper for REMOTE_PROC_DOMAIN_ATTACH_DEVICE_FLAGS.
 func (l *Libvirt) DomainAttachDeviceFlags(Dom Domain, XML string, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainAttachDeviceFlagsArgs {
 		Dom: Dom,
@@ -9434,15 +8996,9 @@ func (l *Libvirt) DomainAttachDeviceFlags(Dom Domain, XML string, Flags uint32) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(160, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(160, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -9451,7 +9007,7 @@ func (l *Libvirt) DomainAttachDeviceFlags(Dom Domain, XML string, Flags uint32) 
 
 // DomainDetachDeviceFlags is the go wrapper for REMOTE_PROC_DOMAIN_DETACH_DEVICE_FLAGS.
 func (l *Libvirt) DomainDetachDeviceFlags(Dom Domain, XML string, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainDetachDeviceFlagsArgs {
 		Dom: Dom,
@@ -9464,15 +9020,9 @@ func (l *Libvirt) DomainDetachDeviceFlags(Dom Domain, XML string, Flags uint32) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(161, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(161, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -9481,7 +9031,7 @@ func (l *Libvirt) DomainDetachDeviceFlags(Dom Domain, XML string, Flags uint32) 
 
 // ConnectBaselineCPU is the go wrapper for REMOTE_PROC_CONNECT_BASELINE_CPU.
 func (l *Libvirt) ConnectBaselineCPU(XMLCPUs []string, Flags ConnectBaselineCPUFlags) (rCPU string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectBaselineCPUArgs {
 		XMLCPUs: XMLCPUs,
@@ -9493,21 +9043,17 @@ func (l *Libvirt) ConnectBaselineCPU(XMLCPUs []string, Flags ConnectBaselineCPUF
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(162, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(162, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CPU: string
 	_, err = dec.Decode(&rCPU)
 	if err != nil {
@@ -9519,7 +9065,7 @@ func (l *Libvirt) ConnectBaselineCPU(XMLCPUs []string, Flags ConnectBaselineCPUF
 
 // DomainGetJobInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_JOB_INFO.
 func (l *Libvirt) DomainGetJobInfo(Dom Domain) (rType int32, rTimeElapsed uint64, rTimeRemaining uint64, rDataTotal uint64, rDataProcessed uint64, rDataRemaining uint64, rMemTotal uint64, rMemProcessed uint64, rMemRemaining uint64, rFileTotal uint64, rFileProcessed uint64, rFileRemaining uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetJobInfoArgs {
 		Dom: Dom,
@@ -9530,21 +9076,17 @@ func (l *Libvirt) DomainGetJobInfo(Dom Domain) (rType int32, rTimeElapsed uint64
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(163, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(163, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: int32
 	_, err = dec.Decode(&rType)
 	if err != nil {
@@ -9611,7 +9153,7 @@ func (l *Libvirt) DomainGetJobInfo(Dom Domain) (rType int32, rTimeElapsed uint64
 
 // DomainAbortJob is the go wrapper for REMOTE_PROC_DOMAIN_ABORT_JOB.
 func (l *Libvirt) DomainAbortJob(Dom Domain) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainAbortJobArgs {
 		Dom: Dom,
@@ -9622,15 +9164,9 @@ func (l *Libvirt) DomainAbortJob(Dom Domain) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(164, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(164, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -9639,7 +9175,7 @@ func (l *Libvirt) DomainAbortJob(Dom Domain) (err error) {
 
 // StorageVolWipe is the go wrapper for REMOTE_PROC_STORAGE_VOL_WIPE.
 func (l *Libvirt) StorageVolWipe(Vol StorageVol, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolWipeArgs {
 		Vol: Vol,
@@ -9651,15 +9187,9 @@ func (l *Libvirt) StorageVolWipe(Vol StorageVol, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(165, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(165, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -9668,7 +9198,7 @@ func (l *Libvirt) StorageVolWipe(Vol StorageVol, Flags uint32) (err error) {
 
 // DomainMigrateSetMaxDowntime is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_SET_MAX_DOWNTIME.
 func (l *Libvirt) DomainMigrateSetMaxDowntime(Dom Domain, Downtime uint64, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateSetMaxDowntimeArgs {
 		Dom: Dom,
@@ -9681,15 +9211,9 @@ func (l *Libvirt) DomainMigrateSetMaxDowntime(Dom Domain, Downtime uint64, Flags
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(166, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(166, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -9698,7 +9222,7 @@ func (l *Libvirt) DomainMigrateSetMaxDowntime(Dom Domain, Downtime uint64, Flags
 
 // ConnectDomainEventRegisterAny is the go wrapper for REMOTE_PROC_CONNECT_DOMAIN_EVENT_REGISTER_ANY.
 func (l *Libvirt) ConnectDomainEventRegisterAny(EventID int32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectDomainEventRegisterAnyArgs {
 		EventID: EventID,
@@ -9709,15 +9233,9 @@ func (l *Libvirt) ConnectDomainEventRegisterAny(EventID int32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(167, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(167, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -9726,7 +9244,7 @@ func (l *Libvirt) ConnectDomainEventRegisterAny(EventID int32) (err error) {
 
 // ConnectDomainEventDeregisterAny is the go wrapper for REMOTE_PROC_CONNECT_DOMAIN_EVENT_DEREGISTER_ANY.
 func (l *Libvirt) ConnectDomainEventDeregisterAny(EventID int32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectDomainEventDeregisterAnyArgs {
 		EventID: EventID,
@@ -9737,15 +9255,9 @@ func (l *Libvirt) ConnectDomainEventDeregisterAny(EventID int32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(168, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(168, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -9754,17 +9266,11 @@ func (l *Libvirt) ConnectDomainEventDeregisterAny(EventID int32) (err error) {
 
 // DomainEventReboot is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_REBOOT.
 func (l *Libvirt) DomainEventReboot() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(169, constants.Program, &buf)
+
+	_, err = l.requestStream(169, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9773,17 +9279,11 @@ func (l *Libvirt) DomainEventReboot() (err error) {
 
 // DomainEventRtcChange is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_RTC_CHANGE.
 func (l *Libvirt) DomainEventRtcChange() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(170, constants.Program, &buf)
+
+	_, err = l.requestStream(170, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9792,17 +9292,11 @@ func (l *Libvirt) DomainEventRtcChange() (err error) {
 
 // DomainEventWatchdog is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_WATCHDOG.
 func (l *Libvirt) DomainEventWatchdog() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(171, constants.Program, &buf)
+
+	_, err = l.requestStream(171, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9811,17 +9305,11 @@ func (l *Libvirt) DomainEventWatchdog() (err error) {
 
 // DomainEventIOError is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_IO_ERROR.
 func (l *Libvirt) DomainEventIOError() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(172, constants.Program, &buf)
+
+	_, err = l.requestStream(172, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9830,17 +9318,11 @@ func (l *Libvirt) DomainEventIOError() (err error) {
 
 // DomainEventGraphics is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_GRAPHICS.
 func (l *Libvirt) DomainEventGraphics() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(173, constants.Program, &buf)
+
+	_, err = l.requestStream(173, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -9848,8 +9330,8 @@ func (l *Libvirt) DomainEventGraphics() (err error) {
 }
 
 // DomainUpdateDeviceFlags is the go wrapper for REMOTE_PROC_DOMAIN_UPDATE_DEVICE_FLAGS.
-func (l *Libvirt) DomainUpdateDeviceFlags(Dom Domain, XML string, Flags uint32) (err error) {
-	var buf bytes.Buffer
+func (l *Libvirt) DomainUpdateDeviceFlags(Dom Domain, XML string, Flags DomainDeviceModifyFlags) (err error) {
+	var buf []byte
 
 	args := DomainUpdateDeviceFlagsArgs {
 		Dom: Dom,
@@ -9862,15 +9344,9 @@ func (l *Libvirt) DomainUpdateDeviceFlags(Dom Domain, XML string, Flags uint32) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(174, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(174, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -9879,7 +9355,7 @@ func (l *Libvirt) DomainUpdateDeviceFlags(Dom Domain, XML string, Flags uint32) 
 
 // NwfilterLookupByName is the go wrapper for REMOTE_PROC_NWFILTER_LOOKUP_BY_NAME.
 func (l *Libvirt) NwfilterLookupByName(Name string) (rOptNwfilter Nwfilter, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NwfilterLookupByNameArgs {
 		Name: Name,
@@ -9890,21 +9366,17 @@ func (l *Libvirt) NwfilterLookupByName(Name string) (rOptNwfilter Nwfilter, err 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(175, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(175, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// OptNwfilter: Nwfilter
 	_, err = dec.Decode(&rOptNwfilter)
 	if err != nil {
@@ -9916,7 +9388,7 @@ func (l *Libvirt) NwfilterLookupByName(Name string) (rOptNwfilter Nwfilter, err 
 
 // NwfilterLookupByUUID is the go wrapper for REMOTE_PROC_NWFILTER_LOOKUP_BY_UUID.
 func (l *Libvirt) NwfilterLookupByUUID(UUID UUID) (rOptNwfilter Nwfilter, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NwfilterLookupByUUIDArgs {
 		UUID: UUID,
@@ -9927,21 +9399,17 @@ func (l *Libvirt) NwfilterLookupByUUID(UUID UUID) (rOptNwfilter Nwfilter, err er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(176, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(176, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// OptNwfilter: Nwfilter
 	_, err = dec.Decode(&rOptNwfilter)
 	if err != nil {
@@ -9953,7 +9421,7 @@ func (l *Libvirt) NwfilterLookupByUUID(UUID UUID) (rOptNwfilter Nwfilter, err er
 
 // NwfilterGetXMLDesc is the go wrapper for REMOTE_PROC_NWFILTER_GET_XML_DESC.
 func (l *Libvirt) NwfilterGetXMLDesc(OptNwfilter Nwfilter, Flags uint32) (rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NwfilterGetXMLDescArgs {
 		OptNwfilter: OptNwfilter,
@@ -9965,21 +9433,17 @@ func (l *Libvirt) NwfilterGetXMLDesc(OptNwfilter Nwfilter, Flags uint32) (rXML s
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(177, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(177, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -9991,23 +9455,19 @@ func (l *Libvirt) NwfilterGetXMLDesc(OptNwfilter Nwfilter, Flags uint32) (rXML s
 
 // ConnectNumOfNwfilters is the go wrapper for REMOTE_PROC_CONNECT_NUM_OF_NWFILTERS.
 func (l *Libvirt) ConnectNumOfNwfilters() (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(178, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(178, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -10019,7 +9479,7 @@ func (l *Libvirt) ConnectNumOfNwfilters() (rNum int32, err error) {
 
 // ConnectListNwfilters is the go wrapper for REMOTE_PROC_CONNECT_LIST_NWFILTERS.
 func (l *Libvirt) ConnectListNwfilters(Maxnames int32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListNwfiltersArgs {
 		Maxnames: Maxnames,
@@ -10030,21 +9490,17 @@ func (l *Libvirt) ConnectListNwfilters(Maxnames int32) (rNames []string, err err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(179, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(179, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -10056,7 +9512,7 @@ func (l *Libvirt) ConnectListNwfilters(Maxnames int32) (rNames []string, err err
 
 // NwfilterDefineXML is the go wrapper for REMOTE_PROC_NWFILTER_DEFINE_XML.
 func (l *Libvirt) NwfilterDefineXML(XML string) (rOptNwfilter Nwfilter, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NwfilterDefineXMLArgs {
 		XML: XML,
@@ -10067,21 +9523,17 @@ func (l *Libvirt) NwfilterDefineXML(XML string) (rOptNwfilter Nwfilter, err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(180, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(180, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// OptNwfilter: Nwfilter
 	_, err = dec.Decode(&rOptNwfilter)
 	if err != nil {
@@ -10093,7 +9545,7 @@ func (l *Libvirt) NwfilterDefineXML(XML string) (rOptNwfilter Nwfilter, err erro
 
 // NwfilterUndefine is the go wrapper for REMOTE_PROC_NWFILTER_UNDEFINE.
 func (l *Libvirt) NwfilterUndefine(OptNwfilter Nwfilter) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NwfilterUndefineArgs {
 		OptNwfilter: OptNwfilter,
@@ -10104,15 +9556,9 @@ func (l *Libvirt) NwfilterUndefine(OptNwfilter Nwfilter) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(181, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(181, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -10121,7 +9567,7 @@ func (l *Libvirt) NwfilterUndefine(OptNwfilter Nwfilter) (err error) {
 
 // DomainManagedSave is the go wrapper for REMOTE_PROC_DOMAIN_MANAGED_SAVE.
 func (l *Libvirt) DomainManagedSave(Dom Domain, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainManagedSaveArgs {
 		Dom: Dom,
@@ -10133,15 +9579,9 @@ func (l *Libvirt) DomainManagedSave(Dom Domain, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(182, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(182, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -10150,7 +9590,7 @@ func (l *Libvirt) DomainManagedSave(Dom Domain, Flags uint32) (err error) {
 
 // DomainHasManagedSaveImage is the go wrapper for REMOTE_PROC_DOMAIN_HAS_MANAGED_SAVE_IMAGE.
 func (l *Libvirt) DomainHasManagedSaveImage(Dom Domain, Flags uint32) (rResult int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainHasManagedSaveImageArgs {
 		Dom: Dom,
@@ -10162,21 +9602,17 @@ func (l *Libvirt) DomainHasManagedSaveImage(Dom Domain, Flags uint32) (rResult i
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(183, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(183, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Result: int32
 	_, err = dec.Decode(&rResult)
 	if err != nil {
@@ -10188,7 +9624,7 @@ func (l *Libvirt) DomainHasManagedSaveImage(Dom Domain, Flags uint32) (rResult i
 
 // DomainManagedSaveRemove is the go wrapper for REMOTE_PROC_DOMAIN_MANAGED_SAVE_REMOVE.
 func (l *Libvirt) DomainManagedSaveRemove(Dom Domain, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainManagedSaveRemoveArgs {
 		Dom: Dom,
@@ -10200,15 +9636,9 @@ func (l *Libvirt) DomainManagedSaveRemove(Dom Domain, Flags uint32) (err error) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(184, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(184, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -10217,7 +9647,7 @@ func (l *Libvirt) DomainManagedSaveRemove(Dom Domain, Flags uint32) (err error) 
 
 // DomainSnapshotCreateXML is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_CREATE_XML.
 func (l *Libvirt) DomainSnapshotCreateXML(Dom Domain, XMLDesc string, Flags uint32) (rSnap DomainSnapshot, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotCreateXMLArgs {
 		Dom: Dom,
@@ -10230,21 +9660,17 @@ func (l *Libvirt) DomainSnapshotCreateXML(Dom Domain, XMLDesc string, Flags uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(185, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(185, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Snap: DomainSnapshot
 	_, err = dec.Decode(&rSnap)
 	if err != nil {
@@ -10256,7 +9682,7 @@ func (l *Libvirt) DomainSnapshotCreateXML(Dom Domain, XMLDesc string, Flags uint
 
 // DomainSnapshotGetXMLDesc is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_GET_XML_DESC.
 func (l *Libvirt) DomainSnapshotGetXMLDesc(Snap DomainSnapshot, Flags uint32) (rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotGetXMLDescArgs {
 		Snap: Snap,
@@ -10268,21 +9694,17 @@ func (l *Libvirt) DomainSnapshotGetXMLDesc(Snap DomainSnapshot, Flags uint32) (r
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(186, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(186, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -10294,7 +9716,7 @@ func (l *Libvirt) DomainSnapshotGetXMLDesc(Snap DomainSnapshot, Flags uint32) (r
 
 // DomainSnapshotNum is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_NUM.
 func (l *Libvirt) DomainSnapshotNum(Dom Domain, Flags uint32) (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotNumArgs {
 		Dom: Dom,
@@ -10306,21 +9728,17 @@ func (l *Libvirt) DomainSnapshotNum(Dom Domain, Flags uint32) (rNum int32, err e
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(187, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(187, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -10332,7 +9750,7 @@ func (l *Libvirt) DomainSnapshotNum(Dom Domain, Flags uint32) (rNum int32, err e
 
 // DomainSnapshotListNames is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_LIST_NAMES.
 func (l *Libvirt) DomainSnapshotListNames(Dom Domain, Maxnames int32, Flags uint32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotListNamesArgs {
 		Dom: Dom,
@@ -10345,21 +9763,17 @@ func (l *Libvirt) DomainSnapshotListNames(Dom Domain, Maxnames int32, Flags uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(188, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(188, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -10371,7 +9785,7 @@ func (l *Libvirt) DomainSnapshotListNames(Dom Domain, Maxnames int32, Flags uint
 
 // DomainSnapshotLookupByName is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_LOOKUP_BY_NAME.
 func (l *Libvirt) DomainSnapshotLookupByName(Dom Domain, Name string, Flags uint32) (rSnap DomainSnapshot, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotLookupByNameArgs {
 		Dom: Dom,
@@ -10384,21 +9798,17 @@ func (l *Libvirt) DomainSnapshotLookupByName(Dom Domain, Name string, Flags uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(189, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(189, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Snap: DomainSnapshot
 	_, err = dec.Decode(&rSnap)
 	if err != nil {
@@ -10410,7 +9820,7 @@ func (l *Libvirt) DomainSnapshotLookupByName(Dom Domain, Name string, Flags uint
 
 // DomainHasCurrentSnapshot is the go wrapper for REMOTE_PROC_DOMAIN_HAS_CURRENT_SNAPSHOT.
 func (l *Libvirt) DomainHasCurrentSnapshot(Dom Domain, Flags uint32) (rResult int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainHasCurrentSnapshotArgs {
 		Dom: Dom,
@@ -10422,21 +9832,17 @@ func (l *Libvirt) DomainHasCurrentSnapshot(Dom Domain, Flags uint32) (rResult in
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(190, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(190, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Result: int32
 	_, err = dec.Decode(&rResult)
 	if err != nil {
@@ -10448,7 +9854,7 @@ func (l *Libvirt) DomainHasCurrentSnapshot(Dom Domain, Flags uint32) (rResult in
 
 // DomainSnapshotCurrent is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_CURRENT.
 func (l *Libvirt) DomainSnapshotCurrent(Dom Domain, Flags uint32) (rSnap DomainSnapshot, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotCurrentArgs {
 		Dom: Dom,
@@ -10460,21 +9866,17 @@ func (l *Libvirt) DomainSnapshotCurrent(Dom Domain, Flags uint32) (rSnap DomainS
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(191, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(191, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Snap: DomainSnapshot
 	_, err = dec.Decode(&rSnap)
 	if err != nil {
@@ -10486,7 +9888,7 @@ func (l *Libvirt) DomainSnapshotCurrent(Dom Domain, Flags uint32) (rSnap DomainS
 
 // DomainRevertToSnapshot is the go wrapper for REMOTE_PROC_DOMAIN_REVERT_TO_SNAPSHOT.
 func (l *Libvirt) DomainRevertToSnapshot(Snap DomainSnapshot, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainRevertToSnapshotArgs {
 		Snap: Snap,
@@ -10498,15 +9900,9 @@ func (l *Libvirt) DomainRevertToSnapshot(Snap DomainSnapshot, Flags uint32) (err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(192, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(192, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -10515,7 +9911,7 @@ func (l *Libvirt) DomainRevertToSnapshot(Snap DomainSnapshot, Flags uint32) (err
 
 // DomainSnapshotDelete is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_DELETE.
 func (l *Libvirt) DomainSnapshotDelete(Snap DomainSnapshot, Flags DomainSnapshotDeleteFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotDeleteArgs {
 		Snap: Snap,
@@ -10527,15 +9923,9 @@ func (l *Libvirt) DomainSnapshotDelete(Snap DomainSnapshot, Flags DomainSnapshot
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(193, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(193, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -10544,7 +9934,7 @@ func (l *Libvirt) DomainSnapshotDelete(Snap DomainSnapshot, Flags DomainSnapshot
 
 // DomainGetBlockInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_BLOCK_INFO.
 func (l *Libvirt) DomainGetBlockInfo(Dom Domain, Path string, Flags uint32) (rAllocation uint64, rCapacity uint64, rPhysical uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetBlockInfoArgs {
 		Dom: Dom,
@@ -10557,21 +9947,17 @@ func (l *Libvirt) DomainGetBlockInfo(Dom Domain, Path string, Flags uint32) (rAl
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(194, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(194, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Allocation: uint64
 	_, err = dec.Decode(&rAllocation)
 	if err != nil {
@@ -10593,17 +9979,11 @@ func (l *Libvirt) DomainGetBlockInfo(Dom Domain, Path string, Flags uint32) (rAl
 
 // DomainEventIOErrorReason is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_IO_ERROR_REASON.
 func (l *Libvirt) DomainEventIOErrorReason() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(195, constants.Program, &buf)
+
+	_, err = l.requestStream(195, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -10612,7 +9992,7 @@ func (l *Libvirt) DomainEventIOErrorReason() (err error) {
 
 // DomainCreateWithFlags is the go wrapper for REMOTE_PROC_DOMAIN_CREATE_WITH_FLAGS.
 func (l *Libvirt) DomainCreateWithFlags(Dom Domain, Flags uint32) (rDom Domain, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainCreateWithFlagsArgs {
 		Dom: Dom,
@@ -10624,21 +10004,17 @@ func (l *Libvirt) DomainCreateWithFlags(Dom Domain, Flags uint32) (rDom Domain, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(196, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(196, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -10650,7 +10026,7 @@ func (l *Libvirt) DomainCreateWithFlags(Dom Domain, Flags uint32) (rDom Domain, 
 
 // DomainSetMemoryParameters is the go wrapper for REMOTE_PROC_DOMAIN_SET_MEMORY_PARAMETERS.
 func (l *Libvirt) DomainSetMemoryParameters(Dom Domain, Params []TypedParam, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetMemoryParametersArgs {
 		Dom: Dom,
@@ -10663,15 +10039,9 @@ func (l *Libvirt) DomainSetMemoryParameters(Dom Domain, Params []TypedParam, Fla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(197, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(197, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -10680,7 +10050,7 @@ func (l *Libvirt) DomainSetMemoryParameters(Dom Domain, Params []TypedParam, Fla
 
 // DomainGetMemoryParameters is the go wrapper for REMOTE_PROC_DOMAIN_GET_MEMORY_PARAMETERS.
 func (l *Libvirt) DomainGetMemoryParameters(Dom Domain, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetMemoryParametersArgs {
 		Dom: Dom,
@@ -10693,25 +10063,20 @@ func (l *Libvirt) DomainGetMemoryParameters(Dom Domain, Nparams int32, Flags uin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(198, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(198, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -10725,7 +10090,7 @@ func (l *Libvirt) DomainGetMemoryParameters(Dom Domain, Nparams int32, Flags uin
 
 // DomainSetVcpusFlags is the go wrapper for REMOTE_PROC_DOMAIN_SET_VCPUS_FLAGS.
 func (l *Libvirt) DomainSetVcpusFlags(Dom Domain, Nvcpus uint32, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetVcpusFlagsArgs {
 		Dom: Dom,
@@ -10738,15 +10103,9 @@ func (l *Libvirt) DomainSetVcpusFlags(Dom Domain, Nvcpus uint32, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(199, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(199, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -10755,7 +10114,7 @@ func (l *Libvirt) DomainSetVcpusFlags(Dom Domain, Nvcpus uint32, Flags uint32) (
 
 // DomainGetVcpusFlags is the go wrapper for REMOTE_PROC_DOMAIN_GET_VCPUS_FLAGS.
 func (l *Libvirt) DomainGetVcpusFlags(Dom Domain, Flags uint32) (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetVcpusFlagsArgs {
 		Dom: Dom,
@@ -10767,21 +10126,17 @@ func (l *Libvirt) DomainGetVcpusFlags(Dom Domain, Flags uint32) (rNum int32, err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(200, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(200, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -10792,8 +10147,8 @@ func (l *Libvirt) DomainGetVcpusFlags(Dom Domain, Flags uint32) (rNum int32, err
 }
 
 // DomainOpenConsole is the go wrapper for REMOTE_PROC_DOMAIN_OPEN_CONSOLE.
-func (l *Libvirt) DomainOpenConsole(Dom Domain, DevName OptString, Flags uint32) (err error) {
-	var buf bytes.Buffer
+func (l *Libvirt) DomainOpenConsole(Dom Domain, DevName OptString, inStream io.Writer, Flags uint32) (err error) {
+	var buf []byte
 
 	args := DomainOpenConsoleArgs {
 		Dom: Dom,
@@ -10806,15 +10161,9 @@ func (l *Libvirt) DomainOpenConsole(Dom Domain, DevName OptString, Flags uint32)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(201, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(201, constants.Program, buf, nil, inStream)
+	if err != nil {
 		return
 	}
 
@@ -10823,7 +10172,7 @@ func (l *Libvirt) DomainOpenConsole(Dom Domain, DevName OptString, Flags uint32)
 
 // DomainIsUpdated is the go wrapper for REMOTE_PROC_DOMAIN_IS_UPDATED.
 func (l *Libvirt) DomainIsUpdated(Dom Domain) (rUpdated int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainIsUpdatedArgs {
 		Dom: Dom,
@@ -10834,21 +10183,17 @@ func (l *Libvirt) DomainIsUpdated(Dom Domain) (rUpdated int32, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(202, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(202, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Updated: int32
 	_, err = dec.Decode(&rUpdated)
 	if err != nil {
@@ -10860,7 +10205,7 @@ func (l *Libvirt) DomainIsUpdated(Dom Domain) (rUpdated int32, err error) {
 
 // ConnectGetSysinfo is the go wrapper for REMOTE_PROC_CONNECT_GET_SYSINFO.
 func (l *Libvirt) ConnectGetSysinfo(Flags uint32) (rSysinfo string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectGetSysinfoArgs {
 		Flags: Flags,
@@ -10871,21 +10216,17 @@ func (l *Libvirt) ConnectGetSysinfo(Flags uint32) (rSysinfo string, err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(203, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(203, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Sysinfo: string
 	_, err = dec.Decode(&rSysinfo)
 	if err != nil {
@@ -10897,7 +10238,7 @@ func (l *Libvirt) ConnectGetSysinfo(Flags uint32) (rSysinfo string, err error) {
 
 // DomainSetMemoryFlags is the go wrapper for REMOTE_PROC_DOMAIN_SET_MEMORY_FLAGS.
 func (l *Libvirt) DomainSetMemoryFlags(Dom Domain, Memory uint64, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetMemoryFlagsArgs {
 		Dom: Dom,
@@ -10910,15 +10251,9 @@ func (l *Libvirt) DomainSetMemoryFlags(Dom Domain, Memory uint64, Flags uint32) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(204, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(204, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -10927,7 +10262,7 @@ func (l *Libvirt) DomainSetMemoryFlags(Dom Domain, Memory uint64, Flags uint32) 
 
 // DomainSetBlkioParameters is the go wrapper for REMOTE_PROC_DOMAIN_SET_BLKIO_PARAMETERS.
 func (l *Libvirt) DomainSetBlkioParameters(Dom Domain, Params []TypedParam, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetBlkioParametersArgs {
 		Dom: Dom,
@@ -10940,15 +10275,9 @@ func (l *Libvirt) DomainSetBlkioParameters(Dom Domain, Params []TypedParam, Flag
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(205, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(205, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -10957,7 +10286,7 @@ func (l *Libvirt) DomainSetBlkioParameters(Dom Domain, Params []TypedParam, Flag
 
 // DomainGetBlkioParameters is the go wrapper for REMOTE_PROC_DOMAIN_GET_BLKIO_PARAMETERS.
 func (l *Libvirt) DomainGetBlkioParameters(Dom Domain, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetBlkioParametersArgs {
 		Dom: Dom,
@@ -10970,25 +10299,20 @@ func (l *Libvirt) DomainGetBlkioParameters(Dom Domain, Nparams int32, Flags uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(206, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(206, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -11002,7 +10326,7 @@ func (l *Libvirt) DomainGetBlkioParameters(Dom Domain, Nparams int32, Flags uint
 
 // DomainMigrateSetMaxSpeed is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_SET_MAX_SPEED.
 func (l *Libvirt) DomainMigrateSetMaxSpeed(Dom Domain, Bandwidth uint64, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateSetMaxSpeedArgs {
 		Dom: Dom,
@@ -11015,15 +10339,9 @@ func (l *Libvirt) DomainMigrateSetMaxSpeed(Dom Domain, Bandwidth uint64, Flags u
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(207, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(207, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11031,8 +10349,8 @@ func (l *Libvirt) DomainMigrateSetMaxSpeed(Dom Domain, Bandwidth uint64, Flags u
 }
 
 // StorageVolUpload is the go wrapper for REMOTE_PROC_STORAGE_VOL_UPLOAD.
-func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64, Flags uint32) (err error) {
-	var buf bytes.Buffer
+func (l *Libvirt) StorageVolUpload(Vol StorageVol, outStream io.Reader, Offset uint64, Length uint64, Flags StorageVolUploadFlags) (err error) {
+	var buf []byte
 
 	args := StorageVolUploadArgs {
 		Vol: Vol,
@@ -11046,15 +10364,9 @@ func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(208, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(208, constants.Program, buf, outStream, nil)
+	if err != nil {
 		return
 	}
 
@@ -11062,8 +10374,8 @@ func (l *Libvirt) StorageVolUpload(Vol StorageVol, Offset uint64, Length uint64,
 }
 
 // StorageVolDownload is the go wrapper for REMOTE_PROC_STORAGE_VOL_DOWNLOAD.
-func (l *Libvirt) StorageVolDownload(Vol StorageVol, Offset uint64, Length uint64, Flags uint32) (err error) {
-	var buf bytes.Buffer
+func (l *Libvirt) StorageVolDownload(Vol StorageVol, inStream io.Writer, Offset uint64, Length uint64, Flags StorageVolDownloadFlags) (err error) {
+	var buf []byte
 
 	args := StorageVolDownloadArgs {
 		Vol: Vol,
@@ -11077,15 +10389,9 @@ func (l *Libvirt) StorageVolDownload(Vol StorageVol, Offset uint64, Length uint6
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(209, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(209, constants.Program, buf, nil, inStream)
+	if err != nil {
 		return
 	}
 
@@ -11094,7 +10400,7 @@ func (l *Libvirt) StorageVolDownload(Vol StorageVol, Offset uint64, Length uint6
 
 // DomainInjectNmi is the go wrapper for REMOTE_PROC_DOMAIN_INJECT_NMI.
 func (l *Libvirt) DomainInjectNmi(Dom Domain, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainInjectNmiArgs {
 		Dom: Dom,
@@ -11106,15 +10412,9 @@ func (l *Libvirt) DomainInjectNmi(Dom Domain, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(210, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(210, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11122,8 +10422,8 @@ func (l *Libvirt) DomainInjectNmi(Dom Domain, Flags uint32) (err error) {
 }
 
 // DomainScreenshot is the go wrapper for REMOTE_PROC_DOMAIN_SCREENSHOT.
-func (l *Libvirt) DomainScreenshot(Dom Domain, Screen uint32, Flags uint32) (rMime OptString, err error) {
-	var buf bytes.Buffer
+func (l *Libvirt) DomainScreenshot(Dom Domain, inStream io.Writer, Screen uint32, Flags uint32) (rMime OptString, err error) {
+	var buf []byte
 
 	args := DomainScreenshotArgs {
 		Dom: Dom,
@@ -11136,21 +10436,17 @@ func (l *Libvirt) DomainScreenshot(Dom Domain, Screen uint32, Flags uint32) (rMi
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(211, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(211, constants.Program, buf, nil, inStream)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Mime: OptString
 	_, err = dec.Decode(&rMime)
 	if err != nil {
@@ -11162,7 +10458,7 @@ func (l *Libvirt) DomainScreenshot(Dom Domain, Screen uint32, Flags uint32) (rMi
 
 // DomainGetState is the go wrapper for REMOTE_PROC_DOMAIN_GET_STATE.
 func (l *Libvirt) DomainGetState(Dom Domain, Flags uint32) (rState int32, rReason int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetStateArgs {
 		Dom: Dom,
@@ -11174,21 +10470,17 @@ func (l *Libvirt) DomainGetState(Dom Domain, Flags uint32) (rState int32, rReaso
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(212, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(212, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// State: int32
 	_, err = dec.Decode(&rState)
 	if err != nil {
@@ -11205,7 +10497,7 @@ func (l *Libvirt) DomainGetState(Dom Domain, Flags uint32) (rState int32, rReaso
 
 // DomainMigrateBegin3 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_BEGIN3.
 func (l *Libvirt) DomainMigrateBegin3(Dom Domain, Xmlin OptString, Flags uint64, Dname OptString, Resource uint64) (rCookieOut []byte, rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateBegin3Args {
 		Dom: Dom,
@@ -11220,21 +10512,17 @@ func (l *Libvirt) DomainMigrateBegin3(Dom Domain, Xmlin OptString, Flags uint64,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(213, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(213, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -11251,7 +10539,7 @@ func (l *Libvirt) DomainMigrateBegin3(Dom Domain, Xmlin OptString, Flags uint64,
 
 // DomainMigratePrepare3 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PREPARE3.
 func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn OptString, Flags uint64, Dname OptString, Resource uint64, DomXML string) (rCookieOut []byte, rUriOut OptString, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigratePrepare3Args {
 		CookieIn: CookieIn,
@@ -11267,21 +10555,17 @@ func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn OptString, Flags 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(214, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(214, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -11297,8 +10581,8 @@ func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn OptString, Flags 
 }
 
 // DomainMigratePrepareTunnel3 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PREPARE_TUNNEL3.
-func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, Flags uint64, Dname OptString, Resource uint64, DomXML string) (rCookieOut []byte, err error) {
-	var buf bytes.Buffer
+func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, outStream io.Reader, Flags uint64, Dname OptString, Resource uint64, DomXML string) (rCookieOut []byte, err error) {
+	var buf []byte
 
 	args := DomainMigratePrepareTunnel3Args {
 		CookieIn: CookieIn,
@@ -11313,21 +10597,17 @@ func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, Flags uint64, Dna
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(215, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(215, constants.Program, buf, outStream, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -11339,7 +10619,7 @@ func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, Flags uint64, Dna
 
 // DomainMigratePerform3 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PERFORM3.
 func (l *Libvirt) DomainMigratePerform3(Dom Domain, Xmlin OptString, CookieIn []byte, Dconnuri OptString, Uri OptString, Flags uint64, Dname OptString, Resource uint64) (rCookieOut []byte, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigratePerform3Args {
 		Dom: Dom,
@@ -11357,21 +10637,17 @@ func (l *Libvirt) DomainMigratePerform3(Dom Domain, Xmlin OptString, CookieIn []
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(216, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(216, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -11383,7 +10659,7 @@ func (l *Libvirt) DomainMigratePerform3(Dom Domain, Xmlin OptString, CookieIn []
 
 // DomainMigrateFinish3 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_FINISH3.
 func (l *Libvirt) DomainMigrateFinish3(Dname string, CookieIn []byte, Dconnuri OptString, Uri OptString, Flags uint64, Cancelled int32) (rDom Domain, rCookieOut []byte, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateFinish3Args {
 		Dname: Dname,
@@ -11399,21 +10675,17 @@ func (l *Libvirt) DomainMigrateFinish3(Dname string, CookieIn []byte, Dconnuri O
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(217, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(217, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -11430,7 +10702,7 @@ func (l *Libvirt) DomainMigrateFinish3(Dname string, CookieIn []byte, Dconnuri O
 
 // DomainMigrateConfirm3 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_CONFIRM3.
 func (l *Libvirt) DomainMigrateConfirm3(Dom Domain, CookieIn []byte, Flags uint64, Cancelled int32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateConfirm3Args {
 		Dom: Dom,
@@ -11444,15 +10716,9 @@ func (l *Libvirt) DomainMigrateConfirm3(Dom Domain, CookieIn []byte, Flags uint6
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(218, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(218, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11461,7 +10727,7 @@ func (l *Libvirt) DomainMigrateConfirm3(Dom Domain, CookieIn []byte, Flags uint6
 
 // DomainSetSchedulerParametersFlags is the go wrapper for REMOTE_PROC_DOMAIN_SET_SCHEDULER_PARAMETERS_FLAGS.
 func (l *Libvirt) DomainSetSchedulerParametersFlags(Dom Domain, Params []TypedParam, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetSchedulerParametersFlagsArgs {
 		Dom: Dom,
@@ -11474,15 +10740,9 @@ func (l *Libvirt) DomainSetSchedulerParametersFlags(Dom Domain, Params []TypedPa
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(219, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(219, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11491,7 +10751,7 @@ func (l *Libvirt) DomainSetSchedulerParametersFlags(Dom Domain, Params []TypedPa
 
 // InterfaceChangeBegin is the go wrapper for REMOTE_PROC_INTERFACE_CHANGE_BEGIN.
 func (l *Libvirt) InterfaceChangeBegin(Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := InterfaceChangeBeginArgs {
 		Flags: Flags,
@@ -11502,15 +10762,9 @@ func (l *Libvirt) InterfaceChangeBegin(Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(220, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(220, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11519,7 +10773,7 @@ func (l *Libvirt) InterfaceChangeBegin(Flags uint32) (err error) {
 
 // InterfaceChangeCommit is the go wrapper for REMOTE_PROC_INTERFACE_CHANGE_COMMIT.
 func (l *Libvirt) InterfaceChangeCommit(Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := InterfaceChangeCommitArgs {
 		Flags: Flags,
@@ -11530,15 +10784,9 @@ func (l *Libvirt) InterfaceChangeCommit(Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(221, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(221, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11547,7 +10795,7 @@ func (l *Libvirt) InterfaceChangeCommit(Flags uint32) (err error) {
 
 // InterfaceChangeRollback is the go wrapper for REMOTE_PROC_INTERFACE_CHANGE_ROLLBACK.
 func (l *Libvirt) InterfaceChangeRollback(Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := InterfaceChangeRollbackArgs {
 		Flags: Flags,
@@ -11558,15 +10806,9 @@ func (l *Libvirt) InterfaceChangeRollback(Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(222, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(222, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11575,7 +10817,7 @@ func (l *Libvirt) InterfaceChangeRollback(Flags uint32) (err error) {
 
 // DomainGetSchedulerParametersFlags is the go wrapper for REMOTE_PROC_DOMAIN_GET_SCHEDULER_PARAMETERS_FLAGS.
 func (l *Libvirt) DomainGetSchedulerParametersFlags(Dom Domain, Nparams int32, Flags uint32) (rParams []TypedParam, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetSchedulerParametersFlagsArgs {
 		Dom: Dom,
@@ -11588,25 +10830,20 @@ func (l *Libvirt) DomainGetSchedulerParametersFlags(Dom Domain, Nparams int32, F
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(223, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(223, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 
@@ -11615,17 +10852,11 @@ func (l *Libvirt) DomainGetSchedulerParametersFlags(Dom Domain, Nparams int32, F
 
 // DomainEventControlError is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CONTROL_ERROR.
 func (l *Libvirt) DomainEventControlError() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(224, constants.Program, &buf)
+
+	_, err = l.requestStream(224, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -11634,7 +10865,7 @@ func (l *Libvirt) DomainEventControlError() (err error) {
 
 // DomainPinVcpuFlags is the go wrapper for REMOTE_PROC_DOMAIN_PIN_VCPU_FLAGS.
 func (l *Libvirt) DomainPinVcpuFlags(Dom Domain, Vcpu uint32, Cpumap []byte, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainPinVcpuFlagsArgs {
 		Dom: Dom,
@@ -11648,15 +10879,9 @@ func (l *Libvirt) DomainPinVcpuFlags(Dom Domain, Vcpu uint32, Cpumap []byte, Fla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(225, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(225, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11665,7 +10890,7 @@ func (l *Libvirt) DomainPinVcpuFlags(Dom Domain, Vcpu uint32, Cpumap []byte, Fla
 
 // DomainSendKey is the go wrapper for REMOTE_PROC_DOMAIN_SEND_KEY.
 func (l *Libvirt) DomainSendKey(Dom Domain, Codeset uint32, Holdtime uint32, Keycodes []uint32, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSendKeyArgs {
 		Dom: Dom,
@@ -11680,15 +10905,9 @@ func (l *Libvirt) DomainSendKey(Dom Domain, Codeset uint32, Holdtime uint32, Key
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(226, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(226, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11697,7 +10916,7 @@ func (l *Libvirt) DomainSendKey(Dom Domain, Codeset uint32, Holdtime uint32, Key
 
 // NodeGetCPUStats is the go wrapper for REMOTE_PROC_NODE_GET_CPU_STATS.
 func (l *Libvirt) NodeGetCPUStats(CPUNum int32, Nparams int32, Flags uint32) (rParams []NodeGetCPUStats, rNparams int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeGetCPUStatsArgs {
 		CPUNum: CPUNum,
@@ -11710,21 +10929,17 @@ func (l *Libvirt) NodeGetCPUStats(CPUNum int32, Nparams int32, Flags uint32) (rP
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(227, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(227, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []NodeGetCPUStats
 	_, err = dec.Decode(&rParams)
 	if err != nil {
@@ -11741,7 +10956,7 @@ func (l *Libvirt) NodeGetCPUStats(CPUNum int32, Nparams int32, Flags uint32) (rP
 
 // NodeGetMemoryStats is the go wrapper for REMOTE_PROC_NODE_GET_MEMORY_STATS.
 func (l *Libvirt) NodeGetMemoryStats(Nparams int32, CellNum int32, Flags uint32) (rParams []NodeGetMemoryStats, rNparams int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeGetMemoryStatsArgs {
 		Nparams: Nparams,
@@ -11754,21 +10969,17 @@ func (l *Libvirt) NodeGetMemoryStats(Nparams int32, CellNum int32, Flags uint32)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(228, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(228, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []NodeGetMemoryStats
 	_, err = dec.Decode(&rParams)
 	if err != nil {
@@ -11785,7 +10996,7 @@ func (l *Libvirt) NodeGetMemoryStats(Nparams int32, CellNum int32, Flags uint32)
 
 // DomainGetControlInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_CONTROL_INFO.
 func (l *Libvirt) DomainGetControlInfo(Dom Domain, Flags uint32) (rState uint32, rDetails uint32, rStateTime uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetControlInfoArgs {
 		Dom: Dom,
@@ -11797,21 +11008,17 @@ func (l *Libvirt) DomainGetControlInfo(Dom Domain, Flags uint32) (rState uint32,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(229, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(229, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// State: uint32
 	_, err = dec.Decode(&rState)
 	if err != nil {
@@ -11833,7 +11040,7 @@ func (l *Libvirt) DomainGetControlInfo(Dom Domain, Flags uint32) (rState uint32,
 
 // DomainGetVcpuPinInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_VCPU_PIN_INFO.
 func (l *Libvirt) DomainGetVcpuPinInfo(Dom Domain, Ncpumaps int32, Maplen int32, Flags uint32) (rCpumaps []byte, rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetVcpuPinInfoArgs {
 		Dom: Dom,
@@ -11847,21 +11054,17 @@ func (l *Libvirt) DomainGetVcpuPinInfo(Dom Domain, Ncpumaps int32, Maplen int32,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(230, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(230, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Cpumaps: []byte
 	_, err = dec.Decode(&rCpumaps)
 	if err != nil {
@@ -11878,7 +11081,7 @@ func (l *Libvirt) DomainGetVcpuPinInfo(Dom Domain, Ncpumaps int32, Maplen int32,
 
 // DomainUndefineFlags is the go wrapper for REMOTE_PROC_DOMAIN_UNDEFINE_FLAGS.
 func (l *Libvirt) DomainUndefineFlags(Dom Domain, Flags DomainUndefineFlagsValues) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainUndefineFlagsArgs {
 		Dom: Dom,
@@ -11890,15 +11093,9 @@ func (l *Libvirt) DomainUndefineFlags(Dom Domain, Flags DomainUndefineFlagsValue
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(231, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(231, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11907,7 +11104,7 @@ func (l *Libvirt) DomainUndefineFlags(Dom Domain, Flags DomainUndefineFlagsValue
 
 // DomainSaveFlags is the go wrapper for REMOTE_PROC_DOMAIN_SAVE_FLAGS.
 func (l *Libvirt) DomainSaveFlags(Dom Domain, To string, Dxml OptString, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSaveFlagsArgs {
 		Dom: Dom,
@@ -11921,15 +11118,9 @@ func (l *Libvirt) DomainSaveFlags(Dom Domain, To string, Dxml OptString, Flags u
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(232, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(232, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11938,7 +11129,7 @@ func (l *Libvirt) DomainSaveFlags(Dom Domain, To string, Dxml OptString, Flags u
 
 // DomainRestoreFlags is the go wrapper for REMOTE_PROC_DOMAIN_RESTORE_FLAGS.
 func (l *Libvirt) DomainRestoreFlags(From string, Dxml OptString, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainRestoreFlagsArgs {
 		From: From,
@@ -11951,15 +11142,9 @@ func (l *Libvirt) DomainRestoreFlags(From string, Dxml OptString, Flags uint32) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(233, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(233, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11968,7 +11153,7 @@ func (l *Libvirt) DomainRestoreFlags(From string, Dxml OptString, Flags uint32) 
 
 // DomainDestroyFlags is the go wrapper for REMOTE_PROC_DOMAIN_DESTROY_FLAGS.
 func (l *Libvirt) DomainDestroyFlags(Dom Domain, Flags DomainDestroyFlagsValues) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainDestroyFlagsArgs {
 		Dom: Dom,
@@ -11980,15 +11165,9 @@ func (l *Libvirt) DomainDestroyFlags(Dom Domain, Flags DomainDestroyFlagsValues)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(234, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(234, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -11997,7 +11176,7 @@ func (l *Libvirt) DomainDestroyFlags(Dom Domain, Flags DomainDestroyFlagsValues)
 
 // DomainSaveImageGetXMLDesc is the go wrapper for REMOTE_PROC_DOMAIN_SAVE_IMAGE_GET_XML_DESC.
 func (l *Libvirt) DomainSaveImageGetXMLDesc(File string, Flags uint32) (rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSaveImageGetXMLDescArgs {
 		File: File,
@@ -12009,21 +11188,17 @@ func (l *Libvirt) DomainSaveImageGetXMLDesc(File string, Flags uint32) (rXML str
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(235, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(235, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// XML: string
 	_, err = dec.Decode(&rXML)
 	if err != nil {
@@ -12035,7 +11210,7 @@ func (l *Libvirt) DomainSaveImageGetXMLDesc(File string, Flags uint32) (rXML str
 
 // DomainSaveImageDefineXML is the go wrapper for REMOTE_PROC_DOMAIN_SAVE_IMAGE_DEFINE_XML.
 func (l *Libvirt) DomainSaveImageDefineXML(File string, Dxml string, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSaveImageDefineXMLArgs {
 		File: File,
@@ -12048,15 +11223,9 @@ func (l *Libvirt) DomainSaveImageDefineXML(File string, Dxml string, Flags uint3
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(236, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(236, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12065,7 +11234,7 @@ func (l *Libvirt) DomainSaveImageDefineXML(File string, Dxml string, Flags uint3
 
 // DomainBlockJobAbort is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_JOB_ABORT.
 func (l *Libvirt) DomainBlockJobAbort(Dom Domain, Path string, Flags DomainBlockJobAbortFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainBlockJobAbortArgs {
 		Dom: Dom,
@@ -12078,15 +11247,9 @@ func (l *Libvirt) DomainBlockJobAbort(Dom Domain, Path string, Flags DomainBlock
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(237, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(237, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12095,7 +11258,7 @@ func (l *Libvirt) DomainBlockJobAbort(Dom Domain, Path string, Flags DomainBlock
 
 // DomainGetBlockJobInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_BLOCK_JOB_INFO.
 func (l *Libvirt) DomainGetBlockJobInfo(Dom Domain, Path string, Flags uint32) (rFound int32, rType int32, rBandwidth uint64, rCur uint64, rEnd uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetBlockJobInfoArgs {
 		Dom: Dom,
@@ -12108,21 +11271,17 @@ func (l *Libvirt) DomainGetBlockJobInfo(Dom Domain, Path string, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(238, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(238, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Found: int32
 	_, err = dec.Decode(&rFound)
 	if err != nil {
@@ -12154,7 +11313,7 @@ func (l *Libvirt) DomainGetBlockJobInfo(Dom Domain, Path string, Flags uint32) (
 
 // DomainBlockJobSetSpeed is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_JOB_SET_SPEED.
 func (l *Libvirt) DomainBlockJobSetSpeed(Dom Domain, Path string, Bandwidth uint64, Flags DomainBlockJobSetSpeedFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainBlockJobSetSpeedArgs {
 		Dom: Dom,
@@ -12168,15 +11327,9 @@ func (l *Libvirt) DomainBlockJobSetSpeed(Dom Domain, Path string, Bandwidth uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(239, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(239, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12185,7 +11338,7 @@ func (l *Libvirt) DomainBlockJobSetSpeed(Dom Domain, Path string, Bandwidth uint
 
 // DomainBlockPull is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_PULL.
 func (l *Libvirt) DomainBlockPull(Dom Domain, Path string, Bandwidth uint64, Flags DomainBlockPullFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainBlockPullArgs {
 		Dom: Dom,
@@ -12199,15 +11352,9 @@ func (l *Libvirt) DomainBlockPull(Dom Domain, Path string, Bandwidth uint64, Fla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(240, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(240, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12216,17 +11363,11 @@ func (l *Libvirt) DomainBlockPull(Dom Domain, Path string, Bandwidth uint64, Fla
 
 // DomainEventBlockJob is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_BLOCK_JOB.
 func (l *Libvirt) DomainEventBlockJob() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(241, constants.Program, &buf)
+
+	_, err = l.requestStream(241, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -12235,7 +11376,7 @@ func (l *Libvirt) DomainEventBlockJob() (err error) {
 
 // DomainMigrateGetMaxSpeed is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_GET_MAX_SPEED.
 func (l *Libvirt) DomainMigrateGetMaxSpeed(Dom Domain, Flags uint32) (rBandwidth uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateGetMaxSpeedArgs {
 		Dom: Dom,
@@ -12247,21 +11388,17 @@ func (l *Libvirt) DomainMigrateGetMaxSpeed(Dom Domain, Flags uint32) (rBandwidth
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(242, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(242, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Bandwidth: uint64
 	_, err = dec.Decode(&rBandwidth)
 	if err != nil {
@@ -12273,7 +11410,7 @@ func (l *Libvirt) DomainMigrateGetMaxSpeed(Dom Domain, Flags uint32) (rBandwidth
 
 // DomainBlockStatsFlags is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_STATS_FLAGS.
 func (l *Libvirt) DomainBlockStatsFlags(Dom Domain, Path string, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainBlockStatsFlagsArgs {
 		Dom: Dom,
@@ -12287,25 +11424,20 @@ func (l *Libvirt) DomainBlockStatsFlags(Dom Domain, Path string, Nparams int32, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(243, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(243, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -12319,7 +11451,7 @@ func (l *Libvirt) DomainBlockStatsFlags(Dom Domain, Path string, Nparams int32, 
 
 // DomainSnapshotGetParent is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_GET_PARENT.
 func (l *Libvirt) DomainSnapshotGetParent(Snap DomainSnapshot, Flags uint32) (rSnap DomainSnapshot, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotGetParentArgs {
 		Snap: Snap,
@@ -12331,21 +11463,17 @@ func (l *Libvirt) DomainSnapshotGetParent(Snap DomainSnapshot, Flags uint32) (rS
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(244, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(244, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Snap: DomainSnapshot
 	_, err = dec.Decode(&rSnap)
 	if err != nil {
@@ -12357,7 +11485,7 @@ func (l *Libvirt) DomainSnapshotGetParent(Snap DomainSnapshot, Flags uint32) (rS
 
 // DomainReset is the go wrapper for REMOTE_PROC_DOMAIN_RESET.
 func (l *Libvirt) DomainReset(Dom Domain, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainResetArgs {
 		Dom: Dom,
@@ -12369,15 +11497,9 @@ func (l *Libvirt) DomainReset(Dom Domain, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(245, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(245, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12386,7 +11508,7 @@ func (l *Libvirt) DomainReset(Dom Domain, Flags uint32) (err error) {
 
 // DomainSnapshotNumChildren is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_NUM_CHILDREN.
 func (l *Libvirt) DomainSnapshotNumChildren(Snap DomainSnapshot, Flags uint32) (rNum int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotNumChildrenArgs {
 		Snap: Snap,
@@ -12398,21 +11520,17 @@ func (l *Libvirt) DomainSnapshotNumChildren(Snap DomainSnapshot, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(246, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(246, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Num: int32
 	_, err = dec.Decode(&rNum)
 	if err != nil {
@@ -12424,7 +11542,7 @@ func (l *Libvirt) DomainSnapshotNumChildren(Snap DomainSnapshot, Flags uint32) (
 
 // DomainSnapshotListChildrenNames is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_LIST_CHILDREN_NAMES.
 func (l *Libvirt) DomainSnapshotListChildrenNames(Snap DomainSnapshot, Maxnames int32, Flags uint32) (rNames []string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotListChildrenNamesArgs {
 		Snap: Snap,
@@ -12437,21 +11555,17 @@ func (l *Libvirt) DomainSnapshotListChildrenNames(Snap DomainSnapshot, Maxnames 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(247, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(247, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Names: []string
 	_, err = dec.Decode(&rNames)
 	if err != nil {
@@ -12463,17 +11577,11 @@ func (l *Libvirt) DomainSnapshotListChildrenNames(Snap DomainSnapshot, Maxnames 
 
 // DomainEventDiskChange is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_DISK_CHANGE.
 func (l *Libvirt) DomainEventDiskChange() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(248, constants.Program, &buf)
+
+	_, err = l.requestStream(248, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -12482,7 +11590,7 @@ func (l *Libvirt) DomainEventDiskChange() (err error) {
 
 // DomainOpenGraphics is the go wrapper for REMOTE_PROC_DOMAIN_OPEN_GRAPHICS.
 func (l *Libvirt) DomainOpenGraphics(Dom Domain, Idx uint32, Flags DomainOpenGraphicsFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainOpenGraphicsArgs {
 		Dom: Dom,
@@ -12495,15 +11603,9 @@ func (l *Libvirt) DomainOpenGraphics(Dom Domain, Idx uint32, Flags DomainOpenGra
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(249, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(249, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12512,7 +11614,7 @@ func (l *Libvirt) DomainOpenGraphics(Dom Domain, Idx uint32, Flags DomainOpenGra
 
 // NodeSuspendForDuration is the go wrapper for REMOTE_PROC_NODE_SUSPEND_FOR_DURATION.
 func (l *Libvirt) NodeSuspendForDuration(Target uint32, Duration uint64, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeSuspendForDurationArgs {
 		Target: Target,
@@ -12525,15 +11627,9 @@ func (l *Libvirt) NodeSuspendForDuration(Target uint32, Duration uint64, Flags u
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(250, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(250, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12542,7 +11638,7 @@ func (l *Libvirt) NodeSuspendForDuration(Target uint32, Duration uint64, Flags u
 
 // DomainBlockResize is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_RESIZE.
 func (l *Libvirt) DomainBlockResize(Dom Domain, Disk string, Size uint64, Flags DomainBlockResizeFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainBlockResizeArgs {
 		Dom: Dom,
@@ -12556,15 +11652,9 @@ func (l *Libvirt) DomainBlockResize(Dom Domain, Disk string, Size uint64, Flags 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(251, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(251, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12573,7 +11663,7 @@ func (l *Libvirt) DomainBlockResize(Dom Domain, Disk string, Size uint64, Flags 
 
 // DomainSetBlockIOTune is the go wrapper for REMOTE_PROC_DOMAIN_SET_BLOCK_IO_TUNE.
 func (l *Libvirt) DomainSetBlockIOTune(Dom Domain, Disk string, Params []TypedParam, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetBlockIOTuneArgs {
 		Dom: Dom,
@@ -12587,15 +11677,9 @@ func (l *Libvirt) DomainSetBlockIOTune(Dom Domain, Disk string, Params []TypedPa
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(252, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(252, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12604,7 +11688,7 @@ func (l *Libvirt) DomainSetBlockIOTune(Dom Domain, Disk string, Params []TypedPa
 
 // DomainGetBlockIOTune is the go wrapper for REMOTE_PROC_DOMAIN_GET_BLOCK_IO_TUNE.
 func (l *Libvirt) DomainGetBlockIOTune(Dom Domain, Disk OptString, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetBlockIOTuneArgs {
 		Dom: Dom,
@@ -12618,25 +11702,20 @@ func (l *Libvirt) DomainGetBlockIOTune(Dom Domain, Disk OptString, Nparams int32
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(253, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(253, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -12650,7 +11729,7 @@ func (l *Libvirt) DomainGetBlockIOTune(Dom Domain, Disk OptString, Nparams int32
 
 // DomainSetNumaParameters is the go wrapper for REMOTE_PROC_DOMAIN_SET_NUMA_PARAMETERS.
 func (l *Libvirt) DomainSetNumaParameters(Dom Domain, Params []TypedParam, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetNumaParametersArgs {
 		Dom: Dom,
@@ -12663,15 +11742,9 @@ func (l *Libvirt) DomainSetNumaParameters(Dom Domain, Params []TypedParam, Flags
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(254, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(254, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12680,7 +11753,7 @@ func (l *Libvirt) DomainSetNumaParameters(Dom Domain, Params []TypedParam, Flags
 
 // DomainGetNumaParameters is the go wrapper for REMOTE_PROC_DOMAIN_GET_NUMA_PARAMETERS.
 func (l *Libvirt) DomainGetNumaParameters(Dom Domain, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetNumaParametersArgs {
 		Dom: Dom,
@@ -12693,25 +11766,20 @@ func (l *Libvirt) DomainGetNumaParameters(Dom Domain, Nparams int32, Flags uint3
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(255, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(255, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -12725,7 +11793,7 @@ func (l *Libvirt) DomainGetNumaParameters(Dom Domain, Nparams int32, Flags uint3
 
 // DomainSetInterfaceParameters is the go wrapper for REMOTE_PROC_DOMAIN_SET_INTERFACE_PARAMETERS.
 func (l *Libvirt) DomainSetInterfaceParameters(Dom Domain, Device string, Params []TypedParam, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetInterfaceParametersArgs {
 		Dom: Dom,
@@ -12739,15 +11807,9 @@ func (l *Libvirt) DomainSetInterfaceParameters(Dom Domain, Device string, Params
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(256, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(256, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12756,7 +11818,7 @@ func (l *Libvirt) DomainSetInterfaceParameters(Dom Domain, Device string, Params
 
 // DomainGetInterfaceParameters is the go wrapper for REMOTE_PROC_DOMAIN_GET_INTERFACE_PARAMETERS.
 func (l *Libvirt) DomainGetInterfaceParameters(Dom Domain, Device string, Nparams int32, Flags DomainModificationImpact) (rParams []TypedParam, rNparams int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetInterfaceParametersArgs {
 		Dom: Dom,
@@ -12770,25 +11832,20 @@ func (l *Libvirt) DomainGetInterfaceParameters(Dom Domain, Device string, Nparam
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(257, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(257, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -12802,7 +11859,7 @@ func (l *Libvirt) DomainGetInterfaceParameters(Dom Domain, Device string, Nparam
 
 // DomainShutdownFlags is the go wrapper for REMOTE_PROC_DOMAIN_SHUTDOWN_FLAGS.
 func (l *Libvirt) DomainShutdownFlags(Dom Domain, Flags DomainShutdownFlagValues) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainShutdownFlagsArgs {
 		Dom: Dom,
@@ -12814,15 +11871,9 @@ func (l *Libvirt) DomainShutdownFlags(Dom Domain, Flags DomainShutdownFlagValues
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(258, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(258, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12831,7 +11882,7 @@ func (l *Libvirt) DomainShutdownFlags(Dom Domain, Flags DomainShutdownFlagValues
 
 // StorageVolWipePattern is the go wrapper for REMOTE_PROC_STORAGE_VOL_WIPE_PATTERN.
 func (l *Libvirt) StorageVolWipePattern(Vol StorageVol, Algorithm uint32, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolWipePatternArgs {
 		Vol: Vol,
@@ -12844,15 +11895,9 @@ func (l *Libvirt) StorageVolWipePattern(Vol StorageVol, Algorithm uint32, Flags 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(259, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(259, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12861,7 +11906,7 @@ func (l *Libvirt) StorageVolWipePattern(Vol StorageVol, Algorithm uint32, Flags 
 
 // StorageVolResize is the go wrapper for REMOTE_PROC_STORAGE_VOL_RESIZE.
 func (l *Libvirt) StorageVolResize(Vol StorageVol, Capacity uint64, Flags StorageVolResizeFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolResizeArgs {
 		Vol: Vol,
@@ -12874,15 +11919,9 @@ func (l *Libvirt) StorageVolResize(Vol StorageVol, Capacity uint64, Flags Storag
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(260, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(260, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12891,7 +11930,7 @@ func (l *Libvirt) StorageVolResize(Vol StorageVol, Capacity uint64, Flags Storag
 
 // DomainPmSuspendForDuration is the go wrapper for REMOTE_PROC_DOMAIN_PM_SUSPEND_FOR_DURATION.
 func (l *Libvirt) DomainPmSuspendForDuration(Dom Domain, Target uint32, Duration uint64, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainPmSuspendForDurationArgs {
 		Dom: Dom,
@@ -12905,15 +11944,9 @@ func (l *Libvirt) DomainPmSuspendForDuration(Dom Domain, Target uint32, Duration
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(261, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(261, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -12922,7 +11955,7 @@ func (l *Libvirt) DomainPmSuspendForDuration(Dom Domain, Target uint32, Duration
 
 // DomainGetCPUStats is the go wrapper for REMOTE_PROC_DOMAIN_GET_CPU_STATS.
 func (l *Libvirt) DomainGetCPUStats(Dom Domain, Nparams uint32, StartCPU int32, Ncpus uint32, Flags TypedParameterFlags) (rParams []TypedParam, rNparams int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetCPUStatsArgs {
 		Dom: Dom,
@@ -12937,25 +11970,20 @@ func (l *Libvirt) DomainGetCPUStats(Dom Domain, Nparams uint32, StartCPU int32, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(262, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(262, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -12969,7 +11997,7 @@ func (l *Libvirt) DomainGetCPUStats(Dom Domain, Nparams uint32, StartCPU int32, 
 
 // DomainGetDiskErrors is the go wrapper for REMOTE_PROC_DOMAIN_GET_DISK_ERRORS.
 func (l *Libvirt) DomainGetDiskErrors(Dom Domain, Maxerrors uint32, Flags uint32) (rErrors []DomainDiskError, rNerrors int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetDiskErrorsArgs {
 		Dom: Dom,
@@ -12982,21 +12010,17 @@ func (l *Libvirt) DomainGetDiskErrors(Dom Domain, Maxerrors uint32, Flags uint32
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(263, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(263, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Errors: []DomainDiskError
 	_, err = dec.Decode(&rErrors)
 	if err != nil {
@@ -13013,7 +12037,7 @@ func (l *Libvirt) DomainGetDiskErrors(Dom Domain, Maxerrors uint32, Flags uint32
 
 // DomainSetMetadata is the go wrapper for REMOTE_PROC_DOMAIN_SET_METADATA.
 func (l *Libvirt) DomainSetMetadata(Dom Domain, Type int32, Metadata OptString, Key OptString, Uri OptString, Flags DomainModificationImpact) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetMetadataArgs {
 		Dom: Dom,
@@ -13029,15 +12053,9 @@ func (l *Libvirt) DomainSetMetadata(Dom Domain, Type int32, Metadata OptString, 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(264, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(264, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -13046,7 +12064,7 @@ func (l *Libvirt) DomainSetMetadata(Dom Domain, Type int32, Metadata OptString, 
 
 // DomainGetMetadata is the go wrapper for REMOTE_PROC_DOMAIN_GET_METADATA.
 func (l *Libvirt) DomainGetMetadata(Dom Domain, Type int32, Uri OptString, Flags DomainModificationImpact) (rMetadata string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetMetadataArgs {
 		Dom: Dom,
@@ -13060,21 +12078,17 @@ func (l *Libvirt) DomainGetMetadata(Dom Domain, Type int32, Uri OptString, Flags
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(265, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(265, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Metadata: string
 	_, err = dec.Decode(&rMetadata)
 	if err != nil {
@@ -13086,7 +12100,7 @@ func (l *Libvirt) DomainGetMetadata(Dom Domain, Type int32, Uri OptString, Flags
 
 // DomainBlockRebase is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_REBASE.
 func (l *Libvirt) DomainBlockRebase(Dom Domain, Path string, Base OptString, Bandwidth uint64, Flags DomainBlockRebaseFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainBlockRebaseArgs {
 		Dom: Dom,
@@ -13101,15 +12115,9 @@ func (l *Libvirt) DomainBlockRebase(Dom Domain, Path string, Base OptString, Ban
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(266, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(266, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -13118,7 +12126,7 @@ func (l *Libvirt) DomainBlockRebase(Dom Domain, Path string, Base OptString, Ban
 
 // DomainPmWakeup is the go wrapper for REMOTE_PROC_DOMAIN_PM_WAKEUP.
 func (l *Libvirt) DomainPmWakeup(Dom Domain, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainPmWakeupArgs {
 		Dom: Dom,
@@ -13130,15 +12138,9 @@ func (l *Libvirt) DomainPmWakeup(Dom Domain, Flags uint32) (err error) {
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(267, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(267, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -13147,17 +12149,11 @@ func (l *Libvirt) DomainPmWakeup(Dom Domain, Flags uint32) (err error) {
 
 // DomainEventTrayChange is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_TRAY_CHANGE.
 func (l *Libvirt) DomainEventTrayChange() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(268, constants.Program, &buf)
+
+	_, err = l.requestStream(268, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13166,17 +12162,11 @@ func (l *Libvirt) DomainEventTrayChange() (err error) {
 
 // DomainEventPmwakeup is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_PMWAKEUP.
 func (l *Libvirt) DomainEventPmwakeup() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(269, constants.Program, &buf)
+
+	_, err = l.requestStream(269, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13185,17 +12175,11 @@ func (l *Libvirt) DomainEventPmwakeup() (err error) {
 
 // DomainEventPmsuspend is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_PMSUSPEND.
 func (l *Libvirt) DomainEventPmsuspend() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(270, constants.Program, &buf)
+
+	_, err = l.requestStream(270, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13204,7 +12188,7 @@ func (l *Libvirt) DomainEventPmsuspend() (err error) {
 
 // DomainSnapshotIsCurrent is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_IS_CURRENT.
 func (l *Libvirt) DomainSnapshotIsCurrent(Snap DomainSnapshot, Flags uint32) (rCurrent int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotIsCurrentArgs {
 		Snap: Snap,
@@ -13216,21 +12200,17 @@ func (l *Libvirt) DomainSnapshotIsCurrent(Snap DomainSnapshot, Flags uint32) (rC
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(271, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(271, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Current: int32
 	_, err = dec.Decode(&rCurrent)
 	if err != nil {
@@ -13242,7 +12222,7 @@ func (l *Libvirt) DomainSnapshotIsCurrent(Snap DomainSnapshot, Flags uint32) (rC
 
 // DomainSnapshotHasMetadata is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_HAS_METADATA.
 func (l *Libvirt) DomainSnapshotHasMetadata(Snap DomainSnapshot, Flags uint32) (rMetadata int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotHasMetadataArgs {
 		Snap: Snap,
@@ -13254,21 +12234,17 @@ func (l *Libvirt) DomainSnapshotHasMetadata(Snap DomainSnapshot, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(272, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(272, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Metadata: int32
 	_, err = dec.Decode(&rMetadata)
 	if err != nil {
@@ -13280,7 +12256,7 @@ func (l *Libvirt) DomainSnapshotHasMetadata(Snap DomainSnapshot, Flags uint32) (
 
 // ConnectListAllDomains is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_DOMAINS.
 func (l *Libvirt) ConnectListAllDomains(NeedResults int32, Flags ConnectListAllDomainsFlags) (rDomains []Domain, rRet uint32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListAllDomainsArgs {
 		NeedResults: NeedResults,
@@ -13292,21 +12268,17 @@ func (l *Libvirt) ConnectListAllDomains(NeedResults int32, Flags ConnectListAllD
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(273, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(273, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Domains: []Domain
 	_, err = dec.Decode(&rDomains)
 	if err != nil {
@@ -13323,7 +12295,7 @@ func (l *Libvirt) ConnectListAllDomains(NeedResults int32, Flags ConnectListAllD
 
 // DomainListAllSnapshots is the go wrapper for REMOTE_PROC_DOMAIN_LIST_ALL_SNAPSHOTS.
 func (l *Libvirt) DomainListAllSnapshots(Dom Domain, NeedResults int32, Flags uint32) (rSnapshots []DomainSnapshot, rRet int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainListAllSnapshotsArgs {
 		Dom: Dom,
@@ -13336,21 +12308,17 @@ func (l *Libvirt) DomainListAllSnapshots(Dom Domain, NeedResults int32, Flags ui
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(274, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(274, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Snapshots: []DomainSnapshot
 	_, err = dec.Decode(&rSnapshots)
 	if err != nil {
@@ -13367,7 +12335,7 @@ func (l *Libvirt) DomainListAllSnapshots(Dom Domain, NeedResults int32, Flags ui
 
 // DomainSnapshotListAllChildren is the go wrapper for REMOTE_PROC_DOMAIN_SNAPSHOT_LIST_ALL_CHILDREN.
 func (l *Libvirt) DomainSnapshotListAllChildren(Snapshot DomainSnapshot, NeedResults int32, Flags uint32) (rSnapshots []DomainSnapshot, rRet int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSnapshotListAllChildrenArgs {
 		Snapshot: Snapshot,
@@ -13380,21 +12348,17 @@ func (l *Libvirt) DomainSnapshotListAllChildren(Snapshot DomainSnapshot, NeedRes
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(275, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(275, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Snapshots: []DomainSnapshot
 	_, err = dec.Decode(&rSnapshots)
 	if err != nil {
@@ -13411,17 +12375,11 @@ func (l *Libvirt) DomainSnapshotListAllChildren(Snapshot DomainSnapshot, NeedRes
 
 // DomainEventBalloonChange is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_BALLOON_CHANGE.
 func (l *Libvirt) DomainEventBalloonChange() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(276, constants.Program, &buf)
+
+	_, err = l.requestStream(276, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -13430,7 +12388,7 @@ func (l *Libvirt) DomainEventBalloonChange() (err error) {
 
 // DomainGetHostname is the go wrapper for REMOTE_PROC_DOMAIN_GET_HOSTNAME.
 func (l *Libvirt) DomainGetHostname(Dom Domain, Flags uint32) (rHostname string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetHostnameArgs {
 		Dom: Dom,
@@ -13442,21 +12400,17 @@ func (l *Libvirt) DomainGetHostname(Dom Domain, Flags uint32) (rHostname string,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(277, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(277, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Hostname: string
 	_, err = dec.Decode(&rHostname)
 	if err != nil {
@@ -13468,7 +12422,7 @@ func (l *Libvirt) DomainGetHostname(Dom Domain, Flags uint32) (rHostname string,
 
 // DomainGetSecurityLabelList is the go wrapper for REMOTE_PROC_DOMAIN_GET_SECURITY_LABEL_LIST.
 func (l *Libvirt) DomainGetSecurityLabelList(Dom Domain) (rLabels []DomainGetSecurityLabelRet, rRet int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetSecurityLabelListArgs {
 		Dom: Dom,
@@ -13479,21 +12433,17 @@ func (l *Libvirt) DomainGetSecurityLabelList(Dom Domain) (rLabels []DomainGetSec
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(278, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(278, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Labels: []DomainGetSecurityLabelRet
 	_, err = dec.Decode(&rLabels)
 	if err != nil {
@@ -13510,7 +12460,7 @@ func (l *Libvirt) DomainGetSecurityLabelList(Dom Domain) (rLabels []DomainGetSec
 
 // DomainPinEmulator is the go wrapper for REMOTE_PROC_DOMAIN_PIN_EMULATOR.
 func (l *Libvirt) DomainPinEmulator(Dom Domain, Cpumap []byte, Flags DomainModificationImpact) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainPinEmulatorArgs {
 		Dom: Dom,
@@ -13523,15 +12473,9 @@ func (l *Libvirt) DomainPinEmulator(Dom Domain, Cpumap []byte, Flags DomainModif
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(279, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(279, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -13540,7 +12484,7 @@ func (l *Libvirt) DomainPinEmulator(Dom Domain, Cpumap []byte, Flags DomainModif
 
 // DomainGetEmulatorPinInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_EMULATOR_PIN_INFO.
 func (l *Libvirt) DomainGetEmulatorPinInfo(Dom Domain, Maplen int32, Flags DomainModificationImpact) (rCpumaps []byte, rRet int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetEmulatorPinInfoArgs {
 		Dom: Dom,
@@ -13553,21 +12497,17 @@ func (l *Libvirt) DomainGetEmulatorPinInfo(Dom Domain, Maplen int32, Flags Domai
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(280, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(280, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Cpumaps: []byte
 	_, err = dec.Decode(&rCpumaps)
 	if err != nil {
@@ -13584,7 +12524,7 @@ func (l *Libvirt) DomainGetEmulatorPinInfo(Dom Domain, Maplen int32, Flags Domai
 
 // ConnectListAllStoragePools is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_STORAGE_POOLS.
 func (l *Libvirt) ConnectListAllStoragePools(NeedResults int32, Flags ConnectListAllStoragePoolsFlags) (rPools []StoragePool, rRet uint32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListAllStoragePoolsArgs {
 		NeedResults: NeedResults,
@@ -13596,21 +12536,17 @@ func (l *Libvirt) ConnectListAllStoragePools(NeedResults int32, Flags ConnectLis
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(281, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(281, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Pools: []StoragePool
 	_, err = dec.Decode(&rPools)
 	if err != nil {
@@ -13627,7 +12563,7 @@ func (l *Libvirt) ConnectListAllStoragePools(NeedResults int32, Flags ConnectLis
 
 // StoragePoolListAllVolumes is the go wrapper for REMOTE_PROC_STORAGE_POOL_LIST_ALL_VOLUMES.
 func (l *Libvirt) StoragePoolListAllVolumes(Pool StoragePool, NeedResults int32, Flags uint32) (rVols []StorageVol, rRet uint32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StoragePoolListAllVolumesArgs {
 		Pool: Pool,
@@ -13640,21 +12576,17 @@ func (l *Libvirt) StoragePoolListAllVolumes(Pool StoragePool, NeedResults int32,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(282, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(282, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Vols: []StorageVol
 	_, err = dec.Decode(&rVols)
 	if err != nil {
@@ -13671,7 +12603,7 @@ func (l *Libvirt) StoragePoolListAllVolumes(Pool StoragePool, NeedResults int32,
 
 // ConnectListAllNetworks is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_NETWORKS.
 func (l *Libvirt) ConnectListAllNetworks(NeedResults int32, Flags ConnectListAllNetworksFlags) (rNets []Network, rRet uint32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListAllNetworksArgs {
 		NeedResults: NeedResults,
@@ -13683,21 +12615,17 @@ func (l *Libvirt) ConnectListAllNetworks(NeedResults int32, Flags ConnectListAll
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(283, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(283, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Nets: []Network
 	_, err = dec.Decode(&rNets)
 	if err != nil {
@@ -13714,7 +12642,7 @@ func (l *Libvirt) ConnectListAllNetworks(NeedResults int32, Flags ConnectListAll
 
 // ConnectListAllInterfaces is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_INTERFACES.
 func (l *Libvirt) ConnectListAllInterfaces(NeedResults int32, Flags ConnectListAllInterfacesFlags) (rIfaces []Interface, rRet uint32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListAllInterfacesArgs {
 		NeedResults: NeedResults,
@@ -13726,21 +12654,17 @@ func (l *Libvirt) ConnectListAllInterfaces(NeedResults int32, Flags ConnectListA
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(284, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(284, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Ifaces: []Interface
 	_, err = dec.Decode(&rIfaces)
 	if err != nil {
@@ -13757,7 +12681,7 @@ func (l *Libvirt) ConnectListAllInterfaces(NeedResults int32, Flags ConnectListA
 
 // ConnectListAllNodeDevices is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_NODE_DEVICES.
 func (l *Libvirt) ConnectListAllNodeDevices(NeedResults int32, Flags uint32) (rDevices []NodeDevice, rRet uint32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListAllNodeDevicesArgs {
 		NeedResults: NeedResults,
@@ -13769,21 +12693,17 @@ func (l *Libvirt) ConnectListAllNodeDevices(NeedResults int32, Flags uint32) (rD
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(285, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(285, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Devices: []NodeDevice
 	_, err = dec.Decode(&rDevices)
 	if err != nil {
@@ -13800,7 +12720,7 @@ func (l *Libvirt) ConnectListAllNodeDevices(NeedResults int32, Flags uint32) (rD
 
 // ConnectListAllNwfilters is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_NWFILTERS.
 func (l *Libvirt) ConnectListAllNwfilters(NeedResults int32, Flags uint32) (rFilters []Nwfilter, rRet uint32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListAllNwfiltersArgs {
 		NeedResults: NeedResults,
@@ -13812,21 +12732,17 @@ func (l *Libvirt) ConnectListAllNwfilters(NeedResults int32, Flags uint32) (rFil
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(286, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(286, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Filters: []Nwfilter
 	_, err = dec.Decode(&rFilters)
 	if err != nil {
@@ -13843,7 +12759,7 @@ func (l *Libvirt) ConnectListAllNwfilters(NeedResults int32, Flags uint32) (rFil
 
 // ConnectListAllSecrets is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_SECRETS.
 func (l *Libvirt) ConnectListAllSecrets(NeedResults int32, Flags ConnectListAllSecretsFlags) (rSecrets []Secret, rRet uint32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectListAllSecretsArgs {
 		NeedResults: NeedResults,
@@ -13855,21 +12771,17 @@ func (l *Libvirt) ConnectListAllSecrets(NeedResults int32, Flags ConnectListAllS
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(287, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(287, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Secrets: []Secret
 	_, err = dec.Decode(&rSecrets)
 	if err != nil {
@@ -13886,7 +12798,7 @@ func (l *Libvirt) ConnectListAllSecrets(NeedResults int32, Flags ConnectListAllS
 
 // NodeSetMemoryParameters is the go wrapper for REMOTE_PROC_NODE_SET_MEMORY_PARAMETERS.
 func (l *Libvirt) NodeSetMemoryParameters(Params []TypedParam, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeSetMemoryParametersArgs {
 		Params: Params,
@@ -13898,15 +12810,9 @@ func (l *Libvirt) NodeSetMemoryParameters(Params []TypedParam, Flags uint32) (er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(288, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(288, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -13915,7 +12821,7 @@ func (l *Libvirt) NodeSetMemoryParameters(Params []TypedParam, Flags uint32) (er
 
 // NodeGetMemoryParameters is the go wrapper for REMOTE_PROC_NODE_GET_MEMORY_PARAMETERS.
 func (l *Libvirt) NodeGetMemoryParameters(Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeGetMemoryParametersArgs {
 		Nparams: Nparams,
@@ -13927,25 +12833,20 @@ func (l *Libvirt) NodeGetMemoryParameters(Nparams int32, Flags uint32) (rParams 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(289, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(289, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 	// Nparams: int32
@@ -13959,7 +12860,7 @@ func (l *Libvirt) NodeGetMemoryParameters(Nparams int32, Flags uint32) (rParams 
 
 // DomainBlockCommit is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_COMMIT.
 func (l *Libvirt) DomainBlockCommit(Dom Domain, Disk string, Base OptString, Top OptString, Bandwidth uint64, Flags DomainBlockCommitFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainBlockCommitArgs {
 		Dom: Dom,
@@ -13975,15 +12876,9 @@ func (l *Libvirt) DomainBlockCommit(Dom Domain, Disk string, Base OptString, Top
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(290, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(290, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -13992,7 +12887,7 @@ func (l *Libvirt) DomainBlockCommit(Dom Domain, Disk string, Base OptString, Top
 
 // NetworkUpdate is the go wrapper for REMOTE_PROC_NETWORK_UPDATE.
 func (l *Libvirt) NetworkUpdate(Net Network, Command uint32, Section uint32, ParentIndex int32, XML string, Flags NetworkUpdateFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkUpdateArgs {
 		Net: Net,
@@ -14008,15 +12903,9 @@ func (l *Libvirt) NetworkUpdate(Net Network, Command uint32, Section uint32, Par
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(291, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(291, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -14025,17 +12914,11 @@ func (l *Libvirt) NetworkUpdate(Net Network, Command uint32, Section uint32, Par
 
 // DomainEventPmsuspendDisk is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_PMSUSPEND_DISK.
 func (l *Libvirt) DomainEventPmsuspendDisk() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(292, constants.Program, &buf)
+
+	_, err = l.requestStream(292, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14044,7 +12927,7 @@ func (l *Libvirt) DomainEventPmsuspendDisk() (err error) {
 
 // NodeGetCPUMap is the go wrapper for REMOTE_PROC_NODE_GET_CPU_MAP.
 func (l *Libvirt) NodeGetCPUMap(NeedMap int32, NeedOnline int32, Flags uint32) (rCpumap []byte, rOnline uint32, rRet int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeGetCPUMapArgs {
 		NeedMap: NeedMap,
@@ -14057,21 +12940,17 @@ func (l *Libvirt) NodeGetCPUMap(NeedMap int32, NeedOnline int32, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(293, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(293, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Cpumap: []byte
 	_, err = dec.Decode(&rCpumap)
 	if err != nil {
@@ -14093,7 +12972,7 @@ func (l *Libvirt) NodeGetCPUMap(NeedMap int32, NeedOnline int32, Flags uint32) (
 
 // DomainFstrim is the go wrapper for REMOTE_PROC_DOMAIN_FSTRIM.
 func (l *Libvirt) DomainFstrim(Dom Domain, MountPoint OptString, Minimum uint64, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainFstrimArgs {
 		Dom: Dom,
@@ -14107,15 +12986,9 @@ func (l *Libvirt) DomainFstrim(Dom Domain, MountPoint OptString, Minimum uint64,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(294, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(294, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -14124,7 +12997,7 @@ func (l *Libvirt) DomainFstrim(Dom Domain, MountPoint OptString, Minimum uint64,
 
 // DomainSendProcessSignal is the go wrapper for REMOTE_PROC_DOMAIN_SEND_PROCESS_SIGNAL.
 func (l *Libvirt) DomainSendProcessSignal(Dom Domain, PidValue int64, Signum uint32, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSendProcessSignalArgs {
 		Dom: Dom,
@@ -14138,15 +13011,9 @@ func (l *Libvirt) DomainSendProcessSignal(Dom Domain, PidValue int64, Signum uin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(295, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(295, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -14154,8 +13021,8 @@ func (l *Libvirt) DomainSendProcessSignal(Dom Domain, PidValue int64, Signum uin
 }
 
 // DomainOpenChannel is the go wrapper for REMOTE_PROC_DOMAIN_OPEN_CHANNEL.
-func (l *Libvirt) DomainOpenChannel(Dom Domain, Name OptString, Flags DomainChannelFlags) (err error) {
-	var buf bytes.Buffer
+func (l *Libvirt) DomainOpenChannel(Dom Domain, Name OptString, inStream io.Writer, Flags DomainChannelFlags) (err error) {
+	var buf []byte
 
 	args := DomainOpenChannelArgs {
 		Dom: Dom,
@@ -14168,15 +13035,9 @@ func (l *Libvirt) DomainOpenChannel(Dom Domain, Name OptString, Flags DomainChan
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(296, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(296, constants.Program, buf, nil, inStream)
+	if err != nil {
 		return
 	}
 
@@ -14185,7 +13046,7 @@ func (l *Libvirt) DomainOpenChannel(Dom Domain, Name OptString, Flags DomainChan
 
 // NodeDeviceLookupScsiHostByWwn is the go wrapper for REMOTE_PROC_NODE_DEVICE_LOOKUP_SCSI_HOST_BY_WWN.
 func (l *Libvirt) NodeDeviceLookupScsiHostByWwn(Wwnn string, Wwpn string, Flags uint32) (rDev NodeDevice, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeDeviceLookupScsiHostByWwnArgs {
 		Wwnn: Wwnn,
@@ -14198,21 +13059,17 @@ func (l *Libvirt) NodeDeviceLookupScsiHostByWwn(Wwnn string, Wwpn string, Flags 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(297, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(297, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dev: NodeDevice
 	_, err = dec.Decode(&rDev)
 	if err != nil {
@@ -14224,7 +13081,7 @@ func (l *Libvirt) NodeDeviceLookupScsiHostByWwn(Wwnn string, Wwpn string, Flags 
 
 // DomainGetJobStats is the go wrapper for REMOTE_PROC_DOMAIN_GET_JOB_STATS.
 func (l *Libvirt) DomainGetJobStats(Dom Domain, Flags DomainGetJobStatsFlags) (rType int32, rParams []TypedParam, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetJobStatsArgs {
 		Dom: Dom,
@@ -14236,30 +13093,25 @@ func (l *Libvirt) DomainGetJobStats(Dom Domain, Flags DomainGetJobStatsFlags) (r
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(298, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(298, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: int32
 	_, err = dec.Decode(&rType)
 	if err != nil {
 		return
 	}
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 
@@ -14268,7 +13120,7 @@ func (l *Libvirt) DomainGetJobStats(Dom Domain, Flags DomainGetJobStatsFlags) (r
 
 // DomainMigrateGetCompressionCache is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_GET_COMPRESSION_CACHE.
 func (l *Libvirt) DomainMigrateGetCompressionCache(Dom Domain, Flags uint32) (rCacheSize uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateGetCompressionCacheArgs {
 		Dom: Dom,
@@ -14280,21 +13132,17 @@ func (l *Libvirt) DomainMigrateGetCompressionCache(Dom Domain, Flags uint32) (rC
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(299, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(299, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CacheSize: uint64
 	_, err = dec.Decode(&rCacheSize)
 	if err != nil {
@@ -14306,7 +13154,7 @@ func (l *Libvirt) DomainMigrateGetCompressionCache(Dom Domain, Flags uint32) (rC
 
 // DomainMigrateSetCompressionCache is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_SET_COMPRESSION_CACHE.
 func (l *Libvirt) DomainMigrateSetCompressionCache(Dom Domain, CacheSize uint64, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateSetCompressionCacheArgs {
 		Dom: Dom,
@@ -14319,15 +13167,9 @@ func (l *Libvirt) DomainMigrateSetCompressionCache(Dom Domain, CacheSize uint64,
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(300, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(300, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -14336,7 +13178,7 @@ func (l *Libvirt) DomainMigrateSetCompressionCache(Dom Domain, CacheSize uint64,
 
 // NodeDeviceDetachFlags is the go wrapper for REMOTE_PROC_NODE_DEVICE_DETACH_FLAGS.
 func (l *Libvirt) NodeDeviceDetachFlags(Name string, DriverName OptString, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeDeviceDetachFlagsArgs {
 		Name: Name,
@@ -14349,15 +13191,9 @@ func (l *Libvirt) NodeDeviceDetachFlags(Name string, DriverName OptString, Flags
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(301, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(301, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -14366,7 +13202,7 @@ func (l *Libvirt) NodeDeviceDetachFlags(Name string, DriverName OptString, Flags
 
 // DomainMigrateBegin3Params is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_BEGIN3_PARAMS.
 func (l *Libvirt) DomainMigrateBegin3Params(Dom Domain, Params []TypedParam, Flags uint32) (rCookieOut []byte, rXML string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateBegin3ParamsArgs {
 		Dom: Dom,
@@ -14379,21 +13215,17 @@ func (l *Libvirt) DomainMigrateBegin3Params(Dom Domain, Params []TypedParam, Fla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(302, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(302, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -14410,7 +13242,7 @@ func (l *Libvirt) DomainMigrateBegin3Params(Dom Domain, Params []TypedParam, Fla
 
 // DomainMigratePrepare3Params is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PREPARE3_PARAMS.
 func (l *Libvirt) DomainMigratePrepare3Params(Params []TypedParam, CookieIn []byte, Flags uint32) (rCookieOut []byte, rUriOut OptString, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigratePrepare3ParamsArgs {
 		Params: Params,
@@ -14423,21 +13255,17 @@ func (l *Libvirt) DomainMigratePrepare3Params(Params []TypedParam, CookieIn []by
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(303, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(303, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -14454,7 +13282,7 @@ func (l *Libvirt) DomainMigratePrepare3Params(Params []TypedParam, CookieIn []by
 
 // DomainMigratePrepareTunnel3Params is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PREPARE_TUNNEL3_PARAMS.
 func (l *Libvirt) DomainMigratePrepareTunnel3Params(Params []TypedParam, CookieIn []byte, Flags uint32) (rCookieOut []byte, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigratePrepareTunnel3ParamsArgs {
 		Params: Params,
@@ -14467,21 +13295,17 @@ func (l *Libvirt) DomainMigratePrepareTunnel3Params(Params []TypedParam, CookieI
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(304, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(304, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -14493,7 +13317,7 @@ func (l *Libvirt) DomainMigratePrepareTunnel3Params(Params []TypedParam, CookieI
 
 // DomainMigratePerform3Params is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PERFORM3_PARAMS.
 func (l *Libvirt) DomainMigratePerform3Params(Dom Domain, Dconnuri OptString, Params []TypedParam, CookieIn []byte, Flags DomainMigrateFlags) (rCookieOut []byte, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigratePerform3ParamsArgs {
 		Dom: Dom,
@@ -14508,21 +13332,17 @@ func (l *Libvirt) DomainMigratePerform3Params(Dom Domain, Dconnuri OptString, Pa
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(305, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(305, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CookieOut: []byte
 	_, err = dec.Decode(&rCookieOut)
 	if err != nil {
@@ -14534,7 +13354,7 @@ func (l *Libvirt) DomainMigratePerform3Params(Dom Domain, Dconnuri OptString, Pa
 
 // DomainMigrateFinish3Params is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_FINISH3_PARAMS.
 func (l *Libvirt) DomainMigrateFinish3Params(Params []TypedParam, CookieIn []byte, Flags uint32, Cancelled int32) (rDom Domain, rCookieOut []byte, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateFinish3ParamsArgs {
 		Params: Params,
@@ -14548,21 +13368,17 @@ func (l *Libvirt) DomainMigrateFinish3Params(Params []TypedParam, CookieIn []byt
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(306, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(306, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -14579,7 +13395,7 @@ func (l *Libvirt) DomainMigrateFinish3Params(Params []TypedParam, CookieIn []byt
 
 // DomainMigrateConfirm3Params is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_CONFIRM3_PARAMS.
 func (l *Libvirt) DomainMigrateConfirm3Params(Dom Domain, Params []TypedParam, CookieIn []byte, Flags uint32, Cancelled int32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateConfirm3ParamsArgs {
 		Dom: Dom,
@@ -14594,15 +13410,9 @@ func (l *Libvirt) DomainMigrateConfirm3Params(Dom Domain, Params []TypedParam, C
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(307, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(307, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -14611,7 +13421,7 @@ func (l *Libvirt) DomainMigrateConfirm3Params(Dom Domain, Params []TypedParam, C
 
 // DomainSetMemoryStatsPeriod is the go wrapper for REMOTE_PROC_DOMAIN_SET_MEMORY_STATS_PERIOD.
 func (l *Libvirt) DomainSetMemoryStatsPeriod(Dom Domain, Period int32, Flags DomainMemoryModFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetMemoryStatsPeriodArgs {
 		Dom: Dom,
@@ -14624,15 +13434,9 @@ func (l *Libvirt) DomainSetMemoryStatsPeriod(Dom Domain, Period int32, Flags Dom
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(308, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(308, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -14641,7 +13445,7 @@ func (l *Libvirt) DomainSetMemoryStatsPeriod(Dom Domain, Period int32, Flags Dom
 
 // DomainCreateXMLWithFiles is the go wrapper for REMOTE_PROC_DOMAIN_CREATE_XML_WITH_FILES.
 func (l *Libvirt) DomainCreateXMLWithFiles(XMLDesc string, Flags DomainCreateFlags) (rDom Domain, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainCreateXMLWithFilesArgs {
 		XMLDesc: XMLDesc,
@@ -14653,21 +13457,17 @@ func (l *Libvirt) DomainCreateXMLWithFiles(XMLDesc string, Flags DomainCreateFla
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(309, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(309, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -14679,7 +13479,7 @@ func (l *Libvirt) DomainCreateXMLWithFiles(XMLDesc string, Flags DomainCreateFla
 
 // DomainCreateWithFiles is the go wrapper for REMOTE_PROC_DOMAIN_CREATE_WITH_FILES.
 func (l *Libvirt) DomainCreateWithFiles(Dom Domain, Flags DomainCreateFlags) (rDom Domain, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainCreateWithFilesArgs {
 		Dom: Dom,
@@ -14691,21 +13491,17 @@ func (l *Libvirt) DomainCreateWithFiles(Dom Domain, Flags DomainCreateFlags) (rD
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(310, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(310, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -14717,17 +13513,11 @@ func (l *Libvirt) DomainCreateWithFiles(Dom Domain, Flags DomainCreateFlags) (rD
 
 // DomainEventDeviceRemoved is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_DEVICE_REMOVED.
 func (l *Libvirt) DomainEventDeviceRemoved() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(311, constants.Program, &buf)
+
+	_, err = l.requestStream(311, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14736,7 +13526,7 @@ func (l *Libvirt) DomainEventDeviceRemoved() (err error) {
 
 // ConnectGetCPUModelNames is the go wrapper for REMOTE_PROC_CONNECT_GET_CPU_MODEL_NAMES.
 func (l *Libvirt) ConnectGetCPUModelNames(Arch string, NeedResults int32, Flags uint32) (rModels []string, rRet int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectGetCPUModelNamesArgs {
 		Arch: Arch,
@@ -14749,21 +13539,17 @@ func (l *Libvirt) ConnectGetCPUModelNames(Arch string, NeedResults int32, Flags 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(312, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(312, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Models: []string
 	_, err = dec.Decode(&rModels)
 	if err != nil {
@@ -14780,7 +13566,7 @@ func (l *Libvirt) ConnectGetCPUModelNames(Arch string, NeedResults int32, Flags 
 
 // ConnectNetworkEventRegisterAny is the go wrapper for REMOTE_PROC_CONNECT_NETWORK_EVENT_REGISTER_ANY.
 func (l *Libvirt) ConnectNetworkEventRegisterAny(EventID int32, Net OptNetwork) (rCallbackID int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectNetworkEventRegisterAnyArgs {
 		EventID: EventID,
@@ -14792,21 +13578,17 @@ func (l *Libvirt) ConnectNetworkEventRegisterAny(EventID int32, Net OptNetwork) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(313, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(313, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CallbackID: int32
 	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
@@ -14818,7 +13600,7 @@ func (l *Libvirt) ConnectNetworkEventRegisterAny(EventID int32, Net OptNetwork) 
 
 // ConnectNetworkEventDeregisterAny is the go wrapper for REMOTE_PROC_CONNECT_NETWORK_EVENT_DEREGISTER_ANY.
 func (l *Libvirt) ConnectNetworkEventDeregisterAny(CallbackID int32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectNetworkEventDeregisterAnyArgs {
 		CallbackID: CallbackID,
@@ -14829,15 +13611,9 @@ func (l *Libvirt) ConnectNetworkEventDeregisterAny(CallbackID int32) (err error)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(314, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(314, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -14846,17 +13622,11 @@ func (l *Libvirt) ConnectNetworkEventDeregisterAny(CallbackID int32) (err error)
 
 // NetworkEventLifecycle is the go wrapper for REMOTE_PROC_NETWORK_EVENT_LIFECYCLE.
 func (l *Libvirt) NetworkEventLifecycle() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(315, constants.Program, &buf)
+
+	_, err = l.requestStream(315, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14865,7 +13635,7 @@ func (l *Libvirt) NetworkEventLifecycle() (err error) {
 
 // ConnectDomainEventCallbackRegisterAny is the go wrapper for REMOTE_PROC_CONNECT_DOMAIN_EVENT_CALLBACK_REGISTER_ANY.
 func (l *Libvirt) ConnectDomainEventCallbackRegisterAny(EventID int32, Dom OptDomain) (rCallbackID int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectDomainEventCallbackRegisterAnyArgs {
 		EventID: EventID,
@@ -14877,21 +13647,17 @@ func (l *Libvirt) ConnectDomainEventCallbackRegisterAny(EventID int32, Dom OptDo
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(316, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(316, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CallbackID: int32
 	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
@@ -14903,7 +13669,7 @@ func (l *Libvirt) ConnectDomainEventCallbackRegisterAny(EventID int32, Dom OptDo
 
 // ConnectDomainEventCallbackDeregisterAny is the go wrapper for REMOTE_PROC_CONNECT_DOMAIN_EVENT_CALLBACK_DEREGISTER_ANY.
 func (l *Libvirt) ConnectDomainEventCallbackDeregisterAny(CallbackID int32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectDomainEventCallbackDeregisterAnyArgs {
 		CallbackID: CallbackID,
@@ -14914,15 +13680,9 @@ func (l *Libvirt) ConnectDomainEventCallbackDeregisterAny(CallbackID int32) (err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(317, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(317, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -14931,17 +13691,11 @@ func (l *Libvirt) ConnectDomainEventCallbackDeregisterAny(CallbackID int32) (err
 
 // DomainEventCallbackLifecycle is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_LIFECYCLE.
 func (l *Libvirt) DomainEventCallbackLifecycle() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(318, constants.Program, &buf)
+
+	_, err = l.requestStream(318, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14950,17 +13704,11 @@ func (l *Libvirt) DomainEventCallbackLifecycle() (err error) {
 
 // DomainEventCallbackReboot is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_REBOOT.
 func (l *Libvirt) DomainEventCallbackReboot() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(319, constants.Program, &buf)
+
+	_, err = l.requestStream(319, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14969,17 +13717,11 @@ func (l *Libvirt) DomainEventCallbackReboot() (err error) {
 
 // DomainEventCallbackRtcChange is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_RTC_CHANGE.
 func (l *Libvirt) DomainEventCallbackRtcChange() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(320, constants.Program, &buf)
+
+	_, err = l.requestStream(320, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -14988,17 +13730,11 @@ func (l *Libvirt) DomainEventCallbackRtcChange() (err error) {
 
 // DomainEventCallbackWatchdog is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_WATCHDOG.
 func (l *Libvirt) DomainEventCallbackWatchdog() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(321, constants.Program, &buf)
+
+	_, err = l.requestStream(321, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15007,17 +13743,11 @@ func (l *Libvirt) DomainEventCallbackWatchdog() (err error) {
 
 // DomainEventCallbackIOError is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_IO_ERROR.
 func (l *Libvirt) DomainEventCallbackIOError() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(322, constants.Program, &buf)
+
+	_, err = l.requestStream(322, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15026,17 +13756,11 @@ func (l *Libvirt) DomainEventCallbackIOError() (err error) {
 
 // DomainEventCallbackGraphics is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_GRAPHICS.
 func (l *Libvirt) DomainEventCallbackGraphics() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(323, constants.Program, &buf)
+
+	_, err = l.requestStream(323, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15045,17 +13769,11 @@ func (l *Libvirt) DomainEventCallbackGraphics() (err error) {
 
 // DomainEventCallbackIOErrorReason is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_IO_ERROR_REASON.
 func (l *Libvirt) DomainEventCallbackIOErrorReason() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(324, constants.Program, &buf)
+
+	_, err = l.requestStream(324, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15064,17 +13782,11 @@ func (l *Libvirt) DomainEventCallbackIOErrorReason() (err error) {
 
 // DomainEventCallbackControlError is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_CONTROL_ERROR.
 func (l *Libvirt) DomainEventCallbackControlError() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(325, constants.Program, &buf)
+
+	_, err = l.requestStream(325, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15083,17 +13795,11 @@ func (l *Libvirt) DomainEventCallbackControlError() (err error) {
 
 // DomainEventCallbackBlockJob is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_BLOCK_JOB.
 func (l *Libvirt) DomainEventCallbackBlockJob() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(326, constants.Program, &buf)
+
+	_, err = l.requestStream(326, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15102,17 +13808,11 @@ func (l *Libvirt) DomainEventCallbackBlockJob() (err error) {
 
 // DomainEventCallbackDiskChange is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_DISK_CHANGE.
 func (l *Libvirt) DomainEventCallbackDiskChange() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(327, constants.Program, &buf)
+
+	_, err = l.requestStream(327, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15121,17 +13821,11 @@ func (l *Libvirt) DomainEventCallbackDiskChange() (err error) {
 
 // DomainEventCallbackTrayChange is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_TRAY_CHANGE.
 func (l *Libvirt) DomainEventCallbackTrayChange() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(328, constants.Program, &buf)
+
+	_, err = l.requestStream(328, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15140,17 +13834,11 @@ func (l *Libvirt) DomainEventCallbackTrayChange() (err error) {
 
 // DomainEventCallbackPmwakeup is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_PMWAKEUP.
 func (l *Libvirt) DomainEventCallbackPmwakeup() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(329, constants.Program, &buf)
+
+	_, err = l.requestStream(329, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15159,17 +13847,11 @@ func (l *Libvirt) DomainEventCallbackPmwakeup() (err error) {
 
 // DomainEventCallbackPmsuspend is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_PMSUSPEND.
 func (l *Libvirt) DomainEventCallbackPmsuspend() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(330, constants.Program, &buf)
+
+	_, err = l.requestStream(330, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15178,17 +13860,11 @@ func (l *Libvirt) DomainEventCallbackPmsuspend() (err error) {
 
 // DomainEventCallbackBalloonChange is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_BALLOON_CHANGE.
 func (l *Libvirt) DomainEventCallbackBalloonChange() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(331, constants.Program, &buf)
+
+	_, err = l.requestStream(331, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15197,17 +13873,11 @@ func (l *Libvirt) DomainEventCallbackBalloonChange() (err error) {
 
 // DomainEventCallbackPmsuspendDisk is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_PMSUSPEND_DISK.
 func (l *Libvirt) DomainEventCallbackPmsuspendDisk() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(332, constants.Program, &buf)
+
+	_, err = l.requestStream(332, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15216,17 +13886,11 @@ func (l *Libvirt) DomainEventCallbackPmsuspendDisk() (err error) {
 
 // DomainEventCallbackDeviceRemoved is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_DEVICE_REMOVED.
 func (l *Libvirt) DomainEventCallbackDeviceRemoved() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(333, constants.Program, &buf)
+
+	_, err = l.requestStream(333, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15235,7 +13899,7 @@ func (l *Libvirt) DomainEventCallbackDeviceRemoved() (err error) {
 
 // DomainCoreDumpWithFormat is the go wrapper for REMOTE_PROC_DOMAIN_CORE_DUMP_WITH_FORMAT.
 func (l *Libvirt) DomainCoreDumpWithFormat(Dom Domain, To string, Dumpformat uint32, Flags DomainCoreDumpFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainCoreDumpWithFormatArgs {
 		Dom: Dom,
@@ -15249,15 +13913,9 @@ func (l *Libvirt) DomainCoreDumpWithFormat(Dom Domain, To string, Dumpformat uin
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(334, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(334, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -15266,7 +13924,7 @@ func (l *Libvirt) DomainCoreDumpWithFormat(Dom Domain, To string, Dumpformat uin
 
 // DomainFsfreeze is the go wrapper for REMOTE_PROC_DOMAIN_FSFREEZE.
 func (l *Libvirt) DomainFsfreeze(Dom Domain, Mountpoints []string, Flags uint32) (rFilesystems int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainFsfreezeArgs {
 		Dom: Dom,
@@ -15279,21 +13937,17 @@ func (l *Libvirt) DomainFsfreeze(Dom Domain, Mountpoints []string, Flags uint32)
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(335, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(335, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Filesystems: int32
 	_, err = dec.Decode(&rFilesystems)
 	if err != nil {
@@ -15305,7 +13959,7 @@ func (l *Libvirt) DomainFsfreeze(Dom Domain, Mountpoints []string, Flags uint32)
 
 // DomainFsthaw is the go wrapper for REMOTE_PROC_DOMAIN_FSTHAW.
 func (l *Libvirt) DomainFsthaw(Dom Domain, Mountpoints []string, Flags uint32) (rFilesystems int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainFsthawArgs {
 		Dom: Dom,
@@ -15318,21 +13972,17 @@ func (l *Libvirt) DomainFsthaw(Dom Domain, Mountpoints []string, Flags uint32) (
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(336, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(336, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Filesystems: int32
 	_, err = dec.Decode(&rFilesystems)
 	if err != nil {
@@ -15344,7 +13994,7 @@ func (l *Libvirt) DomainFsthaw(Dom Domain, Mountpoints []string, Flags uint32) (
 
 // DomainGetTime is the go wrapper for REMOTE_PROC_DOMAIN_GET_TIME.
 func (l *Libvirt) DomainGetTime(Dom Domain, Flags uint32) (rSeconds int64, rNseconds uint32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetTimeArgs {
 		Dom: Dom,
@@ -15356,21 +14006,17 @@ func (l *Libvirt) DomainGetTime(Dom Domain, Flags uint32) (rSeconds int64, rNsec
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(337, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(337, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Seconds: int64
 	_, err = dec.Decode(&rSeconds)
 	if err != nil {
@@ -15387,7 +14033,7 @@ func (l *Libvirt) DomainGetTime(Dom Domain, Flags uint32) (rSeconds int64, rNsec
 
 // DomainSetTime is the go wrapper for REMOTE_PROC_DOMAIN_SET_TIME.
 func (l *Libvirt) DomainSetTime(Dom Domain, Seconds int64, Nseconds uint32, Flags DomainSetTimeFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetTimeArgs {
 		Dom: Dom,
@@ -15401,15 +14047,9 @@ func (l *Libvirt) DomainSetTime(Dom Domain, Seconds int64, Nseconds uint32, Flag
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(338, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(338, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -15418,17 +14058,11 @@ func (l *Libvirt) DomainSetTime(Dom Domain, Seconds int64, Nseconds uint32, Flag
 
 // DomainEventBlockJob2 is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_BLOCK_JOB_2.
 func (l *Libvirt) DomainEventBlockJob2() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(339, constants.Program, &buf)
+
+	_, err = l.requestStream(339, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15437,7 +14071,7 @@ func (l *Libvirt) DomainEventBlockJob2() (err error) {
 
 // NodeGetFreePages is the go wrapper for REMOTE_PROC_NODE_GET_FREE_PAGES.
 func (l *Libvirt) NodeGetFreePages(Pages []uint32, StartCell int32, CellCount uint32, Flags uint32) (rCounts []uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeGetFreePagesArgs {
 		Pages: Pages,
@@ -15451,21 +14085,17 @@ func (l *Libvirt) NodeGetFreePages(Pages []uint32, StartCell int32, CellCount ui
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(340, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(340, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Counts: []uint64
 	_, err = dec.Decode(&rCounts)
 	if err != nil {
@@ -15477,7 +14107,7 @@ func (l *Libvirt) NodeGetFreePages(Pages []uint32, StartCell int32, CellCount ui
 
 // NetworkGetDhcpLeases is the go wrapper for REMOTE_PROC_NETWORK_GET_DHCP_LEASES.
 func (l *Libvirt) NetworkGetDhcpLeases(Net Network, Mac OptString, NeedResults int32, Flags uint32) (rLeases []NetworkDhcpLease, rRet uint32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NetworkGetDhcpLeasesArgs {
 		Net: Net,
@@ -15491,21 +14121,17 @@ func (l *Libvirt) NetworkGetDhcpLeases(Net Network, Mac OptString, NeedResults i
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(341, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(341, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Leases: []NetworkDhcpLease
 	_, err = dec.Decode(&rLeases)
 	if err != nil {
@@ -15522,7 +14148,7 @@ func (l *Libvirt) NetworkGetDhcpLeases(Net Network, Mac OptString, NeedResults i
 
 // ConnectGetDomainCapabilities is the go wrapper for REMOTE_PROC_CONNECT_GET_DOMAIN_CAPABILITIES.
 func (l *Libvirt) ConnectGetDomainCapabilities(Emulatorbin OptString, Arch OptString, Machine OptString, Virttype OptString, Flags uint32) (rCapabilities string, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectGetDomainCapabilitiesArgs {
 		Emulatorbin: Emulatorbin,
@@ -15537,21 +14163,17 @@ func (l *Libvirt) ConnectGetDomainCapabilities(Emulatorbin OptString, Arch OptSt
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(342, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(342, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Capabilities: string
 	_, err = dec.Decode(&rCapabilities)
 	if err != nil {
@@ -15563,7 +14185,7 @@ func (l *Libvirt) ConnectGetDomainCapabilities(Emulatorbin OptString, Arch OptSt
 
 // DomainOpenGraphicsFd is the go wrapper for REMOTE_PROC_DOMAIN_OPEN_GRAPHICS_FD.
 func (l *Libvirt) DomainOpenGraphicsFd(Dom Domain, Idx uint32, Flags DomainOpenGraphicsFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainOpenGraphicsFdArgs {
 		Dom: Dom,
@@ -15576,15 +14198,9 @@ func (l *Libvirt) DomainOpenGraphicsFd(Dom Domain, Idx uint32, Flags DomainOpenG
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(343, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(343, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -15593,7 +14209,7 @@ func (l *Libvirt) DomainOpenGraphicsFd(Dom Domain, Idx uint32, Flags DomainOpenG
 
 // ConnectGetAllDomainStats is the go wrapper for REMOTE_PROC_CONNECT_GET_ALL_DOMAIN_STATS.
 func (l *Libvirt) ConnectGetAllDomainStats(Doms []Domain, Stats uint32, Flags ConnectGetAllDomainStatsFlags) (rRetStats []DomainStatsRecord, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectGetAllDomainStatsArgs {
 		Doms: Doms,
@@ -15606,21 +14222,17 @@ func (l *Libvirt) ConnectGetAllDomainStats(Doms []Domain, Stats uint32, Flags Co
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(344, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(344, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// RetStats: []DomainStatsRecord
 	_, err = dec.Decode(&rRetStats)
 	if err != nil {
@@ -15632,7 +14244,7 @@ func (l *Libvirt) ConnectGetAllDomainStats(Doms []Domain, Stats uint32, Flags Co
 
 // DomainBlockCopy is the go wrapper for REMOTE_PROC_DOMAIN_BLOCK_COPY.
 func (l *Libvirt) DomainBlockCopy(Dom Domain, Path string, Destxml string, Params []TypedParam, Flags DomainBlockCopyFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainBlockCopyArgs {
 		Dom: Dom,
@@ -15647,15 +14259,9 @@ func (l *Libvirt) DomainBlockCopy(Dom Domain, Path string, Destxml string, Param
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(345, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(345, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -15664,17 +14270,11 @@ func (l *Libvirt) DomainBlockCopy(Dom Domain, Path string, Destxml string, Param
 
 // DomainEventCallbackTunable is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_TUNABLE.
 func (l *Libvirt) DomainEventCallbackTunable() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(346, constants.Program, &buf)
+
+	_, err = l.requestStream(346, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15683,7 +14283,7 @@ func (l *Libvirt) DomainEventCallbackTunable() (err error) {
 
 // NodeAllocPages is the go wrapper for REMOTE_PROC_NODE_ALLOC_PAGES.
 func (l *Libvirt) NodeAllocPages(PageSizes []uint32, PageCounts []uint64, StartCell int32, CellCount uint32, Flags NodeAllocPagesFlags) (rRet int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := NodeAllocPagesArgs {
 		PageSizes: PageSizes,
@@ -15698,21 +14298,17 @@ func (l *Libvirt) NodeAllocPages(PageSizes []uint32, PageCounts []uint64, StartC
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(347, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(347, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Ret: int32
 	_, err = dec.Decode(&rRet)
 	if err != nil {
@@ -15724,17 +14320,11 @@ func (l *Libvirt) NodeAllocPages(PageSizes []uint32, PageCounts []uint64, StartC
 
 // DomainEventCallbackAgentLifecycle is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_AGENT_LIFECYCLE.
 func (l *Libvirt) DomainEventCallbackAgentLifecycle() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(348, constants.Program, &buf)
+
+	_, err = l.requestStream(348, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15743,7 +14333,7 @@ func (l *Libvirt) DomainEventCallbackAgentLifecycle() (err error) {
 
 // DomainGetFsinfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_FSINFO.
 func (l *Libvirt) DomainGetFsinfo(Dom Domain, Flags uint32) (rInfo []DomainFsinfo, rRet uint32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetFsinfoArgs {
 		Dom: Dom,
@@ -15755,21 +14345,17 @@ func (l *Libvirt) DomainGetFsinfo(Dom Domain, Flags uint32) (rInfo []DomainFsinf
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(349, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(349, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Info: []DomainFsinfo
 	_, err = dec.Decode(&rInfo)
 	if err != nil {
@@ -15786,7 +14372,7 @@ func (l *Libvirt) DomainGetFsinfo(Dom Domain, Flags uint32) (rInfo []DomainFsinf
 
 // DomainDefineXMLFlags is the go wrapper for REMOTE_PROC_DOMAIN_DEFINE_XML_FLAGS.
 func (l *Libvirt) DomainDefineXMLFlags(XML string, Flags DomainDefineFlags) (rDom Domain, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainDefineXMLFlagsArgs {
 		XML: XML,
@@ -15798,21 +14384,17 @@ func (l *Libvirt) DomainDefineXMLFlags(XML string, Flags DomainDefineFlags) (rDo
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(350, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(350, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Dom: Domain
 	_, err = dec.Decode(&rDom)
 	if err != nil {
@@ -15824,7 +14406,7 @@ func (l *Libvirt) DomainDefineXMLFlags(XML string, Flags DomainDefineFlags) (rDo
 
 // DomainGetIothreadInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_IOTHREAD_INFO.
 func (l *Libvirt) DomainGetIothreadInfo(Dom Domain, Flags DomainModificationImpact) (rInfo []DomainIothreadInfo, rRet uint32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetIothreadInfoArgs {
 		Dom: Dom,
@@ -15836,21 +14418,17 @@ func (l *Libvirt) DomainGetIothreadInfo(Dom Domain, Flags DomainModificationImpa
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(351, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(351, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Info: []DomainIothreadInfo
 	_, err = dec.Decode(&rInfo)
 	if err != nil {
@@ -15867,7 +14445,7 @@ func (l *Libvirt) DomainGetIothreadInfo(Dom Domain, Flags DomainModificationImpa
 
 // DomainPinIothread is the go wrapper for REMOTE_PROC_DOMAIN_PIN_IOTHREAD.
 func (l *Libvirt) DomainPinIothread(Dom Domain, IothreadsID uint32, Cpumap []byte, Flags DomainModificationImpact) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainPinIothreadArgs {
 		Dom: Dom,
@@ -15881,15 +14459,9 @@ func (l *Libvirt) DomainPinIothread(Dom Domain, IothreadsID uint32, Cpumap []byt
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(352, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(352, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -15898,7 +14470,7 @@ func (l *Libvirt) DomainPinIothread(Dom Domain, IothreadsID uint32, Cpumap []byt
 
 // DomainInterfaceAddresses is the go wrapper for REMOTE_PROC_DOMAIN_INTERFACE_ADDRESSES.
 func (l *Libvirt) DomainInterfaceAddresses(Dom Domain, Source uint32, Flags uint32) (rIfaces []DomainInterface, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainInterfaceAddressesArgs {
 		Dom: Dom,
@@ -15911,21 +14483,17 @@ func (l *Libvirt) DomainInterfaceAddresses(Dom Domain, Source uint32, Flags uint
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(353, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(353, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Ifaces: []DomainInterface
 	_, err = dec.Decode(&rIfaces)
 	if err != nil {
@@ -15937,17 +14505,11 @@ func (l *Libvirt) DomainInterfaceAddresses(Dom Domain, Source uint32, Flags uint
 
 // DomainEventCallbackDeviceAdded is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_DEVICE_ADDED.
 func (l *Libvirt) DomainEventCallbackDeviceAdded() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(354, constants.Program, &buf)
+
+	_, err = l.requestStream(354, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -15956,7 +14518,7 @@ func (l *Libvirt) DomainEventCallbackDeviceAdded() (err error) {
 
 // DomainAddIothread is the go wrapper for REMOTE_PROC_DOMAIN_ADD_IOTHREAD.
 func (l *Libvirt) DomainAddIothread(Dom Domain, IothreadID uint32, Flags DomainModificationImpact) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainAddIothreadArgs {
 		Dom: Dom,
@@ -15969,15 +14531,9 @@ func (l *Libvirt) DomainAddIothread(Dom Domain, IothreadID uint32, Flags DomainM
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(355, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(355, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -15986,7 +14542,7 @@ func (l *Libvirt) DomainAddIothread(Dom Domain, IothreadID uint32, Flags DomainM
 
 // DomainDelIothread is the go wrapper for REMOTE_PROC_DOMAIN_DEL_IOTHREAD.
 func (l *Libvirt) DomainDelIothread(Dom Domain, IothreadID uint32, Flags DomainModificationImpact) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainDelIothreadArgs {
 		Dom: Dom,
@@ -15999,15 +14555,9 @@ func (l *Libvirt) DomainDelIothread(Dom Domain, IothreadID uint32, Flags DomainM
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(356, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(356, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -16016,7 +14566,7 @@ func (l *Libvirt) DomainDelIothread(Dom Domain, IothreadID uint32, Flags DomainM
 
 // DomainSetUserPassword is the go wrapper for REMOTE_PROC_DOMAIN_SET_USER_PASSWORD.
 func (l *Libvirt) DomainSetUserPassword(Dom Domain, User OptString, Password OptString, Flags DomainSetUserPasswordFlags) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetUserPasswordArgs {
 		Dom: Dom,
@@ -16030,15 +14580,9 @@ func (l *Libvirt) DomainSetUserPassword(Dom Domain, User OptString, Password Opt
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(357, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(357, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -16047,7 +14591,7 @@ func (l *Libvirt) DomainSetUserPassword(Dom Domain, User OptString, Password Opt
 
 // DomainRename is the go wrapper for REMOTE_PROC_DOMAIN_RENAME.
 func (l *Libvirt) DomainRename(Dom Domain, NewName OptString, Flags uint32) (rRetcode int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainRenameArgs {
 		Dom: Dom,
@@ -16060,21 +14604,17 @@ func (l *Libvirt) DomainRename(Dom Domain, NewName OptString, Flags uint32) (rRe
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(358, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(358, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Retcode: int32
 	_, err = dec.Decode(&rRetcode)
 	if err != nil {
@@ -16086,17 +14626,11 @@ func (l *Libvirt) DomainRename(Dom Domain, NewName OptString, Flags uint32) (rRe
 
 // DomainEventCallbackMigrationIteration is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_MIGRATION_ITERATION.
 func (l *Libvirt) DomainEventCallbackMigrationIteration() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(359, constants.Program, &buf)
+
+	_, err = l.requestStream(359, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16105,17 +14639,11 @@ func (l *Libvirt) DomainEventCallbackMigrationIteration() (err error) {
 
 // ConnectRegisterCloseCallback is the go wrapper for REMOTE_PROC_CONNECT_REGISTER_CLOSE_CALLBACK.
 func (l *Libvirt) ConnectRegisterCloseCallback() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(360, constants.Program, &buf)
+
+	_, err = l.requestStream(360, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16124,17 +14652,11 @@ func (l *Libvirt) ConnectRegisterCloseCallback() (err error) {
 
 // ConnectUnregisterCloseCallback is the go wrapper for REMOTE_PROC_CONNECT_UNREGISTER_CLOSE_CALLBACK.
 func (l *Libvirt) ConnectUnregisterCloseCallback() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(361, constants.Program, &buf)
+
+	_, err = l.requestStream(361, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16143,17 +14665,11 @@ func (l *Libvirt) ConnectUnregisterCloseCallback() (err error) {
 
 // ConnectEventConnectionClosed is the go wrapper for REMOTE_PROC_CONNECT_EVENT_CONNECTION_CLOSED.
 func (l *Libvirt) ConnectEventConnectionClosed() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(362, constants.Program, &buf)
+
+	_, err = l.requestStream(362, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16162,17 +14678,11 @@ func (l *Libvirt) ConnectEventConnectionClosed() (err error) {
 
 // DomainEventCallbackJobCompleted is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_JOB_COMPLETED.
 func (l *Libvirt) DomainEventCallbackJobCompleted() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(363, constants.Program, &buf)
+
+	_, err = l.requestStream(363, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16181,7 +14691,7 @@ func (l *Libvirt) DomainEventCallbackJobCompleted() (err error) {
 
 // DomainMigrateStartPostCopy is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_START_POST_COPY.
 func (l *Libvirt) DomainMigrateStartPostCopy(Dom Domain, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainMigrateStartPostCopyArgs {
 		Dom: Dom,
@@ -16193,15 +14703,9 @@ func (l *Libvirt) DomainMigrateStartPostCopy(Dom Domain, Flags uint32) (err erro
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(364, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(364, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -16210,7 +14714,7 @@ func (l *Libvirt) DomainMigrateStartPostCopy(Dom Domain, Flags uint32) (err erro
 
 // DomainGetPerfEvents is the go wrapper for REMOTE_PROC_DOMAIN_GET_PERF_EVENTS.
 func (l *Libvirt) DomainGetPerfEvents(Dom Domain, Flags DomainModificationImpact) (rParams []TypedParam, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetPerfEventsArgs {
 		Dom: Dom,
@@ -16222,25 +14726,20 @@ func (l *Libvirt) DomainGetPerfEvents(Dom Domain, Flags DomainModificationImpact
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(365, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(365, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 
@@ -16249,7 +14748,7 @@ func (l *Libvirt) DomainGetPerfEvents(Dom Domain, Flags DomainModificationImpact
 
 // DomainSetPerfEvents is the go wrapper for REMOTE_PROC_DOMAIN_SET_PERF_EVENTS.
 func (l *Libvirt) DomainSetPerfEvents(Dom Domain, Params []TypedParam, Flags DomainModificationImpact) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetPerfEventsArgs {
 		Dom: Dom,
@@ -16262,15 +14761,9 @@ func (l *Libvirt) DomainSetPerfEvents(Dom Domain, Params []TypedParam, Flags Dom
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(366, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(366, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -16279,17 +14772,11 @@ func (l *Libvirt) DomainSetPerfEvents(Dom Domain, Params []TypedParam, Flags Dom
 
 // DomainEventCallbackDeviceRemovalFailed is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_DEVICE_REMOVAL_FAILED.
 func (l *Libvirt) DomainEventCallbackDeviceRemovalFailed() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(367, constants.Program, &buf)
+
+	_, err = l.requestStream(367, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16298,7 +14785,7 @@ func (l *Libvirt) DomainEventCallbackDeviceRemovalFailed() (err error) {
 
 // ConnectStoragePoolEventRegisterAny is the go wrapper for REMOTE_PROC_CONNECT_STORAGE_POOL_EVENT_REGISTER_ANY.
 func (l *Libvirt) ConnectStoragePoolEventRegisterAny(EventID int32, Pool OptStoragePool) (rCallbackID int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectStoragePoolEventRegisterAnyArgs {
 		EventID: EventID,
@@ -16310,21 +14797,17 @@ func (l *Libvirt) ConnectStoragePoolEventRegisterAny(EventID int32, Pool OptStor
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(368, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(368, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CallbackID: int32
 	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
@@ -16336,7 +14819,7 @@ func (l *Libvirt) ConnectStoragePoolEventRegisterAny(EventID int32, Pool OptStor
 
 // ConnectStoragePoolEventDeregisterAny is the go wrapper for REMOTE_PROC_CONNECT_STORAGE_POOL_EVENT_DEREGISTER_ANY.
 func (l *Libvirt) ConnectStoragePoolEventDeregisterAny(CallbackID int32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectStoragePoolEventDeregisterAnyArgs {
 		CallbackID: CallbackID,
@@ -16347,15 +14830,9 @@ func (l *Libvirt) ConnectStoragePoolEventDeregisterAny(CallbackID int32) (err er
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(369, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(369, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -16364,17 +14841,11 @@ func (l *Libvirt) ConnectStoragePoolEventDeregisterAny(CallbackID int32) (err er
 
 // StoragePoolEventLifecycle is the go wrapper for REMOTE_PROC_STORAGE_POOL_EVENT_LIFECYCLE.
 func (l *Libvirt) StoragePoolEventLifecycle() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(370, constants.Program, &buf)
+
+	_, err = l.requestStream(370, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16383,7 +14854,7 @@ func (l *Libvirt) StoragePoolEventLifecycle() (err error) {
 
 // DomainGetGuestVcpus is the go wrapper for REMOTE_PROC_DOMAIN_GET_GUEST_VCPUS.
 func (l *Libvirt) DomainGetGuestVcpus(Dom Domain, Flags uint32) (rParams []TypedParam, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainGetGuestVcpusArgs {
 		Dom: Dom,
@@ -16395,25 +14866,20 @@ func (l *Libvirt) DomainGetGuestVcpus(Dom Domain, Flags uint32) (rParams []Typed
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(371, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(371, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Params: []TypedParam
-	rParams, err = decodeTypedParams(dec)
+	_, err = dec.Decode(&rParams)
 	if err != nil {
-		fmt.Println("error decoding typedparams")
 		return
 	}
 
@@ -16422,7 +14888,7 @@ func (l *Libvirt) DomainGetGuestVcpus(Dom Domain, Flags uint32) (rParams []Typed
 
 // DomainSetGuestVcpus is the go wrapper for REMOTE_PROC_DOMAIN_SET_GUEST_VCPUS.
 func (l *Libvirt) DomainSetGuestVcpus(Dom Domain, Cpumap string, State int32, Flags uint32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetGuestVcpusArgs {
 		Dom: Dom,
@@ -16436,15 +14902,9 @@ func (l *Libvirt) DomainSetGuestVcpus(Dom Domain, Cpumap string, State int32, Fl
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(372, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(372, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -16453,17 +14913,11 @@ func (l *Libvirt) DomainSetGuestVcpus(Dom Domain, Cpumap string, State int32, Fl
 
 // StoragePoolEventRefresh is the go wrapper for REMOTE_PROC_STORAGE_POOL_EVENT_REFRESH.
 func (l *Libvirt) StoragePoolEventRefresh() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(373, constants.Program, &buf)
+
+	_, err = l.requestStream(373, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16472,7 +14926,7 @@ func (l *Libvirt) StoragePoolEventRefresh() (err error) {
 
 // ConnectNodeDeviceEventRegisterAny is the go wrapper for REMOTE_PROC_CONNECT_NODE_DEVICE_EVENT_REGISTER_ANY.
 func (l *Libvirt) ConnectNodeDeviceEventRegisterAny(EventID int32, Dev OptNodeDevice) (rCallbackID int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectNodeDeviceEventRegisterAnyArgs {
 		EventID: EventID,
@@ -16484,21 +14938,17 @@ func (l *Libvirt) ConnectNodeDeviceEventRegisterAny(EventID int32, Dev OptNodeDe
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(374, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(374, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CallbackID: int32
 	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
@@ -16510,7 +14960,7 @@ func (l *Libvirt) ConnectNodeDeviceEventRegisterAny(EventID int32, Dev OptNodeDe
 
 // ConnectNodeDeviceEventDeregisterAny is the go wrapper for REMOTE_PROC_CONNECT_NODE_DEVICE_EVENT_DEREGISTER_ANY.
 func (l *Libvirt) ConnectNodeDeviceEventDeregisterAny(CallbackID int32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectNodeDeviceEventDeregisterAnyArgs {
 		CallbackID: CallbackID,
@@ -16521,15 +14971,9 @@ func (l *Libvirt) ConnectNodeDeviceEventDeregisterAny(CallbackID int32) (err err
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(375, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(375, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -16538,17 +14982,11 @@ func (l *Libvirt) ConnectNodeDeviceEventDeregisterAny(CallbackID int32) (err err
 
 // NodeDeviceEventLifecycle is the go wrapper for REMOTE_PROC_NODE_DEVICE_EVENT_LIFECYCLE.
 func (l *Libvirt) NodeDeviceEventLifecycle() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(376, constants.Program, &buf)
+
+	_, err = l.requestStream(376, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16557,17 +14995,11 @@ func (l *Libvirt) NodeDeviceEventLifecycle() (err error) {
 
 // NodeDeviceEventUpdate is the go wrapper for REMOTE_PROC_NODE_DEVICE_EVENT_UPDATE.
 func (l *Libvirt) NodeDeviceEventUpdate() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(377, constants.Program, &buf)
+
+	_, err = l.requestStream(377, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16576,7 +15008,7 @@ func (l *Libvirt) NodeDeviceEventUpdate() (err error) {
 
 // StorageVolGetInfoFlags is the go wrapper for REMOTE_PROC_STORAGE_VOL_GET_INFO_FLAGS.
 func (l *Libvirt) StorageVolGetInfoFlags(Vol StorageVol, Flags uint32) (rType int8, rCapacity uint64, rAllocation uint64, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := StorageVolGetInfoFlagsArgs {
 		Vol: Vol,
@@ -16588,21 +15020,17 @@ func (l *Libvirt) StorageVolGetInfoFlags(Vol StorageVol, Flags uint32) (rType in
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(378, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(378, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Type: int8
 	_, err = dec.Decode(&rType)
 	if err != nil {
@@ -16624,17 +15052,11 @@ func (l *Libvirt) StorageVolGetInfoFlags(Vol StorageVol, Flags uint32) (rType in
 
 // DomainEventCallbackMetadataChange is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_CALLBACK_METADATA_CHANGE.
 func (l *Libvirt) DomainEventCallbackMetadataChange() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(379, constants.Program, &buf)
+
+	_, err = l.requestStream(379, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16643,7 +15065,7 @@ func (l *Libvirt) DomainEventCallbackMetadataChange() (err error) {
 
 // ConnectSecretEventRegisterAny is the go wrapper for REMOTE_PROC_CONNECT_SECRET_EVENT_REGISTER_ANY.
 func (l *Libvirt) ConnectSecretEventRegisterAny(EventID int32, OptSecret OptSecret) (rCallbackID int32, err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectSecretEventRegisterAnyArgs {
 		EventID: EventID,
@@ -16655,21 +15077,17 @@ func (l *Libvirt) ConnectSecretEventRegisterAny(EventID int32, OptSecret OptSecr
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(380, constants.Program, &buf)
+	var r response
+	r, err = l.requestStream(380, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
-		return
-	}
-
 	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
 	rdr := bytes.NewReader(r.Payload)
-	dec := xdr.NewDecoder(rdr)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// CallbackID: int32
 	_, err = dec.Decode(&rCallbackID)
 	if err != nil {
@@ -16681,7 +15099,7 @@ func (l *Libvirt) ConnectSecretEventRegisterAny(EventID int32, OptSecret OptSecr
 
 // ConnectSecretEventDeregisterAny is the go wrapper for REMOTE_PROC_CONNECT_SECRET_EVENT_DEREGISTER_ANY.
 func (l *Libvirt) ConnectSecretEventDeregisterAny(CallbackID int32) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := ConnectSecretEventDeregisterAnyArgs {
 		CallbackID: CallbackID,
@@ -16692,15 +15110,9 @@ func (l *Libvirt) ConnectSecretEventDeregisterAny(CallbackID int32) (err error) 
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(381, constants.Program, &buf)
-	if err != nil {
-		return
-	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	_, err = l.requestStream(381, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 
@@ -16709,17 +15121,11 @@ func (l *Libvirt) ConnectSecretEventDeregisterAny(CallbackID int32) (err error) 
 
 // SecretEventLifecycle is the go wrapper for REMOTE_PROC_SECRET_EVENT_LIFECYCLE.
 func (l *Libvirt) SecretEventLifecycle() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(382, constants.Program, &buf)
+
+	_, err = l.requestStream(382, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16728,17 +15134,11 @@ func (l *Libvirt) SecretEventLifecycle() (err error) {
 
 // SecretEventValueChanged is the go wrapper for REMOTE_PROC_SECRET_EVENT_VALUE_CHANGED.
 func (l *Libvirt) SecretEventValueChanged() (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
-	var resp <-chan response
-	resp, err = l.request(383, constants.Program, &buf)
+
+	_, err = l.requestStream(383, constants.Program, buf, nil, nil)
 	if err != nil {
-		return
-	}
-
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
 		return
 	}
 
@@ -16747,7 +15147,7 @@ func (l *Libvirt) SecretEventValueChanged() (err error) {
 
 // DomainSetVcpu is the go wrapper for REMOTE_PROC_DOMAIN_SET_VCPU.
 func (l *Libvirt) DomainSetVcpu(Dom Domain, Cpumap string, State int32, Flags DomainModificationImpact) (err error) {
-	var buf bytes.Buffer
+	var buf []byte
 
 	args := DomainSetVcpuArgs {
 		Dom: Dom,
@@ -16761,15 +15161,1286 @@ func (l *Libvirt) DomainSetVcpu(Dom Domain, Cpumap string, State int32, Flags Do
 		return
 	}
 
-	var resp <-chan response
-	resp, err = l.request(384, constants.Program, &buf)
+
+	_, err = l.requestStream(384, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
 
-	r := <-resp
-	if r.Status != StatusOK {
-		err = decodeError(r.Payload)
+	return
+}
+
+// DomainEventBlockThreshold is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_BLOCK_THRESHOLD.
+func (l *Libvirt) DomainEventBlockThreshold() (err error) {
+	var buf []byte
+
+
+	_, err = l.requestStream(385, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainSetBlockThreshold is the go wrapper for REMOTE_PROC_DOMAIN_SET_BLOCK_THRESHOLD.
+func (l *Libvirt) DomainSetBlockThreshold(Dom Domain, Dev string, Threshold uint64, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainSetBlockThresholdArgs {
+		Dom: Dom,
+		Dev: Dev,
+		Threshold: Threshold,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(386, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainMigrateGetMaxDowntime is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_GET_MAX_DOWNTIME.
+func (l *Libvirt) DomainMigrateGetMaxDowntime(Dom Domain, Flags uint32) (rDowntime uint64, err error) {
+	var buf []byte
+
+	args := DomainMigrateGetMaxDowntimeArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(387, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Downtime: uint64
+	_, err = dec.Decode(&rDowntime)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainManagedSaveGetXMLDesc is the go wrapper for REMOTE_PROC_DOMAIN_MANAGED_SAVE_GET_XML_DESC.
+func (l *Libvirt) DomainManagedSaveGetXMLDesc(Dom Domain, Flags DomainXMLFlags) (rXML string, err error) {
+	var buf []byte
+
+	args := DomainManagedSaveGetXMLDescArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(388, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// XML: string
+	_, err = dec.Decode(&rXML)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainManagedSaveDefineXML is the go wrapper for REMOTE_PROC_DOMAIN_MANAGED_SAVE_DEFINE_XML.
+func (l *Libvirt) DomainManagedSaveDefineXML(Dom Domain, Dxml OptString, Flags DomainSaveRestoreFlags) (err error) {
+	var buf []byte
+
+	args := DomainManagedSaveDefineXMLArgs {
+		Dom: Dom,
+		Dxml: Dxml,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(389, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainSetLifecycleAction is the go wrapper for REMOTE_PROC_DOMAIN_SET_LIFECYCLE_ACTION.
+func (l *Libvirt) DomainSetLifecycleAction(Dom Domain, Type uint32, Action uint32, Flags DomainModificationImpact) (err error) {
+	var buf []byte
+
+	args := DomainSetLifecycleActionArgs {
+		Dom: Dom,
+		Type: Type,
+		Action: Action,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(390, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// StoragePoolLookupByTargetPath is the go wrapper for REMOTE_PROC_STORAGE_POOL_LOOKUP_BY_TARGET_PATH.
+func (l *Libvirt) StoragePoolLookupByTargetPath(Path string) (rPool StoragePool, err error) {
+	var buf []byte
+
+	args := StoragePoolLookupByTargetPathArgs {
+		Path: Path,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(391, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Pool: StoragePool
+	_, err = dec.Decode(&rPool)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainDetachDeviceAlias is the go wrapper for REMOTE_PROC_DOMAIN_DETACH_DEVICE_ALIAS.
+func (l *Libvirt) DomainDetachDeviceAlias(Dom Domain, Alias string, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainDetachDeviceAliasArgs {
+		Dom: Dom,
+		Alias: Alias,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(392, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// ConnectCompareHypervisorCPU is the go wrapper for REMOTE_PROC_CONNECT_COMPARE_HYPERVISOR_CPU.
+func (l *Libvirt) ConnectCompareHypervisorCPU(Emulator OptString, Arch OptString, Machine OptString, Virttype OptString, XMLCPU string, Flags uint32) (rResult int32, err error) {
+	var buf []byte
+
+	args := ConnectCompareHypervisorCPUArgs {
+		Emulator: Emulator,
+		Arch: Arch,
+		Machine: Machine,
+		Virttype: Virttype,
+		XMLCPU: XMLCPU,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(393, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Result: int32
+	_, err = dec.Decode(&rResult)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// ConnectBaselineHypervisorCPU is the go wrapper for REMOTE_PROC_CONNECT_BASELINE_HYPERVISOR_CPU.
+func (l *Libvirt) ConnectBaselineHypervisorCPU(Emulator OptString, Arch OptString, Machine OptString, Virttype OptString, XMLCPUs []string, Flags uint32) (rCPU string, err error) {
+	var buf []byte
+
+	args := ConnectBaselineHypervisorCPUArgs {
+		Emulator: Emulator,
+		Arch: Arch,
+		Machine: Machine,
+		Virttype: Virttype,
+		XMLCPUs: XMLCPUs,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(394, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// CPU: string
+	_, err = dec.Decode(&rCPU)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NodeGetSevInfo is the go wrapper for REMOTE_PROC_NODE_GET_SEV_INFO.
+func (l *Libvirt) NodeGetSevInfo(Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+	var buf []byte
+
+	args := NodeGetSevInfoArgs {
+		Nparams: Nparams,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(395, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Params: []TypedParam
+	_, err = dec.Decode(&rParams)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainGetLaunchSecurityInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_LAUNCH_SECURITY_INFO.
+func (l *Libvirt) DomainGetLaunchSecurityInfo(Dom Domain, Flags uint32) (rParams []TypedParam, err error) {
+	var buf []byte
+
+	args := DomainGetLaunchSecurityInfoArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(396, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Params: []TypedParam
+	_, err = dec.Decode(&rParams)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NwfilterBindingLookupByPortDev is the go wrapper for REMOTE_PROC_NWFILTER_BINDING_LOOKUP_BY_PORT_DEV.
+func (l *Libvirt) NwfilterBindingLookupByPortDev(Name string) (rOptNwfilter NwfilterBinding, err error) {
+	var buf []byte
+
+	args := NwfilterBindingLookupByPortDevArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(397, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// OptNwfilter: NwfilterBinding
+	_, err = dec.Decode(&rOptNwfilter)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NwfilterBindingGetXMLDesc is the go wrapper for REMOTE_PROC_NWFILTER_BINDING_GET_XML_DESC.
+func (l *Libvirt) NwfilterBindingGetXMLDesc(OptNwfilter NwfilterBinding, Flags uint32) (rXML string, err error) {
+	var buf []byte
+
+	args := NwfilterBindingGetXMLDescArgs {
+		OptNwfilter: OptNwfilter,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(398, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// XML: string
+	_, err = dec.Decode(&rXML)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NwfilterBindingCreateXML is the go wrapper for REMOTE_PROC_NWFILTER_BINDING_CREATE_XML.
+func (l *Libvirt) NwfilterBindingCreateXML(XML string, Flags uint32) (rOptNwfilter NwfilterBinding, err error) {
+	var buf []byte
+
+	args := NwfilterBindingCreateXMLArgs {
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(399, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// OptNwfilter: NwfilterBinding
+	_, err = dec.Decode(&rOptNwfilter)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NwfilterBindingDelete is the go wrapper for REMOTE_PROC_NWFILTER_BINDING_DELETE.
+func (l *Libvirt) NwfilterBindingDelete(OptNwfilter NwfilterBinding) (err error) {
+	var buf []byte
+
+	args := NwfilterBindingDeleteArgs {
+		OptNwfilter: OptNwfilter,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(400, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// ConnectListAllNwfilterBindings is the go wrapper for REMOTE_PROC_CONNECT_LIST_ALL_NWFILTER_BINDINGS.
+func (l *Libvirt) ConnectListAllNwfilterBindings(NeedResults int32, Flags uint32) (rBindings []NwfilterBinding, rRet uint32, err error) {
+	var buf []byte
+
+	args := ConnectListAllNwfilterBindingsArgs {
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(401, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Bindings: []NwfilterBinding
+	_, err = dec.Decode(&rBindings)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainSetIothreadParams is the go wrapper for REMOTE_PROC_DOMAIN_SET_IOTHREAD_PARAMS.
+func (l *Libvirt) DomainSetIothreadParams(Dom Domain, IothreadID uint32, Params []TypedParam, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainSetIothreadParamsArgs {
+		Dom: Dom,
+		IothreadID: IothreadID,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(402, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// ConnectGetStoragePoolCapabilities is the go wrapper for REMOTE_PROC_CONNECT_GET_STORAGE_POOL_CAPABILITIES.
+func (l *Libvirt) ConnectGetStoragePoolCapabilities(Flags uint32) (rCapabilities string, err error) {
+	var buf []byte
+
+	args := ConnectGetStoragePoolCapabilitiesArgs {
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(403, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Capabilities: string
+	_, err = dec.Decode(&rCapabilities)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkListAllPorts is the go wrapper for REMOTE_PROC_NETWORK_LIST_ALL_PORTS.
+func (l *Libvirt) NetworkListAllPorts(OptNetwork Network, NeedResults int32, Flags uint32) (rPorts []NetworkPort, rRet uint32, err error) {
+	var buf []byte
+
+	args := NetworkListAllPortsArgs {
+		OptNetwork: OptNetwork,
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(404, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Ports: []NetworkPort
+	_, err = dec.Decode(&rPorts)
+	if err != nil {
+		return
+	}
+	// Ret: uint32
+	_, err = dec.Decode(&rRet)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkPortLookupByUUID is the go wrapper for REMOTE_PROC_NETWORK_PORT_LOOKUP_BY_UUID.
+func (l *Libvirt) NetworkPortLookupByUUID(OptNetwork Network, UUID UUID) (rPort NetworkPort, err error) {
+	var buf []byte
+
+	args := NetworkPortLookupByUUIDArgs {
+		OptNetwork: OptNetwork,
+		UUID: UUID,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(405, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Port: NetworkPort
+	_, err = dec.Decode(&rPort)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkPortCreateXML is the go wrapper for REMOTE_PROC_NETWORK_PORT_CREATE_XML.
+func (l *Libvirt) NetworkPortCreateXML(OptNetwork Network, XML string, Flags uint32) (rPort NetworkPort, err error) {
+	var buf []byte
+
+	args := NetworkPortCreateXMLArgs {
+		OptNetwork: OptNetwork,
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(406, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Port: NetworkPort
+	_, err = dec.Decode(&rPort)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkPortGetParameters is the go wrapper for REMOTE_PROC_NETWORK_PORT_GET_PARAMETERS.
+func (l *Libvirt) NetworkPortGetParameters(Port NetworkPort, Nparams int32, Flags uint32) (rParams []TypedParam, rNparams int32, err error) {
+	var buf []byte
+
+	args := NetworkPortGetParametersArgs {
+		Port: Port,
+		Nparams: Nparams,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(407, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Params: []TypedParam
+	_, err = dec.Decode(&rParams)
+	if err != nil {
+		return
+	}
+	// Nparams: int32
+	_, err = dec.Decode(&rNparams)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkPortSetParameters is the go wrapper for REMOTE_PROC_NETWORK_PORT_SET_PARAMETERS.
+func (l *Libvirt) NetworkPortSetParameters(Port NetworkPort, Params []TypedParam, Flags uint32) (err error) {
+	var buf []byte
+
+	args := NetworkPortSetParametersArgs {
+		Port: Port,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(408, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkPortGetXMLDesc is the go wrapper for REMOTE_PROC_NETWORK_PORT_GET_XML_DESC.
+func (l *Libvirt) NetworkPortGetXMLDesc(Port NetworkPort, Flags uint32) (rXML string, err error) {
+	var buf []byte
+
+	args := NetworkPortGetXMLDescArgs {
+		Port: Port,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(409, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// XML: string
+	_, err = dec.Decode(&rXML)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkPortDelete is the go wrapper for REMOTE_PROC_NETWORK_PORT_DELETE.
+func (l *Libvirt) NetworkPortDelete(Port NetworkPort, Flags uint32) (err error) {
+	var buf []byte
+
+	args := NetworkPortDeleteArgs {
+		Port: Port,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(410, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainCheckpointCreateXML is the go wrapper for REMOTE_PROC_DOMAIN_CHECKPOINT_CREATE_XML.
+func (l *Libvirt) DomainCheckpointCreateXML(Dom Domain, XMLDesc string, Flags uint32) (rCheckpoint DomainCheckpoint, err error) {
+	var buf []byte
+
+	args := DomainCheckpointCreateXMLArgs {
+		Dom: Dom,
+		XMLDesc: XMLDesc,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(411, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Checkpoint: DomainCheckpoint
+	_, err = dec.Decode(&rCheckpoint)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainCheckpointGetXMLDesc is the go wrapper for REMOTE_PROC_DOMAIN_CHECKPOINT_GET_XML_DESC.
+func (l *Libvirt) DomainCheckpointGetXMLDesc(Checkpoint DomainCheckpoint, Flags uint32) (rXML string, err error) {
+	var buf []byte
+
+	args := DomainCheckpointGetXMLDescArgs {
+		Checkpoint: Checkpoint,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(412, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// XML: string
+	_, err = dec.Decode(&rXML)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainListAllCheckpoints is the go wrapper for REMOTE_PROC_DOMAIN_LIST_ALL_CHECKPOINTS.
+func (l *Libvirt) DomainListAllCheckpoints(Dom Domain, NeedResults int32, Flags uint32) (rCheckpoints []DomainCheckpoint, rRet int32, err error) {
+	var buf []byte
+
+	args := DomainListAllCheckpointsArgs {
+		Dom: Dom,
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(413, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Checkpoints: []DomainCheckpoint
+	_, err = dec.Decode(&rCheckpoints)
+	if err != nil {
+		return
+	}
+	// Ret: int32
+	_, err = dec.Decode(&rRet)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainCheckpointListAllChildren is the go wrapper for REMOTE_PROC_DOMAIN_CHECKPOINT_LIST_ALL_CHILDREN.
+func (l *Libvirt) DomainCheckpointListAllChildren(Checkpoint DomainCheckpoint, NeedResults int32, Flags uint32) (rCheckpoints []DomainCheckpoint, rRet int32, err error) {
+	var buf []byte
+
+	args := DomainCheckpointListAllChildrenArgs {
+		Checkpoint: Checkpoint,
+		NeedResults: NeedResults,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(414, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Checkpoints: []DomainCheckpoint
+	_, err = dec.Decode(&rCheckpoints)
+	if err != nil {
+		return
+	}
+	// Ret: int32
+	_, err = dec.Decode(&rRet)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainCheckpointLookupByName is the go wrapper for REMOTE_PROC_DOMAIN_CHECKPOINT_LOOKUP_BY_NAME.
+func (l *Libvirt) DomainCheckpointLookupByName(Dom Domain, Name string, Flags uint32) (rCheckpoint DomainCheckpoint, err error) {
+	var buf []byte
+
+	args := DomainCheckpointLookupByNameArgs {
+		Dom: Dom,
+		Name: Name,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(415, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Checkpoint: DomainCheckpoint
+	_, err = dec.Decode(&rCheckpoint)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainCheckpointGetParent is the go wrapper for REMOTE_PROC_DOMAIN_CHECKPOINT_GET_PARENT.
+func (l *Libvirt) DomainCheckpointGetParent(Checkpoint DomainCheckpoint, Flags uint32) (rParent DomainCheckpoint, err error) {
+	var buf []byte
+
+	args := DomainCheckpointGetParentArgs {
+		Checkpoint: Checkpoint,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(416, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Parent: DomainCheckpoint
+	_, err = dec.Decode(&rParent)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainCheckpointDelete is the go wrapper for REMOTE_PROC_DOMAIN_CHECKPOINT_DELETE.
+func (l *Libvirt) DomainCheckpointDelete(Checkpoint DomainCheckpoint, Flags DomainCheckpointDeleteFlags) (err error) {
+	var buf []byte
+
+	args := DomainCheckpointDeleteArgs {
+		Checkpoint: Checkpoint,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(417, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainGetGuestInfo is the go wrapper for REMOTE_PROC_DOMAIN_GET_GUEST_INFO.
+func (l *Libvirt) DomainGetGuestInfo(Dom Domain, Types uint32, Flags uint32) (rParams []TypedParam, err error) {
+	var buf []byte
+
+	args := DomainGetGuestInfoArgs {
+		Dom: Dom,
+		Types: Types,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(418, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Params: []TypedParam
+	_, err = dec.Decode(&rParams)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// ConnectSetIdentity is the go wrapper for REMOTE_PROC_CONNECT_SET_IDENTITY.
+func (l *Libvirt) ConnectSetIdentity(Params []TypedParam, Flags uint32) (err error) {
+	var buf []byte
+
+	args := ConnectSetIdentityArgs {
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(419, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainAgentSetResponseTimeout is the go wrapper for REMOTE_PROC_DOMAIN_AGENT_SET_RESPONSE_TIMEOUT.
+func (l *Libvirt) DomainAgentSetResponseTimeout(Dom Domain, Timeout int32, Flags uint32) (rResult int32, err error) {
+	var buf []byte
+
+	args := DomainAgentSetResponseTimeoutArgs {
+		Dom: Dom,
+		Timeout: Timeout,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(420, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Result: int32
+	_, err = dec.Decode(&rResult)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainBackupBegin is the go wrapper for REMOTE_PROC_DOMAIN_BACKUP_BEGIN.
+func (l *Libvirt) DomainBackupBegin(Dom Domain, BackupXML string, CheckpointXML OptString, Flags DomainBackupBeginFlags) (err error) {
+	var buf []byte
+
+	args := DomainBackupBeginArgs {
+		Dom: Dom,
+		BackupXML: BackupXML,
+		CheckpointXML: CheckpointXML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(421, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainBackupGetXMLDesc is the go wrapper for REMOTE_PROC_DOMAIN_BACKUP_GET_XML_DESC.
+func (l *Libvirt) DomainBackupGetXMLDesc(Dom Domain, Flags uint32) (rXML string, err error) {
+	var buf []byte
+
+	args := DomainBackupGetXMLDescArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(422, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// XML: string
+	_, err = dec.Decode(&rXML)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainEventMemoryFailure is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_MEMORY_FAILURE.
+func (l *Libvirt) DomainEventMemoryFailure() (err error) {
+	var buf []byte
+
+
+	_, err = l.requestStream(423, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainAuthorizedSshKeysGet is the go wrapper for REMOTE_PROC_DOMAIN_AUTHORIZED_SSH_KEYS_GET.
+func (l *Libvirt) DomainAuthorizedSshKeysGet(Dom Domain, User string, Flags uint32) (rKeys []string, err error) {
+	var buf []byte
+
+	args := DomainAuthorizedSshKeysGetArgs {
+		Dom: Dom,
+		User: User,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(424, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Keys: []string
+	_, err = dec.Decode(&rKeys)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainAuthorizedSshKeysSet is the go wrapper for REMOTE_PROC_DOMAIN_AUTHORIZED_SSH_KEYS_SET.
+func (l *Libvirt) DomainAuthorizedSshKeysSet(Dom Domain, User string, Keys []string, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainAuthorizedSshKeysSetArgs {
+		Dom: Dom,
+		User: User,
+		Keys: Keys,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(425, constants.Program, buf, nil, nil)
+	if err != nil {
 		return
 	}
 

@@ -1,4 +1,4 @@
-// Copyright 2017 The go-libvirt Authors.
+// Copyright 2018 The go-libvirt Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,19 +18,11 @@
 // To regenerate, run 'go generate' in internal/lvgen.
 //
 
-// Package constants contains libvirt procedure identifiers and other enums and
-// constants.
 package constants
 
 // These are libvirt procedure numbers which correspond to each respective
 // API call between remote_internal driver and libvirtd. Each procedure is
-// identified by a unique number which *may change in any future libvirt
-// update*.
-//
-// Examples:
-//	REMOTE_PROC_CONNECT_OPEN = 1
-//	REMOTE_PROC_DOMAIN_DEFINE_XML = 11
-//	REMOTE_PROC_DOMAIN_MIGRATE_SET_MAX_SPEED = 207,
+// identified by a unique number.
 const (
 	// From enums:
 	// AuthNone is libvirt's REMOTE_AUTH_NONE
@@ -807,11 +799,95 @@ const (
 	ProcSecretEventValueChanged = 383
 	// ProcDomainSetVcpu is libvirt's REMOTE_PROC_DOMAIN_SET_VCPU
 	ProcDomainSetVcpu = 384
+	// ProcDomainEventBlockThreshold is libvirt's REMOTE_PROC_DOMAIN_EVENT_BLOCK_THRESHOLD
+	ProcDomainEventBlockThreshold = 385
+	// ProcDomainSetBlockThreshold is libvirt's REMOTE_PROC_DOMAIN_SET_BLOCK_THRESHOLD
+	ProcDomainSetBlockThreshold = 386
+	// ProcDomainMigrateGetMaxDowntime is libvirt's REMOTE_PROC_DOMAIN_MIGRATE_GET_MAX_DOWNTIME
+	ProcDomainMigrateGetMaxDowntime = 387
+	// ProcDomainManagedSaveGetXMLDesc is libvirt's REMOTE_PROC_DOMAIN_MANAGED_SAVE_GET_XML_DESC
+	ProcDomainManagedSaveGetXMLDesc = 388
+	// ProcDomainManagedSaveDefineXML is libvirt's REMOTE_PROC_DOMAIN_MANAGED_SAVE_DEFINE_XML
+	ProcDomainManagedSaveDefineXML = 389
+	// ProcDomainSetLifecycleAction is libvirt's REMOTE_PROC_DOMAIN_SET_LIFECYCLE_ACTION
+	ProcDomainSetLifecycleAction = 390
+	// ProcStoragePoolLookupByTargetPath is libvirt's REMOTE_PROC_STORAGE_POOL_LOOKUP_BY_TARGET_PATH
+	ProcStoragePoolLookupByTargetPath = 391
+	// ProcDomainDetachDeviceAlias is libvirt's REMOTE_PROC_DOMAIN_DETACH_DEVICE_ALIAS
+	ProcDomainDetachDeviceAlias = 392
+	// ProcConnectCompareHypervisorCPU is libvirt's REMOTE_PROC_CONNECT_COMPARE_HYPERVISOR_CPU
+	ProcConnectCompareHypervisorCPU = 393
+	// ProcConnectBaselineHypervisorCPU is libvirt's REMOTE_PROC_CONNECT_BASELINE_HYPERVISOR_CPU
+	ProcConnectBaselineHypervisorCPU = 394
+	// ProcNodeGetSevInfo is libvirt's REMOTE_PROC_NODE_GET_SEV_INFO
+	ProcNodeGetSevInfo = 395
+	// ProcDomainGetLaunchSecurityInfo is libvirt's REMOTE_PROC_DOMAIN_GET_LAUNCH_SECURITY_INFO
+	ProcDomainGetLaunchSecurityInfo = 396
+	// ProcNwfilterBindingLookupByPortDev is libvirt's REMOTE_PROC_NWFILTER_BINDING_LOOKUP_BY_PORT_DEV
+	ProcNwfilterBindingLookupByPortDev = 397
+	// ProcNwfilterBindingGetXMLDesc is libvirt's REMOTE_PROC_NWFILTER_BINDING_GET_XML_DESC
+	ProcNwfilterBindingGetXMLDesc = 398
+	// ProcNwfilterBindingCreateXML is libvirt's REMOTE_PROC_NWFILTER_BINDING_CREATE_XML
+	ProcNwfilterBindingCreateXML = 399
+	// ProcNwfilterBindingDelete is libvirt's REMOTE_PROC_NWFILTER_BINDING_DELETE
+	ProcNwfilterBindingDelete = 400
+	// ProcConnectListAllNwfilterBindings is libvirt's REMOTE_PROC_CONNECT_LIST_ALL_NWFILTER_BINDINGS
+	ProcConnectListAllNwfilterBindings = 401
+	// ProcDomainSetIothreadParams is libvirt's REMOTE_PROC_DOMAIN_SET_IOTHREAD_PARAMS
+	ProcDomainSetIothreadParams = 402
+	// ProcConnectGetStoragePoolCapabilities is libvirt's REMOTE_PROC_CONNECT_GET_STORAGE_POOL_CAPABILITIES
+	ProcConnectGetStoragePoolCapabilities = 403
+	// ProcNetworkListAllPorts is libvirt's REMOTE_PROC_NETWORK_LIST_ALL_PORTS
+	ProcNetworkListAllPorts = 404
+	// ProcNetworkPortLookupByUUID is libvirt's REMOTE_PROC_NETWORK_PORT_LOOKUP_BY_UUID
+	ProcNetworkPortLookupByUUID = 405
+	// ProcNetworkPortCreateXML is libvirt's REMOTE_PROC_NETWORK_PORT_CREATE_XML
+	ProcNetworkPortCreateXML = 406
+	// ProcNetworkPortGetParameters is libvirt's REMOTE_PROC_NETWORK_PORT_GET_PARAMETERS
+	ProcNetworkPortGetParameters = 407
+	// ProcNetworkPortSetParameters is libvirt's REMOTE_PROC_NETWORK_PORT_SET_PARAMETERS
+	ProcNetworkPortSetParameters = 408
+	// ProcNetworkPortGetXMLDesc is libvirt's REMOTE_PROC_NETWORK_PORT_GET_XML_DESC
+	ProcNetworkPortGetXMLDesc = 409
+	// ProcNetworkPortDelete is libvirt's REMOTE_PROC_NETWORK_PORT_DELETE
+	ProcNetworkPortDelete = 410
+	// ProcDomainCheckpointCreateXML is libvirt's REMOTE_PROC_DOMAIN_CHECKPOINT_CREATE_XML
+	ProcDomainCheckpointCreateXML = 411
+	// ProcDomainCheckpointGetXMLDesc is libvirt's REMOTE_PROC_DOMAIN_CHECKPOINT_GET_XML_DESC
+	ProcDomainCheckpointGetXMLDesc = 412
+	// ProcDomainListAllCheckpoints is libvirt's REMOTE_PROC_DOMAIN_LIST_ALL_CHECKPOINTS
+	ProcDomainListAllCheckpoints = 413
+	// ProcDomainCheckpointListAllChildren is libvirt's REMOTE_PROC_DOMAIN_CHECKPOINT_LIST_ALL_CHILDREN
+	ProcDomainCheckpointListAllChildren = 414
+	// ProcDomainCheckpointLookupByName is libvirt's REMOTE_PROC_DOMAIN_CHECKPOINT_LOOKUP_BY_NAME
+	ProcDomainCheckpointLookupByName = 415
+	// ProcDomainCheckpointGetParent is libvirt's REMOTE_PROC_DOMAIN_CHECKPOINT_GET_PARENT
+	ProcDomainCheckpointGetParent = 416
+	// ProcDomainCheckpointDelete is libvirt's REMOTE_PROC_DOMAIN_CHECKPOINT_DELETE
+	ProcDomainCheckpointDelete = 417
+	// ProcDomainGetGuestInfo is libvirt's REMOTE_PROC_DOMAIN_GET_GUEST_INFO
+	ProcDomainGetGuestInfo = 418
+	// ProcConnectSetIdentity is libvirt's REMOTE_PROC_CONNECT_SET_IDENTITY
+	ProcConnectSetIdentity = 419
+	// ProcDomainAgentSetResponseTimeout is libvirt's REMOTE_PROC_DOMAIN_AGENT_SET_RESPONSE_TIMEOUT
+	ProcDomainAgentSetResponseTimeout = 420
+	// ProcDomainBackupBegin is libvirt's REMOTE_PROC_DOMAIN_BACKUP_BEGIN
+	ProcDomainBackupBegin = 421
+	// ProcDomainBackupGetXMLDesc is libvirt's REMOTE_PROC_DOMAIN_BACKUP_GET_XML_DESC
+	ProcDomainBackupGetXMLDesc = 422
+	// ProcDomainEventMemoryFailure is libvirt's REMOTE_PROC_DOMAIN_EVENT_MEMORY_FAILURE
+	ProcDomainEventMemoryFailure = 423
+	// ProcDomainAuthorizedSshKeysGet is libvirt's REMOTE_PROC_DOMAIN_AUTHORIZED_SSH_KEYS_GET
+	ProcDomainAuthorizedSshKeysGet = 424
+	// ProcDomainAuthorizedSshKeysSet is libvirt's REMOTE_PROC_DOMAIN_AUTHORIZED_SSH_KEYS_SET
+	ProcDomainAuthorizedSshKeysSet = 425
 
 
 	// From consts:
 	// StringMax is libvirt's REMOTE_STRING_MAX
 	StringMax = 4194304
+	// ConnectIdentityParamsMax is libvirt's REMOTE_CONNECT_IDENTITY_PARAMS_MAX
+	ConnectIdentityParamsMax = 20
 	// DomainListMax is libvirt's REMOTE_DOMAIN_LIST_MAX
 	DomainListMax = 16384
 	// CpumapMax is libvirt's REMOTE_CPUMAP_MAX
@@ -826,10 +902,12 @@ const (
 	MigrateCookieMax = 4194304
 	// NetworkListMax is libvirt's REMOTE_NETWORK_LIST_MAX
 	NetworkListMax = 16384
+	// NetworkPortListMax is libvirt's REMOTE_NETWORK_PORT_LIST_MAX
+	NetworkPortListMax = 16384
 	// InterfaceListMax is libvirt's REMOTE_INTERFACE_LIST_MAX
 	InterfaceListMax = 16384
 	// StoragePoolListMax is libvirt's REMOTE_STORAGE_POOL_LIST_MAX
-	StoragePoolListMax = 4096
+	StoragePoolListMax = 16384
 	// StorageVolListMax is libvirt's REMOTE_STORAGE_VOL_LIST_MAX
 	StorageVolListMax = 16384
 	// NodeDeviceListMax is libvirt's REMOTE_NODE_DEVICE_LIST_MAX
@@ -837,7 +915,9 @@ const (
 	// NodeDeviceCapsListMax is libvirt's REMOTE_NODE_DEVICE_CAPS_LIST_MAX
 	NodeDeviceCapsListMax = 65536
 	// NwfilterListMax is libvirt's REMOTE_NWFILTER_LIST_MAX
-	NwfilterListMax = 1024
+	NwfilterListMax = 16384
+	// NwfilterBindingListMax is libvirt's REMOTE_NWFILTER_BINDING_LIST_MAX
+	NwfilterBindingListMax = 16384
 	// DomainSchedulerParametersMax is libvirt's REMOTE_DOMAIN_SCHEDULER_PARAMETERS_MAX
 	DomainSchedulerParametersMax = 16
 	// DomainBlkioParametersMax is libvirt's REMOTE_DOMAIN_BLKIO_PARAMETERS_MAX
@@ -866,8 +946,10 @@ const (
 	AuthTypeListMax = 20
 	// DomainMemoryStatsMax is libvirt's REMOTE_DOMAIN_MEMORY_STATS_MAX
 	DomainMemoryStatsMax = 1024
+	// DomainCheckpointListMax is libvirt's REMOTE_DOMAIN_CHECKPOINT_LIST_MAX
+	DomainCheckpointListMax = 16384
 	// DomainSnapshotListMax is libvirt's REMOTE_DOMAIN_SNAPSHOT_LIST_MAX
-	DomainSnapshotListMax = 1024
+	DomainSnapshotListMax = 16384
 	// DomainBlockPeekBufferMax is libvirt's REMOTE_DOMAIN_BLOCK_PEEK_BUFFER_MAX
 	DomainBlockPeekBufferMax = 4194304
 	// DomainMemoryPeekBufferMax is libvirt's REMOTE_DOMAIN_MEMORY_PEEK_BUFFER_MAX
@@ -903,7 +985,7 @@ const (
 	// NetworkDhcpLeasesMax is libvirt's REMOTE_NETWORK_DHCP_LEASES_MAX
 	NetworkDhcpLeasesMax = 65536
 	// ConnectGetAllDomainStatsMax is libvirt's REMOTE_CONNECT_GET_ALL_DOMAIN_STATS_MAX
-	ConnectGetAllDomainStatsMax = 4096
+	ConnectGetAllDomainStatsMax = 262144
 	// DomainEventTunableMax is libvirt's REMOTE_DOMAIN_EVENT_TUNABLE_MAX
 	DomainEventTunableMax = 2048
 	// DomainFsinfoMax is libvirt's REMOTE_DOMAIN_FSINFO_MAX
@@ -916,6 +998,18 @@ const (
 	DomainIPAddrMax = 2048
 	// DomainGuestVcpuParamsMax is libvirt's REMOTE_DOMAIN_GUEST_VCPU_PARAMS_MAX
 	DomainGuestVcpuParamsMax = 64
+	// DomainIothreadParamsMax is libvirt's REMOTE_DOMAIN_IOTHREAD_PARAMS_MAX
+	DomainIothreadParamsMax = 64
+	// NodeSevInfoMax is libvirt's REMOTE_NODE_SEV_INFO_MAX
+	NodeSevInfoMax = 64
+	// DomainLaunchSecurityInfoParamsMax is libvirt's REMOTE_DOMAIN_LAUNCH_SECURITY_INFO_PARAMS_MAX
+	DomainLaunchSecurityInfoParamsMax = 64
+	// DomainGuestInfoParamsMax is libvirt's REMOTE_DOMAIN_GUEST_INFO_PARAMS_MAX
+	DomainGuestInfoParamsMax = 2048
+	// NetworkPortParametersMax is libvirt's REMOTE_NETWORK_PORT_PARAMETERS_MAX
+	NetworkPortParametersMax = 16
+	// DomainAuthorizedSshKeysMax is libvirt's REMOTE_DOMAIN_AUTHORIZED_SSH_KEYS_MAX
+	DomainAuthorizedSshKeysMax = 2048
 	// DomainEventGraphicsIdentityMax is libvirt's REMOTE_DOMAIN_EVENT_GRAPHICS_IDENTITY_MAX
 	DomainEventGraphicsIdentityMax = 20
 	// Program is libvirt's REMOTE_PROGRAM

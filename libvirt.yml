@@ -6,7 +6,7 @@
 GENERATOR:
     PackageName: libvirt
     PackageLicense: |
-        Copyright 2017 The go-libvirt Authors.
+        Copyright 2018 The go-libvirt Authors.
 
         Licensed under the Apache License, Version 2.0 (the "License");
         you may not use this file except in compliance with the License.
@@ -54,8 +54,9 @@ TRANSLATOR:
             - {action: replace, from: "Vcpu([A-Z]|$)", to: "VCPU$1"}
             - {action: replace, from: "Xml([A-Z]|$)", to: "XML$1"}
             - {action: replace, from: "Rpc([A-Z]|$)", to: "RPC$1"}
-            - {action: replace, from: "Http([A-Z]|$)", to: "HTTP$1"}
             - {action: replace, from: "Ssh([A-Z]|$)", to: "SSH$1"}
+            - {action: replace, from: "Http([A-Z]|$)", to: "HTTP$1"}
+            - {transform: unexport, from: "^(Err|From|War)"}
         const:
             - {action: accept, from: "^VIR_"}
             # Special case to prevent a collision with a type:

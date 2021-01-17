@@ -25,12 +25,23 @@ package constants
 // identified by a unique number.
 const (
 	// From enums:
-{{range .EnumVals}}	// {{.Name}} is libvirt's {{.LVName}}
-	{{.Name}} = {{.Val}}
-{{end}}
+	// QEMUProcDomainMonitorCommand is libvirt's QEMU_PROC_DOMAIN_MONITOR_COMMAND
+	QEMUProcDomainMonitorCommand = 1
+	// QEMUProcDomainAttach is libvirt's QEMU_PROC_DOMAIN_ATTACH
+	QEMUProcDomainAttach = 2
+	// QEMUProcDomainAgentCommand is libvirt's QEMU_PROC_DOMAIN_AGENT_COMMAND
+	QEMUProcDomainAgentCommand = 3
+	// QEMUProcConnectDomainMonitorEventRegister is libvirt's QEMU_PROC_CONNECT_DOMAIN_MONITOR_EVENT_REGISTER
+	QEMUProcConnectDomainMonitorEventRegister = 4
+	// QEMUProcConnectDomainMonitorEventDeregister is libvirt's QEMU_PROC_CONNECT_DOMAIN_MONITOR_EVENT_DEREGISTER
+	QEMUProcConnectDomainMonitorEventDeregister = 5
+	// QEMUProcDomainMonitorEvent is libvirt's QEMU_PROC_DOMAIN_MONITOR_EVENT
+	QEMUProcDomainMonitorEvent = 6
+
 
 	// From consts:
-{{range .Consts}}	// {{.Name}} is libvirt's {{.LVName}}
-	{{.Name}} = {{.Val}}
-{{end -}}
+	// QEMUProgram is libvirt's QEMU_PROGRAM
+	QEMUProgram = 0x20008087
+	// QEMUProtocolVersion is libvirt's QEMU_PROTOCOL_VERSION
+	QEMUProtocolVersion = 1
 )

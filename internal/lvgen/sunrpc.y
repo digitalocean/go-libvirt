@@ -56,6 +56,8 @@ import (
 %token IDENTIFIER CONSTANT ERROR
 // RPCL additional tokens:
 %token PROGRAM VERSION
+%token METADATACOMMENT
+%token PROCIDENTIFIER
 
 %%
 
@@ -106,6 +108,24 @@ enum_value
             return 1
         }
     }
+    | enum_proc_ident '=' value {
+        err := AddProcEnumVal($1.val, $3.val, "")
+        if err != nil {
+            yylex.Error(err.Error())
+            return 1
+        }
+    }
+    | METADATACOMMENT enum_proc_ident '=' value {
+        err := AddProcEnumVal($2.val, $4.val, $1.val)
+        if err != nil {
+            yylex.Error(err.Error())
+            return 1
+        }
+    }
+    ;
+
+enum_proc_ident
+    : PROCIDENTIFIER
     ;
 
 enum_ident

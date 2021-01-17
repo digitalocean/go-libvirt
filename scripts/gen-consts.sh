@@ -26,9 +26,11 @@ if ! which goyacc > /dev/null; then
     fi
 fi
 
+# Set DIR to the absolute path to the scripts/ directory.
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 # Temporarily symlink the libvirt sources to a subdirectory because c-for-go
 # lacks a mechanism for us to pass it a search path for header files.
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 LVDIR=lv_source
 ln -sF ${LIBVIRT_SOURCE} ${LVDIR}
 if ! c-for-go -nostamp -nocgo -ccincl libvirt.yml; then

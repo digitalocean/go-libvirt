@@ -1,18 +1,25 @@
 language: go
 os: linux
-dist: trusty
+dist: bionic
 sudo: require
 
+cache:
+  directories:
+    - $HOME/.ccache
+
 go:
-  - 1.9
+  - "1.15"
 
 env:
-  - LIBVIRT=1.2.12 EXT=gz
-  - LIBVIRT=2.3.0  EXT=xz
-  - LIBVIRT=3.1.0  EXT=xz
+  global:
+    - CCACHE_TEMPDIR=/tmp/.ccache-temp
+  matrix:
+    - LIBVIRT=2.3.0  EXT=xz
+    - LIBVIRT=3.1.0  EXT=xz
+    - LIBVIRT=5.1.0  EXT=xz
 
 before_install:
-  - go get github.com/golang/lint/golint
+  - go get golang.org/x/lint/golint
   - go get golang.org/x/tools/cmd/goyacc
 
 install:
@@ -24,13 +31,16 @@ install:
   - curl -O -s https://libvirt.org/sources/libvirt-${LIBVIRT}.tar.${EXT}
   - tar -C /usr/src -xf libvirt-${LIBVIRT}.tar.${EXT}
   - pushd /usr/src/libvirt-${LIBVIRT}
+  - ccache --show-stats
   - |
+        env PATH=/usr/lib/ccache:$PATH \
         ./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc \
                     --without-polkit \
                     --without-esx --without-vbox --without-xen --without-libxl --without-lxc \
                     --with-qemu
   - make
   - sudo make install
+  - ccache --show-stats
   - popd
   - sudo libvirtd -d -l -f libvirtd.conf
   - sudo virtlogd -d || true

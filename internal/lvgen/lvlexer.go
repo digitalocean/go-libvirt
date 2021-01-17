@@ -137,7 +137,7 @@ func (l *Lexer) Error(s string) {
 // the items channel, and sets the state to nil, which stops the lexer's state
 // machine.
 func (l *Lexer) errorf(format string, args ...interface{}) stateFn {
-	l.items <- item{ERROR, fmt.Sprintf(format, args), l.line, l.column}
+	l.items <- item{ERROR, fmt.Sprintf(format, args...), l.line, l.column}
 	return nil
 }
 
@@ -199,6 +199,19 @@ func (l *Lexer) acceptRun(valid string) {
 	l.backup()
 }
 
+// procIdent checks whether an identifier matches the pattern for a procedure
+// enum.
+func procIdent(ident string) bool {
+	// The pattern we're looking for is "<PROGRAM>_PROC_<NAME>", like
+	// "REMOTE_PROC_DOMAIN_OPEN_CONSOLE"
+	if ix := strings.Index(ident, "_PROC_"); ix != -1 {
+		if strings.Index(ident[:ix], "_") == -1 {
+			return true
+		}
+	}
+	return false
+}
+
 // keyword checks whether the current lexeme is a keyword or not. If so it
 // returns the keyword's token id, otherwise it returns IDENTIFIER.
 func (l *Lexer) keyword() int {
@@ -206,6 +219,9 @@ func (l *Lexer) keyword() int {
 	tok, ok := keywords[ident]
 	if ok == true {
 		return int(tok)
+	}
+	if procIdent(ident) {
+		return PROCIDENTIFIER
 	}
 	return IDENTIFIER
 }
@@ -259,12 +275,19 @@ func lexText(l *Lexer) stateFn {
 
 // lexBlockComment is used when we find a comment marker '/*' in the input.
 func lexBlockComment(l *Lexer) stateFn {
+	// Double star is used only at the start of metadata comments
+	metadataComment := strings.HasPrefix(l.input[l.pos:], "/**")
 	for {
 		if strings.HasPrefix(l.input[l.pos:], "*/") {
-			// Found the end. Advance past the '*/' and discard the comment body.
+			// Found the end. Advance past the '*/' and discard the comment body
+			// unless it's a metadata comment
 			l.next()
 			l.next()
-			l.ignore()
+			if metadataComment {
+				l.emit(METADATACOMMENT)
+			} else {
+				l.ignore()
+			}
 			return lexText
 		}
 		if l.next() == eof {

@@ -17,15 +17,16 @@
 package libvirt
 
 import (
+	"bytes"
 	"encoding/xml"
 	"net"
 	"sync"
 	"testing"
 	"time"
-
-	"github.com/digitalocean/go-libvirt/internal/constants"
 )
 
+// In order for this test to work, libvirtd must be running and listening for
+// tcp connections.
 const testAddr = "127.0.0.1:16509"
 
 func TestConnectIntegration(t *testing.T) {
@@ -33,6 +34,15 @@ func TestConnectIntegration(t *testing.T) {
 	defer l.Disconnect()
 
 	if err := l.Connect(); err != nil {
+		t.Error(err)
+	}
+}
+
+func TestConnectToURIIntegration(t *testing.T) {
+	l := New(testConn(t))
+	defer l.Disconnect()
+
+	if err := l.ConnectToURI(TestDefault); err != nil {
 		t.Error(err)
 	}
 }
@@ -105,7 +115,7 @@ func TestSecretsIntegration(t *testing.T) {
 	}
 
 	// 19fdc2f2-fa64-46f3-bacf-42a8aafca6dd
-	wantUUID := [constants.UUIDSize]byte{
+	wantUUID := [UUIDBuflen]byte{
 		0x19, 0xfd, 0xc2, 0xf2, 0xfa, 0x64, 0x46, 0xf3,
 		0xba, 0xcf, 0x42, 0xa8, 0xaa, 0xfc, 0xa6, 0xdd,
 	}
@@ -249,6 +259,58 @@ func TestXMLIntegration(t *testing.T) {
 	var v interface{}
 	if err := xml.Unmarshal(data, &v); err != nil {
 		t.Error(err)
+	}
+}
+
+func TestVolumeUploadDownloadIntegration(t *testing.T) {
+	testdata := []byte("Hello, world!")
+	l := New(testConn(t))
+
+	if err := l.Connect(); err != nil {
+		t.Error(err)
+	}
+	defer l.Disconnect()
+
+	pool, err := l.StoragePool("test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var volObj struct {
+		XMLName  xml.Name `xml:"volume"`
+		Name     string   `xml:"name"`
+		Capacity struct {
+			Value uint64 `xml:",chardata"`
+		} `xml:"capacity"`
+		Target struct {
+			Format struct {
+				Type string `xml:"type,attr"`
+			} `xml:"format"`
+		} `xml:"target"`
+	}
+	volObj.Name = "testvol"
+	volObj.Capacity.Value = uint64(len(testdata))
+	volObj.Target.Format.Type = "raw"
+	xmlVol, err := xml.Marshal(volObj)
+	if err != nil {
+		t.Fatal(err)
+	}
+	vol, err := l.StorageVolCreateXML(pool, string(xmlVol), 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.StorageVolDelete(vol, 0)
+	err = l.StorageVolUpload(vol, bytes.NewBuffer(testdata), 0, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var buf bytes.Buffer
+	err = l.StorageVolDownload(vol, &buf, 0, 0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if bytes.Compare(testdata, buf.Bytes()) != 0 {
+		t.Fatal("download not what we uploaded")
 	}
 }
 

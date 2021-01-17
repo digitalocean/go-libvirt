@@ -16,17 +16,20 @@ package libvirt
 
 import (
 	"bytes"
+	"fmt"
 	"sync"
 	"testing"
 
-	"github.com/davecgh/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/internal/constants"
+	"github.com/digitalocean/go-libvirt/internal/event"
+	xdr "github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/libvirttest"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
 	// dc229f87d4de47198cfd2e21c6105b01
-	testUUID = [constants.UUIDSize]byte{
+	testUUID = [UUIDBuflen]byte{
 		0xdc, 0x22, 0x9f, 0x87, 0xd4, 0xde, 0x47, 0x19,
 		0x8c, 0xfd, 0x2e, 0x21, 0xc6, 0x10, 0x5b, 0x01,
 	}
@@ -88,8 +91,20 @@ var (
 		0x63, 0x6f, 0x6d, 0x6d, 0x69, 0x74, 0x22, 0x7d,
 	}
 
+	testLifeCycle = []byte{
+		0x00, 0x00, 0x00, 0x01, // callback id
+
+		// domain name ("test")
+		0x00, 0x00, 0x00, 0x04, 0x74, 0x65, 0x73, 0x74,
+
+		// event data
+		0x00, 0x00, 0x00, 0x50, 0xad, 0xf7, 0x3f, 0xbe, 0xca, 0x48, 0xac, 0x95,
+		0x13, 0x8a, 0x31, 0xf4, 0xfe, 0x03, 0x2a, 0xff, 0xff, 0xff, 0xff, 0x00,
+		0x00, 0x00, 0x05, 0x00, 0x00, 0x00, 0x01,
+	}
+
 	testErrorMessage = []byte{
-		0x00, 0x00, 0x00, 0x37, // code
+		0x00, 0x00, 0x00, 0x37, // code (55, errOperationInvalid)
 		0x00, 0x00, 0x00, 0x0a, // domain id
 
 		// message ("Requested operation is not valid: domain is not running")
@@ -104,6 +119,25 @@ var (
 
 		// error level
 		0x00, 0x00, 0x00, 0x02,
+	}
+
+	testErrorNotFoundMessage = []byte{
+		0x00, 0x00, 0x00, 0x2a, // code (42 errDoDmain)
+		0x00, 0x00, 0x00, 0x0a, // domain id
+
+		// message
+		0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x38,
+		0x44, 0x6f, 0x6d, 0x61, 0x69, 0x6e, 0x20, 0x6e,
+		0x6f, 0x74, 0x20, 0x66, 0x6f, 0x75, 0x6e, 0x64,
+		0x3a, 0x20, 0x6e, 0x6f, 0x20, 0x64, 0x6f, 0x6d,
+		0x61, 0x69, 0x6e, 0x20, 0x77, 0x69, 0x74, 0x68,
+		0x20, 0x6d, 0x61, 0x74, 0x63, 0x68, 0x69, 0x6e,
+		0x67, 0x20, 0x6e, 0x61, 0x6d, 0x65, 0x20, 0x27,
+		0x74, 0x65, 0x73, 0x74, 0x2d, 0x2d, 0x2d, 0x27,
+		0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
+
+		// error level
+		0x00, 0x00, 0x00, 0x01,
 	}
 
 	testDomain = &Domain{
@@ -157,12 +191,13 @@ func TestPktLen(t *testing.T) {
 }
 
 func TestDecodeEvent(t *testing.T) {
-	e, err := decodeEvent(testEvent)
+	var e DomainEvent
+	err := eventDecoder(testEvent, &e)
 	if err != nil {
 		t.Error(err)
 	}
 
-	expCbID := uint32(1)
+	expCbID := int32(1)
 	if e.CallbackID != expCbID {
 		t.Errorf("expected callback id %d, got %d", expCbID, e.CallbackID)
 	}
@@ -204,11 +239,24 @@ func TestDecodeEvent(t *testing.T) {
 }
 
 func TestDecodeError(t *testing.T) {
-	expected := "Requested operation is not valid: domain is not running"
+	expectedMsg := "Requested operation is not valid: domain is not running"
+	expectedCode := errOperationInvalid
 
 	err := decodeError(testErrorMessage)
-	if err.Error() != expected {
-		t.Errorf("expected error %s, got %s", expected, err.Error())
+	e := err.(LibvirtError)
+	if e.Message != expectedMsg {
+		t.Errorf("expected error message %s, got %s", expectedMsg, err.Error())
+	}
+	if e.Code != uint32(expectedCode) {
+		t.Errorf("expected code %d, got %d", expectedCode, e.Code)
+	}
+}
+
+func TestErrNotFound(t *testing.T) {
+	err := decodeError(testErrorNotFoundMessage)
+	ok := IsNotFound(err)
+	if !ok {
+		t.Errorf("expected true, got %t", ok)
 	}
 }
 
@@ -219,7 +267,7 @@ func TestEncode(t *testing.T) {
 		t.Error(err)
 	}
 
-	dec := xdr.NewDecoder(bytes.NewReader(buf.Bytes()))
+	dec := xdr.NewDecoder(bytes.NewReader(buf))
 	res, _, err := dec.DecodeString()
 	if err != nil {
 		t.Error(err)
@@ -232,8 +280,8 @@ func TestEncode(t *testing.T) {
 
 func TestRegister(t *testing.T) {
 	l := &Libvirt{}
-	l.callbacks = make(map[uint32]chan response)
-	id := uint32(1)
+	l.callbacks = make(map[int32]chan response)
+	id := int32(1)
 	c := make(chan response)
 
 	l.register(id, c)
@@ -243,10 +291,10 @@ func TestRegister(t *testing.T) {
 }
 
 func TestDeregister(t *testing.T) {
-	id := uint32(1)
+	id := int32(1)
 
 	l := &Libvirt{}
-	l.callbacks = map[uint32]chan response{
+	l.callbacks = map[int32]chan response{
 		id: make(chan response),
 	}
 
@@ -257,28 +305,35 @@ func TestDeregister(t *testing.T) {
 }
 
 func TestAddStream(t *testing.T) {
-	id := uint32(1)
-	c := make(chan *DomainEvent)
+	id := int32(1)
 
 	l := &Libvirt{}
-	l.events = make(map[uint32]chan *DomainEvent)
+	l.events = make(map[int32]*event.Stream)
 
-	l.addStream(id, c)
+	stream := event.NewStream(0, id)
+	defer stream.Shutdown()
+
+	l.addStream(stream)
 	if _, ok := l.events[id]; !ok {
 		t.Error("expected event stream to exist")
 	}
 }
 
 func TestRemoveStream(t *testing.T) {
-	id := uint32(1)
+	id := int32(1)
 
 	conn := libvirttest.New()
 	l := New(conn)
-	l.events[id] = make(chan *DomainEvent)
 
+	stream := event.NewStream(constants.QEMUProgram, id)
+	defer stream.Shutdown()
+
+	l.events[id] = stream
+
+	fmt.Println("removing stream")
 	err := l.removeStream(id)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	if _, ok := l.events[id]; ok {
@@ -287,24 +342,31 @@ func TestRemoveStream(t *testing.T) {
 }
 
 func TestStream(t *testing.T) {
-	id := uint32(1)
-	c := make(chan *DomainEvent, 1)
+	id := int32(1)
+	stream := event.NewStream(constants.Program, 1)
+	defer stream.Shutdown()
 
 	l := &Libvirt{}
-	l.events = map[uint32]chan *DomainEvent{
-		id: c,
+	l.events = map[int32]*event.Stream{
+		id: stream,
 	}
 
-	l.stream(testEvent)
-	e := <-c
+	var streamEvent DomainEvent
+	err := eventDecoder(testEvent, &streamEvent)
+	if err != nil { // event was malformed, drop.
+		t.Error(err)
+	}
 
-	if e.Event != "BLOCK_JOB_COMPLETED" {
+	l.stream(streamEvent)
+	e := <-stream.Recv()
+
+	if e.(DomainEvent).Event != "BLOCK_JOB_COMPLETED" {
 		t.Error("expected event")
 	}
 }
 
 func TestSerial(t *testing.T) {
-	count := uint32(10)
+	count := int32(10)
 	l := &Libvirt{}
 
 	var wg sync.WaitGroup
@@ -318,7 +380,7 @@ func TestSerial(t *testing.T) {
 
 	wg.Wait()
 
-	expected := count + uint32(1)
+	expected := count + int32(1)
 	actual := l.serial()
 	if expected != actual {
 		t.Errorf("expected serial to be %d, got %d", expected, actual)
@@ -326,7 +388,7 @@ func TestSerial(t *testing.T) {
 }
 
 func TestLookup(t *testing.T) {
-	id := uint32(1)
+	id := int32(1)
 	c := make(chan response)
 	name := "test"
 
@@ -343,4 +405,91 @@ func TestLookup(t *testing.T) {
 	if d.Name != name {
 		t.Errorf("expected domain %s, got %s", name, d.Name)
 	}
+
+	// The callback should now be deregistered.
+	if _, ok := l.callbacks[id]; ok {
+		t.Error("expected callback to deregister")
+	}
+}
+
+func TestDeregisterAll(t *testing.T) {
+	conn := libvirttest.New()
+	c1 := make(chan response)
+	c2 := make(chan response)
+	l := New(conn)
+	if len(l.callbacks) != 0 {
+		t.Error("expected callback map to be empty at test start")
+	}
+	l.register(1, c1)
+	l.register(2, c2)
+	if len(l.callbacks) != 2 {
+		t.Error("expected callback map to have 2 entries after inserts")
+	}
+	l.deregisterAll()
+	if len(l.callbacks) != 0 {
+		t.Error("expected callback map to be empty after deregisterAll")
+	}
+}
+
+// TestRouteDeadlock ensures that go-libvirt doesn't hang when trying to send
+// both an event and a response (to a request) at the same time.
+//
+// Events are inherently asynchronous - the client may not be ready to receive
+// an event when it arrives. We don't want that to prevent go-libvirt from
+// continuing to receive responses to outstanding requests. This test checks for
+// deadlocks where the client doesn't immediately consume incoming events.
+func TestRouteDeadlock(t *testing.T) {
+	id := int32(1)
+	rch := make(chan response, 1)
+
+	l := &Libvirt{
+		callbacks: map[int32]chan response{
+			id: rch,
+		},
+		events: make(map[int32]*event.Stream),
+	}
+	stream := event.NewStream(constants.Program, id)
+
+	l.addStream(stream)
+
+	respHeader := &header{constants.Program, 0, 0, 0, id, StatusOK}
+	eventHeader := &header{constants.Program, 0, constants.ProcDomainEventCallbackLifecycle, 0, 0, StatusOK}
+
+	send := func(respCount, evCount int) {
+		// Send the events first
+		for i := 0; i < evCount; i++ {
+			l.route(eventHeader, testLifeCycle)
+		}
+		// Now send the requests.
+		for i := 0; i < respCount; i++ {
+			l.route(respHeader, []byte{})
+		}
+	}
+
+	cases := []struct{ rCount, eCount int }{
+		{2, 0},
+		{0, 2},
+		{1, 1},
+		{2, 2},
+		{50, 50},
+	}
+
+	for _, tc := range cases {
+		fmt.Printf("testing %d responses and %d events\n", tc.rCount, tc.eCount)
+		go send(tc.rCount, tc.eCount)
+
+		for i := 0; i < tc.rCount; i++ {
+			r := <-rch
+			assert.Equal(t, r.Status, uint32(StatusOK))
+		}
+		for i := 0; i < tc.eCount; i++ {
+			e := <-stream.Recv()
+			fmt.Printf("event %v/%v received\n", i, len(cases))
+			assert.Equal(t, "test", e.(*DomainEventCallbackLifecycleMsg).Msg.Dom.Name)
+		}
+	}
+
+	// finally verify that canceling the context doesn't cause a deadlock.
+	fmt.Println("checking for deadlock after context cancellation")
+	send(0, 50)
 }

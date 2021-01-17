@@ -1,4 +1,4 @@
-// Copyright 2016 The go-libvirt Authors.
+// Copyright 2018 The go-libvirt Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,12 +15,12 @@
 package libvirt
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/digitalocean/go-libvirt/internal/constants"
 	"github.com/digitalocean/go-libvirt/libvirttest"
 )
 
@@ -31,6 +31,42 @@ func TestConnect(t *testing.T) {
 	err := l.Connect()
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestLibvirt_ConnectToURI(t *testing.T) {
+	type args struct {
+		uri ConnectURI
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "connect to test:///default socket",
+			args: args{
+				uri: TestDefault,
+			},
+			wantErr: false,
+		},
+		{
+			name: "connect to qemu:///session socket",
+			args: args{
+				uri: QEMUSession,
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			conn := libvirttest.New()
+			libvirtConn := New(conn)
+
+			if err := libvirtConn.ConnectToURI(tt.args.uri); (err != nil) != tt.wantErr {
+				t.Errorf("ConnectToURI() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
 	}
 }
 
@@ -57,27 +93,14 @@ func TestMigrate(t *testing.T) {
 		MigrateAutoConverge |
 		MigrateNonSharedDisk
 
-	if err := l.Migrate("test", "qemu+tcp://foo/system", flags); err != nil {
-		t.Fatalf("unexpected live migration error: %v", err)
+	dom, err := l.DomainLookupByName("test")
+	if err != nil {
+		t.Fatalf("failed to lookup domain: %v", err)
 	}
-}
-
-func TestMigrateInvalidDest(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
-
-	var flags DomainMigrateFlags
-	flags = MigrateLive |
-		MigratePeer2peer |
-		MigratePersistDest |
-		MigrateChangeProtection |
-		MigrateAbortOnError |
-		MigrateAutoConverge |
-		MigrateNonSharedDisk
-
-	dest := ":$'"
-	if err := l.Migrate("test", dest, flags); err == nil {
-		t.Fatalf("expected invalid dest uri %q to fail", dest)
+	dconnuri := []string{"qemu+tcp://foo/system"}
+	if _, err := l.DomainMigratePerform3Params(dom, dconnuri,
+		[]TypedParam{}, []byte{}, flags); err != nil {
+		t.Fatalf("unexpected live migration error: %v", err)
 	}
 }
 
@@ -85,7 +108,12 @@ func TestMigrateSetMaxSpeed(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	if err := l.MigrateSetMaxSpeed("test", 100); err != nil {
+	dom, err := l.DomainLookupByName("test")
+	if err != nil {
+		t.Fatalf("failed to lookup domain: %v", err)
+	}
+
+	if err := l.DomainMigrateSetMaxSpeed(dom, 100, 0); err != nil {
 		t.Fatalf("unexpected error setting max speed for migrate: %v", err)
 	}
 }
@@ -138,11 +166,11 @@ func TestDomainMemoryStats(t *testing.T) {
 	l := New(conn)
 
 	wantDomainMemoryStats := []DomainMemoryStat{
-		DomainMemoryStat{
+		{
 			Tag: 6,
 			Val: 1048576,
 		},
-		DomainMemoryStat{
+		{
 			Tag: 7,
 			Val: 91272,
 		},
@@ -157,8 +185,6 @@ func TestDomainMemoryStats(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
-	t.Log(gotDomainMemoryStats)
 
 	if len(gotDomainMemoryStats) == 0 {
 		t.Error("No memory stats returned!")
@@ -176,17 +202,20 @@ func TestEvents(t *testing.T) {
 	l := New(conn)
 	done := make(chan struct{})
 
-	stream, err := l.Events("test")
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	stream, err := l.SubscribeQEMUEvents(ctx, "test")
 	if err != nil {
 		t.Error(err)
 	}
 
 	go func() {
 		var e DomainEvent
+
 		select {
 		case e = <-stream:
 		case <-time.After(time.Second * 5):
-			t.Error("expected event, received timeout")
+			t.Fatal("expected event, received timeout")
 		}
 
 		result := struct {
@@ -286,7 +315,7 @@ func TestSecrets(t *testing.T) {
 	}
 
 	// 19fdc2f2-fa64-46f3-bacf-42a8aafca6dd
-	wantUUID := [constants.UUIDSize]byte{
+	wantUUID := [UUIDBuflen]byte{
 		0x19, 0xfd, 0xc2, 0xf2, 0xfa, 0x64, 0x46, 0xf3,
 		0xba, 0xcf, 0x42, 0xa8, 0xaa, 0xfc, 0xa6, 0xdd,
 	}
@@ -311,7 +340,7 @@ func TestStoragePool(t *testing.T) {
 	}
 
 	// bb30a11c-0846-4827-8bba-3e6b5cf1b65f
-	wantUUID := [constants.UUIDSize]byte{
+	wantUUID := [UUIDBuflen]byte{
 		0xbb, 0x30, 0xa1, 0x1c, 0x08, 0x46, 0x48, 0x27,
 		0x8b, 0xba, 0x3e, 0x6b, 0x5c, 0xf1, 0xb6, 0x5f,
 	}
@@ -343,7 +372,7 @@ func TestStoragePools(t *testing.T) {
 	}
 
 	// bb30a11c-0846-4827-8bba-3e6b5cf1b65f
-	wantUUID := [constants.UUIDSize]byte{
+	wantUUID := [UUIDBuflen]byte{
 		0xbb, 0x30, 0xa1, 0x1c, 0x08, 0x46, 0x48, 0x27,
 		0x8b, 0xba, 0x3e, 0x6b, 0x5c, 0xf1, 0xb6, 0x5f,
 	}
@@ -477,5 +506,43 @@ func TestGetBlockIOTune(t *testing.T) {
 	lim := BlockLimit{"write_bytes_sec", 500000}
 	if limits[2] != lim {
 		t.Fatalf("unexpected result in limits list: %v", limits[2])
+	}
+}
+
+// ConnectGetAllDomainStats is a good test, since its return values include an
+// array of TypedParams embedded in a struct.
+func TestConnectGetAllDomainStats(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	doms, _, err := l.ConnectListAllDomains(1, 0)
+	if err != nil {
+		t.Fatalf("unexpected error listing all domains")
+	}
+
+	stats, err := l.ConnectGetAllDomainStats(doms, uint32(DomainStatsState), 0)
+	if err != nil {
+		t.Fatalf("unexpected error getting domain stats")
+	}
+
+	// Verify that the stats records we got back look like this:
+	// [{state.state {1 1}} {state.reason {1 2}}]
+	// [{state.state {1 1}} {state.reason {1 1}}]
+	if len(stats) != 2 {
+		t.Fatalf("expected 2 domain stats records, got %d", len(stats))
+	}
+
+	tp1 := NewTypedParamValueInt(1)
+	if stats[1].Params[0].Field != "state.state" {
+		t.Fatalf("unexpected domain statistic %v", stats[1].Params[0].Field)
+	}
+	if stats[1].Params[1].Field != "state.reason" {
+		t.Fatalf("unexpected domain statistic %v", stats[1].Params[1].Field)
+	}
+	if stats[1].Params[0].Value != *tp1 {
+		t.Fatalf("unexpected typed param value %v", stats[1].Params[0].Value)
+	}
+	if stats[1].Params[1].Value != *tp1 {
+		t.Fatalf("unexpected typed param value %v", stats[1].Params[1].Value)
 	}
 }

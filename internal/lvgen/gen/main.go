@@ -18,11 +18,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/digitalocean/go-libvirt/internal/lvgen"
 )
 
-const protoPath = "src/remote/remote_protocol.x"
+var protoPaths = [...]string{
+	"src/remote/remote_protocol.x",
+	"src/remote/qemu_protocol.x",
+}
 
 func main() {
 	lvPath := os.Getenv("LIBVIRT_SOURCE")
@@ -30,7 +34,19 @@ func main() {
 		fmt.Println("set $LIBVIRT_SOURCE to point to the root of the libvirt sources and retry")
 		os.Exit(1)
 	}
-	lvFile := filepath.Join(lvPath, protoPath)
+	fmt.Println("protocol file processing")
+	for _, p := range protoPaths {
+		protoPath := filepath.Join(lvPath, p)
+		fmt.Println("  processing", p)
+		err := processProto(protoPath)
+		if err != nil {
+			fmt.Println("go-libvirt code generator failed:", err)
+			os.Exit(1)
+		}
+	}
+}
+
+func processProto(lvFile string) error {
 	rdr, err := os.Open(lvFile)
 	if err != nil {
 		fmt.Printf("failed to open protocol file at %v: %v\n", lvFile, err)
@@ -38,8 +54,8 @@ func main() {
 	}
 	defer rdr.Close()
 
-	if err = lvgen.Generate(rdr); err != nil {
-		fmt.Println("go-libvirt code generator failed:", err)
-		os.Exit(1)
-	}
+	// extract the base filename, without extension, for the generator to use.
+	name := strings.TrimSuffix(filepath.Base(lvFile), filepath.Ext(lvFile))
+
+	return lvgen.Generate(name, rdr)
 }
