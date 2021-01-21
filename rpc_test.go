@@ -243,7 +243,7 @@ func TestDecodeError(t *testing.T) {
 	expectedCode := errOperationInvalid
 
 	err := decodeError(testErrorMessage)
-	e := err.(libvirtError)
+	e := err.(LibvirtError)
 	if e.Message != expectedMsg {
 		t.Errorf("expected error message %s, got %s", expectedMsg, err.Error())
 	}
