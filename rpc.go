@@ -111,8 +111,8 @@ type response struct {
 	Status  uint32
 }
 
-// LibvirtError response
-type LibvirtError struct {
+// LvirtError response
+type LvirtError struct {
 	Code     uint32
 	DomainID uint32
 	Padding  uint8
@@ -120,15 +120,15 @@ type LibvirtError struct {
 	Level    uint32
 }
 
-func (e LibvirtError) Error() string {
+func (e LvirtError) Error() string {
 	return e.Message
 }
 
-// checkError is used to check whether an error is a LibvirtError, and if it is,
+// checkError is used to check whether an error is a LvirtError, and if it is,
 // whether its error code matches the one passed in. It will return false if
 // these conditions are not met.
 func checkError(err error, expectedError errorNumber) bool {
-	e, ok := err.(LibvirtError)
+	e, ok := err.(LvirtError)
 	if ok {
 		return e.Code == uint32(expectedError)
 	}
@@ -472,7 +472,7 @@ func encode(data interface{}) ([]byte, error) {
 
 // decodeError extracts an error message from the provider buffer.
 func decodeError(buf []byte) error {
-	var e LibvirtError
+	var e LvirtError
 
 	dec := xdr.NewDecoder(bytes.NewReader(buf))
 	_, err := dec.Decode(&e)
