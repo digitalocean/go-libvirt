@@ -128,9 +128,12 @@ func (e libvirtError) Error() string {
 // whether its error code matches the one passed in. It will return false if
 // these conditions are not met.
 func checkError(err error, expectedError errorNumber) bool {
-	e, ok := err.(libvirtError)
-	if ok {
-		return e.Code == uint32(expectedError)
+	for err != nil {
+		e, ok := err.(libvirtError)
+		if ok {
+			return e.Code == uint32(expectedError)
+		}
+		err = errors.Unwrap(err)
 	}
 	return false
 }
