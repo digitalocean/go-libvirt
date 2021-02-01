@@ -258,6 +258,12 @@ func TestErrNotFound(t *testing.T) {
 	if !ok {
 		t.Errorf("expected true, got %t", ok)
 	}
+
+	err = fmt.Errorf("something went wrong: %w", err)
+	ok = IsNotFound(err)
+	if !ok {
+		t.Errorf("expected true, got %t", ok)
+	}
 }
 
 func TestEncode(t *testing.T) {
