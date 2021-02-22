@@ -112,7 +112,7 @@ type response struct {
 }
 
 // libvirt error response
-type libvirtError struct {
+type Error struct {
 	Code     uint32
 	DomainID uint32
 	Padding  uint8
@@ -120,16 +120,16 @@ type libvirtError struct {
 	Level    uint32
 }
 
-func (e libvirtError) Error() string {
+func (e Error) Error() string {
 	return e.Message
 }
 
 // checkError is used to check whether an error is a libvirtError, and if it is,
 // whether its error code matches the one passed in. It will return false if
 // these conditions are not met.
-func checkError(err error, expectedError errorNumber) bool {
+func checkError(err error, expectedError ErrorNumber) bool {
 	for err != nil {
-		e, ok := err.(libvirtError)
+		e, ok := err.(Error)
 		if ok {
 			return e.Code == uint32(expectedError)
 		}
@@ -140,7 +140,7 @@ func checkError(err error, expectedError errorNumber) bool {
 
 // IsNotFound detects libvirt's ERR_NO_DOMAIN.
 func IsNotFound(err error) bool {
-	return checkError(err, errNoDomain)
+	return checkError(err, ErrNoDomain)
 }
 
 // listen processes incoming data and routes
@@ -475,7 +475,7 @@ func encode(data interface{}) ([]byte, error) {
 
 // decodeError extracts an error message from the provider buffer.
 func decodeError(buf []byte) error {
-	var e libvirtError
+	var e Error
 
 	dec := xdr.NewDecoder(bytes.NewReader(buf))
 	_, err := dec.Decode(&e)
@@ -487,7 +487,7 @@ func decodeError(buf []byte) error {
 		return ErrUnsupported
 	}
 	// if libvirt returns ERR_OK, ignore the error
-	if checkError(e, errOk) {
+	if checkError(e, ErrOk) {
 		return nil
 	}
 

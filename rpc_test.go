@@ -240,10 +240,10 @@ func TestDecodeEvent(t *testing.T) {
 
 func TestDecodeError(t *testing.T) {
 	expectedMsg := "Requested operation is not valid: domain is not running"
-	expectedCode := errOperationInvalid
+	expectedCode := ErrOperationInvalid
 
 	err := decodeError(testErrorMessage)
-	e := err.(libvirtError)
+	e := err.(Error)
 	if e.Message != expectedMsg {
 		t.Errorf("expected error message %s, got %s", expectedMsg, err.Error())
 	}
