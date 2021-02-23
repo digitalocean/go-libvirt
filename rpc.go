@@ -114,10 +114,7 @@ type response struct {
 // libvirt error response
 type Error struct {
 	Code     uint32
-	DomainID uint32
-	Padding  uint8
 	Message  string
-	Level    uint32
 }
 
 func (e Error) Error() string {
@@ -475,9 +472,15 @@ func encode(data interface{}) ([]byte, error) {
 
 // decodeError extracts an error message from the provider buffer.
 func decodeError(buf []byte) error {
-	var e Error
-
 	dec := xdr.NewDecoder(bytes.NewReader(buf))
+
+	e := struct {
+        Code     uint32
+		DomainID uint32
+		Padding  uint8
+        Message  string
+		Level    uint32
+	}{}
 	_, err := dec.Decode(&e)
 	if err != nil {
 		return err
@@ -486,12 +489,13 @@ func decodeError(buf []byte) error {
 	if strings.Contains(e.Message, "unknown procedure") {
 		return ErrUnsupported
 	}
+
 	// if libvirt returns ERR_OK, ignore the error
-	if checkError(e, ErrOk) {
+	if ErrorNumber(e.Code) == ErrOk {
 		return nil
 	}
 
-	return e
+	return Error{Code: uint32(e.Code), Message: e.Message}
 }
 
 // eventDecoder decodes an event from a xdr buffer.
