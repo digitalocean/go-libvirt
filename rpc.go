@@ -113,8 +113,8 @@ type response struct {
 
 // libvirt error response
 type Error struct {
-	Code     uint32
-	Message  string
+	Code    uint32
+	Message string
 }
 
 func (e Error) Error() string {
@@ -475,10 +475,10 @@ func decodeError(buf []byte) error {
 	dec := xdr.NewDecoder(bytes.NewReader(buf))
 
 	e := struct {
-        Code     uint32
+		Code     uint32
 		DomainID uint32
 		Padding  uint8
-        Message  string
+		Message  string
 		Level    uint32
 	}{}
 	_, err := dec.Decode(&e)
