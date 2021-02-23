@@ -111,7 +111,7 @@ type response struct {
 	Status  uint32
 }
 
-// libvirt error response
+// Error reponse from libvirt
 type Error struct {
 	Code    uint32
 	Message string
