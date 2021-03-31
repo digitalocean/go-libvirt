@@ -17,6 +17,7 @@ package libvirt
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -200,7 +201,7 @@ func TestDomainMemoryStats(t *testing.T) {
 func TestEvents(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
-	done := make(chan struct{})
+	done := make(chan error)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -215,7 +216,7 @@ func TestEvents(t *testing.T) {
 		select {
 		case e = <-stream:
 		case <-time.After(time.Second * 5):
-			t.Fatal("expected event, received timeout")
+			done <- errors.New("expected event, received timeout")
 		}
 
 		result := struct {
@@ -235,14 +236,16 @@ func TestEvents(t *testing.T) {
 			t.Errorf("expected device %q, got %q", expected, result.Device)
 		}
 
-		done <- struct{}{}
+		done <- nil
 	}()
 
 	// send an event to the listener goroutine
 	conn.Test.Write(append(testEventHeader, testEvent...))
 
 	// wait for completion
-	<-done
+	if err := <-done; err != nil {
+		t.Fatal(err)
+	}
 }
 
 func TestRun(t *testing.T) {
