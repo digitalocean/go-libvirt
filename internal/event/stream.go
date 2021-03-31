@@ -70,11 +70,6 @@ func (s *Stream) start() context.CancelFunc {
 // the a listening client. New events pushed onto the queue will not block due
 // to client behavior.
 func (s *Stream) process(ctx context.Context) {
-	defer func() {
-		close(s.in)
-		close(s.out)
-	}()
-
 	for {
 		// informs send() to stop trying
 		nctx, next := context.WithCancel(ctx)

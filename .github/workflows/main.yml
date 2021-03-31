@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  # allow manual execution from the web interface
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2 # respository path: $GITHUB_WORKSPACE
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.2
+
+      - name: Install dependencies
+        run: go get -u golang.org/x/lint/golint
+
+      - name: Lint
+        run: |
+          golint ./...
+          go vet ./...
+
+      - name: Unit test
+        run: go test -race ./...
+
+      # TODO: integration testing previously available with travis-ci.
+      # - name: integration test
+      #   run: |
+      #     ~much setup~
+      #     go test -race -tags=integration ./...
+
+      - name: Build
+        run: go build ./...
