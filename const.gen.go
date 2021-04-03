@@ -1750,6 +1750,15 @@ const (
 	DomainAuthorizedSSHKeysSetRemove DomainAuthorizedSSHKeysSetFlags = 2
 )
 
+// DomainMessageType as declared in libvirt/libvirt-domain.h:5144
+type DomainMessageType int32
+
+// DomainMessageType enumeration from libvirt/libvirt-domain.h:5144
+const (
+	DomainMessageDeprecation DomainMessageType = 1
+	DomainMessageTainting    DomainMessageType = 2
+)
+
 // DomainCheckpointCreateFlags as declared in libvirt/libvirt-domain-checkpoint.h:62
 type DomainCheckpointCreateFlags int32
 
@@ -2298,78 +2307,78 @@ type ErrorDomain int32
 
 // ErrorDomain enumeration from libvirt/virterror.h:143
 const (
-	FromNone             ErrorDomain = iota
-	FromXen              ErrorDomain = 1
-	FromXend             ErrorDomain = 2
-	FromXenstore         ErrorDomain = 3
-	FromSexpr            ErrorDomain = 4
-	FromXML              ErrorDomain = 5
-	FromDom              ErrorDomain = 6
-	FromRPC              ErrorDomain = 7
-	FromProxy            ErrorDomain = 8
-	FromConf             ErrorDomain = 9
-	FromQemu             ErrorDomain = 10
-	FromNet              ErrorDomain = 11
-	FromTest             ErrorDomain = 12
-	FromRemote           ErrorDomain = 13
-	FromOpenvz           ErrorDomain = 14
-	FromXenxm            ErrorDomain = 15
-	FromStatsLinux       ErrorDomain = 16
-	FromLxc              ErrorDomain = 17
-	FromStorage          ErrorDomain = 18
-	FromNetwork          ErrorDomain = 19
-	FromDomain           ErrorDomain = 20
-	FromUml              ErrorDomain = 21
-	FromNodedev          ErrorDomain = 22
-	FromXenInotify       ErrorDomain = 23
-	FromSecurity         ErrorDomain = 24
-	FromVbox             ErrorDomain = 25
-	FromInterface        ErrorDomain = 26
-	FromOne              ErrorDomain = 27
-	FromEsx              ErrorDomain = 28
-	FromPhyp             ErrorDomain = 29
-	FromSecret           ErrorDomain = 30
-	FromCPU              ErrorDomain = 31
-	FromXenapi           ErrorDomain = 32
-	FromNwfilter         ErrorDomain = 33
-	FromHook             ErrorDomain = 34
-	FromDomainSnapshot   ErrorDomain = 35
-	FromAudit            ErrorDomain = 36
-	FromSysinfo          ErrorDomain = 37
-	FromStreams          ErrorDomain = 38
-	FromVmware           ErrorDomain = 39
-	FromEvent            ErrorDomain = 40
-	FromLibxl            ErrorDomain = 41
-	FromLocking          ErrorDomain = 42
-	FromHyperv           ErrorDomain = 43
-	FromCapabilities     ErrorDomain = 44
-	FromURI              ErrorDomain = 45
-	FromAuth             ErrorDomain = 46
-	FromDbus             ErrorDomain = 47
-	FromParallels        ErrorDomain = 48
-	FromDevice           ErrorDomain = 49
-	FromSSH              ErrorDomain = 50
-	FromLockspace        ErrorDomain = 51
-	FromInitctl          ErrorDomain = 52
-	FromIdentity         ErrorDomain = 53
-	FromCgroup           ErrorDomain = 54
-	FromAccess           ErrorDomain = 55
-	FromSystemd          ErrorDomain = 56
-	FromBhyve            ErrorDomain = 57
-	FromCrypto           ErrorDomain = 58
-	FromFirewall         ErrorDomain = 59
-	FromPolkit           ErrorDomain = 60
-	FromThread           ErrorDomain = 61
-	FromAdmin            ErrorDomain = 62
-	FromLogging          ErrorDomain = 63
-	FromXenxl            ErrorDomain = 64
-	FromPerf             ErrorDomain = 65
-	FromLibssh           ErrorDomain = 66
-	FromResctrl          ErrorDomain = 67
-	FromFirewalld        ErrorDomain = 68
-	FromDomainCheckpoint ErrorDomain = 69
-	FromTpm              ErrorDomain = 70
-	FromBpf              ErrorDomain = 71
+	fromNone             ErrorDomain = iota
+	fromXen              ErrorDomain = 1
+	fromXend             ErrorDomain = 2
+	fromXenstore         ErrorDomain = 3
+	fromSexpr            ErrorDomain = 4
+	fromXML              ErrorDomain = 5
+	fromDom              ErrorDomain = 6
+	fromRPC              ErrorDomain = 7
+	fromProxy            ErrorDomain = 8
+	fromConf             ErrorDomain = 9
+	fromQemu             ErrorDomain = 10
+	fromNet              ErrorDomain = 11
+	fromTest             ErrorDomain = 12
+	fromRemote           ErrorDomain = 13
+	fromOpenvz           ErrorDomain = 14
+	fromXenxm            ErrorDomain = 15
+	fromStatsLinux       ErrorDomain = 16
+	fromLxc              ErrorDomain = 17
+	fromStorage          ErrorDomain = 18
+	fromNetwork          ErrorDomain = 19
+	fromDomain           ErrorDomain = 20
+	fromUml              ErrorDomain = 21
+	fromNodedev          ErrorDomain = 22
+	fromXenInotify       ErrorDomain = 23
+	fromSecurity         ErrorDomain = 24
+	fromVbox             ErrorDomain = 25
+	fromInterface        ErrorDomain = 26
+	fromOne              ErrorDomain = 27
+	fromEsx              ErrorDomain = 28
+	fromPhyp             ErrorDomain = 29
+	fromSecret           ErrorDomain = 30
+	fromCPU              ErrorDomain = 31
+	fromXenapi           ErrorDomain = 32
+	fromNwfilter         ErrorDomain = 33
+	fromHook             ErrorDomain = 34
+	fromDomainSnapshot   ErrorDomain = 35
+	fromAudit            ErrorDomain = 36
+	fromSysinfo          ErrorDomain = 37
+	fromStreams          ErrorDomain = 38
+	fromVmware           ErrorDomain = 39
+	fromEvent            ErrorDomain = 40
+	fromLibxl            ErrorDomain = 41
+	fromLocking          ErrorDomain = 42
+	fromHyperv           ErrorDomain = 43
+	fromCapabilities     ErrorDomain = 44
+	fromURI              ErrorDomain = 45
+	fromAuth             ErrorDomain = 46
+	fromDbus             ErrorDomain = 47
+	fromParallels        ErrorDomain = 48
+	fromDevice           ErrorDomain = 49
+	fromSSH              ErrorDomain = 50
+	fromLockspace        ErrorDomain = 51
+	fromInitctl          ErrorDomain = 52
+	fromIdentity         ErrorDomain = 53
+	fromCgroup           ErrorDomain = 54
+	fromAccess           ErrorDomain = 55
+	fromSystemd          ErrorDomain = 56
+	fromBhyve            ErrorDomain = 57
+	fromCrypto           ErrorDomain = 58
+	fromFirewall         ErrorDomain = 59
+	fromPolkit           ErrorDomain = 60
+	fromThread           ErrorDomain = 61
+	fromAdmin            ErrorDomain = 62
+	fromLogging          ErrorDomain = 63
+	fromXenxl            ErrorDomain = 64
+	fromPerf             ErrorDomain = 65
+	fromLibssh           ErrorDomain = 66
+	fromResctrl          ErrorDomain = 67
+	fromFirewalld        ErrorDomain = 68
+	fromDomainCheckpoint ErrorDomain = 69
+	fromTpm              ErrorDomain = 70
+	fromBpf              ErrorDomain = 71
 )
 
 // ErrorNumber as declared in libvirt/virterror.h:341
