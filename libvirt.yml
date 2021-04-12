@@ -56,7 +56,7 @@ TRANSLATOR:
             - {action: replace, from: "Rpc([A-Z]|$)", to: "RPC$1"}
             - {action: replace, from: "Ssh([A-Z]|$)", to: "SSH$1"}
             - {action: replace, from: "Http([A-Z]|$)", to: "HTTP$1"}
-            - {transform: unexport, from: "^(Err|From|War)"}
+            - {transform: unexport, from: "^From"}
         const:
             - {action: accept, from: "^VIR_"}
             # Special case to prevent a collision with a type:

@@ -93,6 +93,10 @@ var goEquivTypes = map[string]string{
 	// requires us to ditch the typedef that would otherwise be generated.
 	"NonnullString": "string",
 
+	// We rename Error to remote_error in order to use libvirt.Error as the exposed
+	// type, only with necessary fields exposed
+	"Error": "remote_error",
+
 	// TODO: Get rid of these. They're only needed because we lose information
 	// that the parser has (the parser knows it has emitted a go type), and then
 	// we capitalize types to make them public.
