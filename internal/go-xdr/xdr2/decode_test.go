@@ -572,9 +572,7 @@ func TestDecoder(t *testing.T) {
 	}
 	for _, decoder := range decoders {
 		for i, test := range tests {
-			err = nil
-			var dec *Decoder
-			dec = decoder(test)
+			dec := decoder(test)
 			switch test.f {
 			case fDecodeBool:
 				rv, n, err = dec.DecodeBool()
