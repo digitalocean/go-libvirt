@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package libvirt is a pure Go implementation of the libvirt RPC protocol.
-// For more information on the protocol, see https://libvirt.org/internals/l.html
 package libvirt
 
 // We'll use c-for-go to extract the consts and typedefs from the libvirt
@@ -287,7 +285,7 @@ func (l *Libvirt) SubscribeEvents(ctx context.Context, eventID DomainEventID,
 
 // unsubscribeEvents stops the flow of the specified events from libvirt. There
 // are two steps to this process: a call to libvirt to deregister our callback,
-// and then removing the callback from the list used by the `route` fucntion. If
+// and then removing the callback from the list used by the `route` function. If
 // the deregister call fails, we'll return the error, but still remove the
 // callback from the list. That's ok; if any events arrive after this point, the
 // route function will drop them when it finds no registered handler.

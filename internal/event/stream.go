@@ -83,7 +83,7 @@ func (s *Stream) process(ctx context.Context) {
 		// safe internal queue lookup
 		case s.peek <- s.queue:
 
-		// client recieved an event, pop from queue
+		// client received an event, pop from queue
 		case <-s.send(nctx):
 			if len(s.queue) > 1 {
 				s.queue = s.queue[1:]

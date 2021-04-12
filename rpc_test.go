@@ -139,12 +139,6 @@ var (
 		// error level
 		0x00, 0x00, 0x00, 0x01,
 	}
-
-	testDomain = &Domain{
-		Name: "test-domain",
-		UUID: testUUID,
-		ID:   1,
-	}
 )
 
 func TestExtractHeader(t *testing.T) {

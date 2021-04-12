@@ -85,8 +85,7 @@ func TestMigrate(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	var flags DomainMigrateFlags
-	flags = MigrateLive |
+	flags := MigrateLive |
 		MigratePeer2peer |
 		MigratePersistDest |
 		MigrateChangeProtection |

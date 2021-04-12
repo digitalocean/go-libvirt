@@ -493,7 +493,6 @@ func TestEncoder(t *testing.T) {
 	var n int
 
 	for i, test := range tests {
-		err = nil
 		data := newFixedWriter(test.wantN)
 		enc := NewEncoder(data)
 		switch test.f {
