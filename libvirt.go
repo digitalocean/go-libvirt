@@ -315,6 +315,7 @@ func (l *Libvirt) LifecycleEvents(ctx context.Context) (<-chan DomainEventLifecy
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
 		defer l.unsubscribeEvents(stream)
+		defer stream.Shutdown()
 		defer func() { close(ch) }()
 
 		for {
