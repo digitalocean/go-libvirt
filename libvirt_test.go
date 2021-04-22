@@ -251,6 +251,9 @@ func TestRun(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	l.Connect()
+	defer l.Disconnect()
+
 	res, err := l.Run("test", []byte(`{"query-version"}`))
 	if err != nil {
 		t.Error(err)
