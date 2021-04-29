@@ -59,6 +59,9 @@ type Libvirt struct {
 	r    *bufio.Reader
 	w    *bufio.Writer
 	mu   *sync.Mutex
+	// closed after cleanup complete following the underlying connection to
+	// libvirt being disconnected.
+	socketCleanupDone chan struct{}
 
 	// method callbacks
 	cmux      sync.RWMutex
@@ -156,17 +159,11 @@ func (l *Libvirt) Disconnect() error {
 	if err != nil {
 		return err
 	}
-
 	err = l.conn.Close()
 
-	// close event streams
-	for _, ev := range l.events {
-		l.unsubscribeEvents(ev)
-	}
-
-	// Deregister all callbacks to prevent blocking on clients with
-	// outstanding requests
-	l.deregisterAll()
+	// wait for the listen goroutine to detect the lost connection and clean up
+	// to happen once it returns
+	<-l.socketCleanupDone
 
 	return err
 }
@@ -618,16 +615,32 @@ func getQEMUError(r response) error {
 // New configures a new Libvirt RPC connection.
 func New(conn net.Conn) *Libvirt {
 	l := &Libvirt{
-		conn:      conn,
-		s:         0,
-		r:         bufio.NewReader(conn),
-		w:         bufio.NewWriter(conn),
-		mu:        &sync.Mutex{},
-		callbacks: make(map[int32]chan response),
-		events:    make(map[int32]*event.Stream),
+		conn:              conn,
+		s:                 0,
+		r:                 bufio.NewReader(conn),
+		w:                 bufio.NewWriter(conn),
+		mu:                &sync.Mutex{},
+		socketCleanupDone: make(chan struct{}),
+		callbacks:         make(map[int32]chan response),
+		events:            make(map[int32]*event.Stream),
 	}
 
-	go l.listen()
+	go func() {
+		// only returns once it detects a non-temporary error related to the
+		// underlying connection
+		l.listen()
+
+		// close event streams
+		for _, ev := range l.events {
+			l.unsubscribeEvents(ev)
+		}
+
+		// Deregister all callbacks to prevent blocking on clients with
+		// outstanding requests
+		l.deregisterAll()
+
+		close(l.socketCleanupDone)
+	}()
 
 	return l
 }
