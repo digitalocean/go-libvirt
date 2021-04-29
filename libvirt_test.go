@@ -81,6 +81,64 @@ func TestDisconnect(t *testing.T) {
 	}
 }
 
+func TestDisconnectCleanup(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+
+	// register a callback
+	ch := make(chan response)
+	l.register(1, ch)
+
+	err = l.Disconnect()
+	if err != nil {
+		t.Errorf("disconnect failed: %v", err)
+	}
+
+	// now make sure that the Disconnect deregistered the callback
+	// do it via a select just to avoid the 10 minute unit test timeout on
+	// failure
+	select {
+	case <-ch:
+		t.Log("callback channel appropriately closed")
+	case <-time.After(10 * time.Second):
+		t.Errorf("callback channel not closed")
+	}
+}
+
+func TestLostConnectionCleanup(t *testing.T) {
+	conn := libvirttest.New()
+	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+
+	// register a callback
+	ch := make(chan response)
+	l.register(1, ch)
+
+	// forcibly just close the fake libvirt tester side of the pipe to lose
+	// the connection.
+	// This should be detected and cleaned up without having to call Disconnect.
+	conn.Test.Close()
+
+	// now make sure that deregistered the callback
+	// do it via a select just to avoid the 10 minute unit test timeout on
+	// failure
+	select {
+	case <-ch:
+		t.Log("callback channel appropriately closed")
+	case <-time.After(10 * time.Second):
+		t.Fatalf("callback channel not closed")
+	}
+}
+
 func TestMigrate(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
