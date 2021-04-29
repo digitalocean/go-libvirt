@@ -33,6 +33,7 @@ func TestConnect(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	defer l.Disconnect()
 }
 
 func TestLibvirt_ConnectToURI(t *testing.T) {
@@ -67,6 +68,7 @@ func TestLibvirt_ConnectToURI(t *testing.T) {
 			if err := libvirtConn.ConnectToURI(tt.args.uri); (err != nil) != tt.wantErr {
 				t.Errorf("ConnectToURI() error = %v, wantErr %v", err, tt.wantErr)
 			}
+			libvirtConn.Disconnect()
 		})
 	}
 }
@@ -143,6 +145,12 @@ func TestMigrate(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	flags := MigrateLive |
 		MigratePeer2peer |
 		MigratePersistDest |
@@ -166,6 +174,12 @@ func TestMigrateSetMaxSpeed(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	dom, err := l.DomainLookupByName("test")
 	if err != nil {
 		t.Fatalf("failed to lookup domain: %v", err)
@@ -179,6 +193,12 @@ func TestMigrateSetMaxSpeed(t *testing.T) {
 func TestDomains(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
 
 	domains, err := l.Domains()
 	if err != nil {
@@ -208,6 +228,12 @@ func TestDomainState(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	wantState := DomainState(DomainRunning)
 	gotState, err := l.DomainState("test")
 	if err != nil {
@@ -222,6 +248,12 @@ func TestDomainState(t *testing.T) {
 func TestDomainMemoryStats(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
 
 	wantDomainMemoryStats := []DomainMemoryStat{
 		{
@@ -258,6 +290,13 @@ func TestDomainMemoryStats(t *testing.T) {
 func TestEvents(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	done := make(chan error)
 
 	ctx, cancel := context.WithCancel(context.Background())
@@ -309,7 +348,10 @@ func TestRun(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
-	l.Connect()
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
 	defer l.Disconnect()
 
 	res, err := l.Run("test", []byte(`{"query-version"}`))
@@ -345,7 +387,13 @@ func TestRunFail(t *testing.T) {
 	conn.Fail = true
 	l := New(conn)
 
-	_, err := l.Run("test", []byte(`{"drive-foo"}`))
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
+	_, err = l.Run("test", []byte(`{"drive-foo"}`))
 	if err == nil {
 		t.Error("expected qemu error")
 	}
@@ -354,6 +402,12 @@ func TestRunFail(t *testing.T) {
 func TestSecrets(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
 
 	secrets, err := l.Secrets()
 	if err != nil {
@@ -391,6 +445,12 @@ func TestStoragePool(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	wantName := "default"
 	pool, err := l.StoragePool(wantName)
 	if err != nil {
@@ -416,6 +476,12 @@ func TestStoragePool(t *testing.T) {
 func TestStoragePools(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
 
 	pools, err := l.StoragePools(ConnectListStoragePoolsTransient)
 	if err != nil {
@@ -449,6 +515,12 @@ func TestStoragePoolRefresh(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	pool, err := l.StoragePool("default")
 	if err != nil {
 		t.Error(err)
@@ -463,6 +535,12 @@ func TestUndefine(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	var flags DomainUndefineFlagsValues
 	if err := l.Undefine("test", flags); err != nil {
 		t.Fatalf("unexpected undefine error: %v", err)
@@ -473,6 +551,12 @@ func TestDestroy(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	var flags DomainDestroyFlagsValues
 	if err := l.Destroy("test", flags); err != nil {
 		t.Fatalf("unexpected destroy error: %v", err)
@@ -482,6 +566,12 @@ func TestDestroy(t *testing.T) {
 func TestVersion(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
 
 	version, err := l.Version()
 	if err != nil {
@@ -498,6 +588,12 @@ func TestDefineXML(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	var flags DomainDefineFlags
 	var buf []byte
 	if err := l.DefineXML(buf, flags); err != nil {
@@ -508,6 +604,12 @@ func TestDefineXML(t *testing.T) {
 func TestDomainCreateWithFlags(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
 
 	d, err := l.lookup("test")
 	if err != nil {
@@ -523,6 +625,12 @@ func TestShutdown(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	var flags DomainShutdownFlagValues
 	if err := l.Shutdown("test", flags); err != nil {
 		t.Fatalf("unexpected shutdown error: %v", err)
@@ -532,6 +640,12 @@ func TestShutdown(t *testing.T) {
 func TestReboot(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
 
 	var flags DomainRebootFlagValues
 	if err := l.Reboot("test", flags); err != nil {
@@ -543,6 +657,12 @@ func TestReset(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	if err := l.Reset("test"); err != nil {
 		t.Fatalf("unexpected reset error: %v", err)
 	}
@@ -552,6 +672,12 @@ func TestSetBlockIOTune(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	if err := l.SetBlockIOTune("test", "vda", BlockLimit{"write_bytes_sec", 5000000}); err != nil {
 		t.Fatalf("unexpected SetBlockIOTune error: %v", err)
 	}
@@ -560,6 +686,12 @@ func TestSetBlockIOTune(t *testing.T) {
 func TestGetBlockIOTune(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
 
 	limits, err := l.GetBlockIOTune("do-test", "vda")
 	if err != nil {
@@ -577,6 +709,12 @@ func TestGetBlockIOTune(t *testing.T) {
 func TestConnectGetAllDomainStats(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
 
 	doms, _, err := l.ConnectListAllDomains(1, 0)
 	if err != nil {

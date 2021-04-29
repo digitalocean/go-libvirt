@@ -325,13 +325,19 @@ func TestRemoveStream(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	stream := event.NewStream(constants.QEMUProgram, id)
 	defer stream.Shutdown()
 
 	l.events[id] = stream
 
 	fmt.Println("removing stream")
-	err := l.removeStream(id)
+	err = l.removeStream(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -392,6 +398,12 @@ func TestLookup(t *testing.T) {
 
 	conn := libvirttest.New()
 	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
 
 	d, err := l.lookup(name)
 	if err != nil {
