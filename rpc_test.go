@@ -388,14 +388,10 @@ func TestSerial(t *testing.T) {
 }
 
 func TestLookup(t *testing.T) {
-	id := int32(1)
-	c := make(chan response)
 	name := "test"
 
 	conn := libvirttest.New()
 	l := New(conn)
-
-	l.register(id, c)
 
 	d, err := l.lookup(name)
 	if err != nil {
@@ -404,11 +400,6 @@ func TestLookup(t *testing.T) {
 
 	if d.Name != name {
 		t.Errorf("expected domain %s, got %s", name, d.Name)
-	}
-
-	// The callback should now be deregistered.
-	if _, ok := l.callbacks[id]; ok {
-		t.Error("expected callback to deregister")
 	}
 }
 
