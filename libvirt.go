@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
 	"github.com/digitalocean/go-libvirt/internal/event"
@@ -51,6 +52,10 @@ const (
 	XenSystem ConnectURI = "xen:///system"
 	//TestDefault connect to default mock driver
 	TestDefault ConnectURI = "test:///default"
+
+	// disconnectedTimeout is how long to wait for disconnect cleanup to
+	// complete
+	disconnectTimeout = 5 * time.Second
 )
 
 // Libvirt implements libvirt's remote procedure call protocol.
@@ -162,8 +167,12 @@ func (l *Libvirt) Disconnect() error {
 	err = l.conn.Close()
 
 	// wait for the listen goroutine to detect the lost connection and clean up
-	// to happen once it returns
-	<-l.disconnected
+	// to happen once it returns.  Safeguard with a timeout.
+	// Things not fully cleaned up is better than a deadlock.
+	select {
+	case <-l.disconnected:
+	case <-time.After(disconnectTimeout):
+	}
 
 	return err
 }
