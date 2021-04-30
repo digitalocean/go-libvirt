@@ -621,6 +621,23 @@ func getQEMUError(r response) error {
 	return nil
 }
 
+func (l *Libvirt) listenAndRoute() {
+	// only returns once it detects a non-temporary error related to the
+	// underlying connection
+	l.listen()
+
+	// close event streams
+	for _, ev := range l.events {
+		l.unsubscribeEvents(ev)
+	}
+
+	// Deregister all callbacks to prevent blocking on clients with
+	// outstanding requests
+	l.deregisterAll()
+
+	close(l.disconnected)
+}
+
 // New configures a new Libvirt RPC connection.
 func New(conn net.Conn) *Libvirt {
 	l := &Libvirt{
@@ -634,22 +651,7 @@ func New(conn net.Conn) *Libvirt {
 		events:       make(map[int32]*event.Stream),
 	}
 
-	go func() {
-		// only returns once it detects a non-temporary error related to the
-		// underlying connection
-		l.listen()
-
-		// close event streams
-		for _, ev := range l.events {
-			l.unsubscribeEvents(ev)
-		}
-
-		// Deregister all callbacks to prevent blocking on clients with
-		// outstanding requests
-		l.deregisterAll()
-
-		close(l.disconnected)
-	}()
+	go l.listenAndRoute()
 
 	return l
 }
