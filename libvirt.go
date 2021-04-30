@@ -61,7 +61,7 @@ type Libvirt struct {
 	mu   *sync.Mutex
 	// closed after cleanup complete following the underlying connection to
 	// libvirt being disconnected.
-	socketCleanupDone chan struct{}
+	disconnected chan struct{}
 
 	// method callbacks
 	cmux      sync.RWMutex
@@ -163,7 +163,7 @@ func (l *Libvirt) Disconnect() error {
 
 	// wait for the listen goroutine to detect the lost connection and clean up
 	// to happen once it returns
-	<-l.socketCleanupDone
+	<-l.disconnected
 
 	return err
 }
@@ -615,14 +615,14 @@ func getQEMUError(r response) error {
 // New configures a new Libvirt RPC connection.
 func New(conn net.Conn) *Libvirt {
 	l := &Libvirt{
-		conn:              conn,
-		s:                 0,
-		r:                 bufio.NewReader(conn),
-		w:                 bufio.NewWriter(conn),
-		mu:                &sync.Mutex{},
-		socketCleanupDone: make(chan struct{}),
-		callbacks:         make(map[int32]chan response),
-		events:            make(map[int32]*event.Stream),
+		conn:         conn,
+		s:            0,
+		r:            bufio.NewReader(conn),
+		w:            bufio.NewWriter(conn),
+		mu:           &sync.Mutex{},
+		disconnected: make(chan struct{}),
+		callbacks:    make(map[int32]chan response),
+		events:       make(map[int32]*event.Stream),
 	}
 
 	go func() {
@@ -639,7 +639,7 @@ func New(conn net.Conn) *Libvirt {
 		// outstanding requests
 		l.deregisterAll()
 
-		close(l.socketCleanupDone)
+		close(l.disconnected)
 	}()
 
 	return l
