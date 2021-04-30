@@ -15,7 +15,7 @@
 // This module provides different units of measurement to make other
 // code more readable.
 
-package libvirt
+package socket
 
 const (
 	// B - byte

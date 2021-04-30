@@ -24,6 +24,7 @@ import (
 	"github.com/digitalocean/go-libvirt/internal/event"
 	xdr "github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/libvirttest"
+	"github.com/digitalocean/go-libvirt/socket"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,15 +33,6 @@ var (
 	testUUID = [UUIDBuflen]byte{
 		0xdc, 0x22, 0x9f, 0x87, 0xd4, 0xde, 0x47, 0x19,
 		0x8c, 0xfd, 0x2e, 0x21, 0xc6, 0x10, 0x5b, 0x01,
-	}
-
-	testHeader = []byte{
-		0x20, 0x00, 0x80, 0x86, // program
-		0x00, 0x00, 0x00, 0x01, // version
-		0x00, 0x00, 0x00, 0x01, // procedure
-		0x00, 0x00, 0x00, 0x00, // type
-		0x00, 0x00, 0x00, 0x00, // serial
-		0x00, 0x00, 0x00, 0x00, // status
 	}
 
 	testEventHeader = []byte{
@@ -140,49 +132,6 @@ var (
 		0x00, 0x00, 0x00, 0x01,
 	}
 )
-
-func TestExtractHeader(t *testing.T) {
-	r := bytes.NewBuffer(testHeader)
-	h, err := extractHeader(r)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if h.Program != constants.Program {
-		t.Errorf("expected Program %q, got %q", constants.Program, h.Program)
-	}
-
-	if h.Version != constants.ProtocolVersion {
-		t.Errorf("expected version %q, got %q", constants.ProtocolVersion, h.Version)
-	}
-
-	if h.Procedure != constants.ProcConnectOpen {
-		t.Errorf("expected procedure %q, got %q", constants.ProcConnectOpen, h.Procedure)
-	}
-
-	if h.Type != Call {
-		t.Errorf("expected type %q, got %q", Call, h.Type)
-	}
-
-	if h.Status != StatusOK {
-		t.Errorf("expected status %q, got %q", StatusOK, h.Status)
-	}
-}
-
-func TestPktLen(t *testing.T) {
-	data := []byte{0x00, 0x00, 0x00, 0xa} // uint32:10
-	r := bytes.NewBuffer(data)
-
-	expected := uint32(10)
-	actual, err := pktlen(r)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if expected != actual {
-		t.Errorf("expected packet length %q, got %q", expected, actual)
-	}
-}
 
 func TestDecodeEvent(t *testing.T) {
 	var e DomainEvent
@@ -455,17 +404,25 @@ func TestRouteDeadlock(t *testing.T) {
 
 	l.addStream(stream)
 
-	respHeader := &header{constants.Program, 0, 0, 0, id, StatusOK}
-	eventHeader := &header{constants.Program, 0, constants.ProcDomainEventCallbackLifecycle, 0, 0, StatusOK}
+	respHeader := &socket.Header{
+		Program: constants.Program,
+		Serial:  id,
+		Status:  socket.StatusOK,
+	}
+	eventHeader := &socket.Header{
+		Program:   constants.Program,
+		Procedure: constants.ProcDomainEventCallbackLifecycle,
+		Status:    socket.StatusOK,
+	}
 
 	send := func(respCount, evCount int) {
 		// Send the events first
 		for i := 0; i < evCount; i++ {
-			l.route(eventHeader, testLifeCycle)
+			l.Route(eventHeader, testLifeCycle)
 		}
 		// Now send the requests.
 		for i := 0; i < respCount; i++ {
-			l.route(respHeader, []byte{})
+			l.Route(respHeader, []byte{})
 		}
 	}
 
@@ -483,7 +440,7 @@ func TestRouteDeadlock(t *testing.T) {
 
 		for i := 0; i < tc.rCount; i++ {
 			r := <-rch
-			assert.Equal(t, r.Status, uint32(StatusOK))
+			assert.Equal(t, r.Status, uint32(socket.StatusOK))
 		}
 		for i := 0; i < tc.eCount; i++ {
 			e := <-stream.Recv()
