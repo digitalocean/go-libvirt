@@ -141,7 +141,7 @@ func IsNotFound(err error) bool {
 	return checkError(err, ErrNoDomain)
 }
 
-// isTemporary returns true if the error returned from a read is transiet.
+// isTemporary returns true if the error returned from a read is transient.
 // If the error type is an OpError, check whether the net connection
 // error condition is temporary (which means we can keep using the
 // connection).
@@ -151,10 +151,7 @@ func IsNotFound(err error) bool {
 func isTemporary(err error) bool {
 	opErr, ok := err.(*net.OpError)
 	if ok {
-		if opErr.Temporary() {
-			// invalid packet or similar transient issue
-			return true
-		}
+		return opErr.Temporary()
 	}
 	return false
 }
