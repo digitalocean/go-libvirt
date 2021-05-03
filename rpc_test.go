@@ -325,13 +325,19 @@ func TestRemoveStream(t *testing.T) {
 	conn := libvirttest.New()
 	l := New(conn)
 
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
 	stream := event.NewStream(constants.QEMUProgram, id)
 	defer stream.Shutdown()
 
 	l.events[id] = stream
 
 	fmt.Println("removing stream")
-	err := l.removeStream(id)
+	err = l.removeStream(id)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -388,14 +394,16 @@ func TestSerial(t *testing.T) {
 }
 
 func TestLookup(t *testing.T) {
-	id := int32(1)
-	c := make(chan response)
 	name := "test"
 
 	conn := libvirttest.New()
 	l := New(conn)
 
-	l.register(id, c)
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
 
 	d, err := l.lookup(name)
 	if err != nil {
@@ -404,11 +412,6 @@ func TestLookup(t *testing.T) {
 
 	if d.Name != name {
 		t.Errorf("expected domain %s, got %s", name, d.Name)
-	}
-
-	// The callback should now be deregistered.
-	if _, ok := l.callbacks[id]; ok {
-		t.Error("expected callback to deregister")
 	}
 }
 

@@ -27,6 +27,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"time"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
 	"github.com/digitalocean/go-libvirt/internal/event"
@@ -51,6 +52,10 @@ const (
 	XenSystem ConnectURI = "xen:///system"
 	//TestDefault connect to default mock driver
 	TestDefault ConnectURI = "test:///default"
+
+	// disconnectedTimeout is how long to wait for disconnect cleanup to
+	// complete
+	disconnectTimeout = 5 * time.Second
 )
 
 // Libvirt implements libvirt's remote procedure call protocol.
@@ -59,6 +64,9 @@ type Libvirt struct {
 	r    *bufio.Reader
 	w    *bufio.Writer
 	mu   *sync.Mutex
+	// closed after cleanup complete following the underlying connection to
+	// libvirt being disconnected.
+	disconnected chan struct{}
 
 	// method callbacks
 	cmux      sync.RWMutex
@@ -156,17 +164,15 @@ func (l *Libvirt) Disconnect() error {
 	if err != nil {
 		return err
 	}
-
 	err = l.conn.Close()
 
-	// close event streams
-	for _, ev := range l.events {
-		l.unsubscribeEvents(ev)
+	// wait for the listen goroutine to detect the lost connection and clean up
+	// to happen once it returns.  Safeguard with a timeout.
+	// Things not fully cleaned up is better than a deadlock.
+	select {
+	case <-l.disconnected:
+	case <-time.After(disconnectTimeout):
 	}
-
-	// Deregister all callbacks to prevent blocking on clients with
-	// outstanding requests
-	l.deregisterAll()
 
 	return err
 }
@@ -615,19 +621,37 @@ func getQEMUError(r response) error {
 	return nil
 }
 
+func (l *Libvirt) listenAndRoute() {
+	// only returns once it detects a non-temporary error related to the
+	// underlying connection
+	l.listen()
+
+	// close event streams
+	for _, ev := range l.events {
+		l.unsubscribeEvents(ev)
+	}
+
+	// Deregister all callbacks to prevent blocking on clients with
+	// outstanding requests
+	l.deregisterAll()
+
+	close(l.disconnected)
+}
+
 // New configures a new Libvirt RPC connection.
 func New(conn net.Conn) *Libvirt {
 	l := &Libvirt{
-		conn:      conn,
-		s:         0,
-		r:         bufio.NewReader(conn),
-		w:         bufio.NewWriter(conn),
-		mu:        &sync.Mutex{},
-		callbacks: make(map[int32]chan response),
-		events:    make(map[int32]*event.Stream),
+		conn:         conn,
+		s:            0,
+		r:            bufio.NewReader(conn),
+		w:            bufio.NewWriter(conn),
+		mu:           &sync.Mutex{},
+		disconnected: make(chan struct{}),
+		callbacks:    make(map[int32]chan response),
+		events:       make(map[int32]*event.Stream),
 	}
 
-	go l.listen()
+	go l.listenAndRoute()
 
 	return l
 }

@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net"
 	"reflect"
 	"strings"
 	"sync/atomic"
@@ -140,6 +141,21 @@ func IsNotFound(err error) bool {
 	return checkError(err, ErrNoDomain)
 }
 
+// isTemporary returns true if the error returned from a read is transient.
+// If the error type is an OpError, check whether the net connection
+// error condition is temporary (which means we can keep using the
+// connection).
+// Errors not of the net.OpError type tend to be things like io.EOF,
+// syscall.EINVAL, or io.ErrClosedPipe (i.e. all things that
+// indicate the connection in use is no longer valid.)
+func isTemporary(err error) bool {
+	opErr, ok := err.(*net.OpError)
+	if ok {
+		return opErr.Temporary()
+	}
+	return false
+}
+
 // listen processes incoming data and routes
 // responses to their respective callback handler.
 func (l *Libvirt) listen() {
@@ -147,14 +163,11 @@ func (l *Libvirt) listen() {
 		// response packet length
 		length, err := pktlen(l.r)
 		if err != nil {
-			// When the underlying connection EOFs or is closed, stop
-			// this goroutine
-			if err == io.EOF || strings.Contains(err.Error(), "use of closed network connection") {
-				return
+			if isTemporary(err) {
+				continue
 			}
-
-			// invalid packet
-			continue
+			// connection is no longer valid, so shutdown
+			return
 		}
 
 		// response header
