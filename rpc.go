@@ -273,6 +273,19 @@ func (l *Libvirt) removeStream(id int32) error {
 	return nil
 }
 
+// removeAllStreams deletes all event streams.  This is meant to be used to
+// clean up only once the underlying connection to libvirt is disconnected and
+// thus does not attempt to notify libvirt to stop sending events.
+func (l *Libvirt) removeAllStreams() {
+	l.emux.Lock()
+	defer l.emux.Unlock()
+
+	for _, ev := range l.events {
+		delete(l.events, ev.CallbackID)
+		ev.Shutdown()
+	}
+}
+
 // register configures a method response callback
 func (l *Libvirt) register(id int32, c chan response) {
 	l.cmux.Lock()
