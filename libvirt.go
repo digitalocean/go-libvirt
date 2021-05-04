@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"net"
 	"sync"
 	"time"
 
@@ -138,9 +137,7 @@ func (l *Libvirt) authenticate() error {
 	return nil
 }
 
-// ConnectToURI establishes communication with the specified libvirt driver
-// The underlying libvirt socket connection must be previously established.
-func (l *Libvirt) ConnectToURI(uri ConnectURI) error {
+func (l *Libvirt) initLibvirtComms(uri ConnectURI) error {
 	payload := struct {
 		Padding [3]byte
 		Name    string
@@ -169,8 +166,32 @@ func (l *Libvirt) ConnectToURI(uri ConnectURI) error {
 	return nil
 }
 
+// ConnectToURI establishes communication with the specified libvirt driver
+// The underlying libvirt socket connection will be created via the dialer.
+// Since the connection can be lost, the Disconnected function can be used
+// to monitor for a lost connection.
+func (l *Libvirt) ConnectToURI(uri ConnectURI) error {
+	err := l.socket.Connect()
+	if err != nil {
+		return err
+	}
+
+	err = l.initLibvirtComms(uri)
+	if err != nil {
+		l.socket.Disconnect()
+		return err
+	}
+
+	l.disconnected = make(chan struct{})
+	go l.waitAndDisconnect()
+
+	return nil
+}
+
 // Connect establishes communication with the libvirt server.
-// The underlying libvirt socket connection must be previously established.
+// The underlying libvirt socket connection will be created via the dialer.
+// Since the connection can be lost, the Disconnected function can be used
+// to monitor for a lost connection.
 func (l *Libvirt) Connect() error {
 	return l.ConnectToURI(QEMUSystem)
 }
@@ -659,22 +680,21 @@ func (l *Libvirt) waitAndDisconnect() {
 	close(l.disconnected)
 }
 
-// New configures a new Libvirt RPC connection.
-func New(conn net.Conn) *Libvirt {
+// New configures a new Libvirt object that can be used to perform RPCs via
+// libvirt's socket.  The actual connection will not be established until
+// Connect is called.  The same Libvirt object may be used to re-connect
+// multiple times.
+func New(dialer socket.Dialer) *Libvirt {
 	l := &Libvirt{
 		s:            0,
 		disconnected: make(chan struct{}),
 		callbacks:    make(map[int32]chan response),
 		events:       make(map[int32]*event.Stream),
 	}
+	l.socket = socket.New(dialer, l)
 
-	// this starts the listening and routing
-	// TODO:  The connection and listen goroutine should be moved to the
-	//  Connect function, but this is going to impact the exported API, so
-	//  trying to do as much as possible before doing that.
-	l.socket = socket.New(conn, l)
-
-	go l.waitAndDisconnect()
+	// we start with a closed channel since that indicates no connection
+	close(l.disconnected)
 
 	return l
 }
