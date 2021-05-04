@@ -281,8 +281,8 @@ func (l *Libvirt) removeAllStreams() {
 	defer l.emux.Unlock()
 
 	for _, ev := range l.events {
-		delete(l.events, ev.CallbackID)
 		ev.Shutdown()
+		delete(l.events, ev.CallbackID)
 	}
 }
 
