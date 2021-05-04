@@ -296,6 +296,42 @@ func TestRemoveStream(t *testing.T) {
 	}
 }
 
+func TestRemoveAllStreams(t *testing.T) {
+	id1 := int32(1)
+	id2 := int32(2)
+
+	conn := libvirttest.New()
+	l := New(conn)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
+	// verify it's a successful no-op when no streams have been added
+	l.removeAllStreams()
+	if len(l.events) != 0 {
+		t.Fatal("expected no streams after remove all")
+	}
+
+	stream := event.NewStream(constants.QEMUProgram, id1)
+	defer stream.Shutdown()
+
+	l.events[id1] = stream
+
+	stream2 := event.NewStream(constants.QEMUProgram, id2)
+	defer stream2.Shutdown()
+
+	l.events[id2] = stream2
+
+	l.removeAllStreams()
+
+	if len(l.events) != 0 {
+		t.Error("expected all event streams to be removed")
+	}
+}
+
 func TestStream(t *testing.T) {
 	id := int32(1)
 	stream := event.NewStream(constants.Program, 1)

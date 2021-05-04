@@ -627,9 +627,7 @@ func (l *Libvirt) waitAndDisconnect() {
 	<-l.socket.Disconnected()
 
 	// close event streams
-	for _, ev := range l.events {
-		l.unsubscribeEvents(ev)
-	}
+	l.removeAllStreams()
 
 	// Deregister all callbacks to prevent blocking on clients with
 	// outstanding requests
