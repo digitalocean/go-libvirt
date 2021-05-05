@@ -61,7 +61,7 @@ const (
 // Libvirt implements libvirt's remote procedure call protocol.
 type Libvirt struct {
 	// socket connection
-	socket socket.Socket
+	socket *socket.Socket
 	// closed after cleanup complete following the underlying connection to
 	// libvirt being disconnected.
 	disconnected chan struct{}

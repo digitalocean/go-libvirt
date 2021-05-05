@@ -109,8 +109,8 @@ type Header struct {
 }
 
 // New initializes a new type for managing the Socket.
-func New(conn net.Conn, router Router) Socket {
-	s := Socket{
+func New(conn net.Conn, router Router) *Socket {
+	s := &Socket{
 		router: router,
 		mu:     &sync.Mutex{},
 	}
@@ -132,7 +132,7 @@ func New(conn net.Conn, router Router) Socket {
 
 // Disconnect closes the Socket connection to libvirt and waits for the reader
 // gorouting to shut down.
-func (s Socket) Disconnect() error {
+func (s *Socket) Disconnect() error {
 	// just return if we're already disconnected
 	if s.isDisconnected() {
 		return nil
@@ -159,13 +159,13 @@ func (s Socket) Disconnect() error {
 // Disconnected returns a channel that will be closed once the current
 // connection is closed.  This can happen due to an explicit call to Disconnect
 // from the client, or due to non-temporary Read or Write errors encountered.
-func (s Socket) Disconnected() <-chan struct{} {
+func (s *Socket) Disconnected() <-chan struct{} {
 	return s.disconnected
 }
 
 // isDisconnected is a non-blocking function to query whether a connection
 // is disconnected or not.
-func (s Socket) isDisconnected() bool {
+func (s *Socket) isDisconnected() bool {
 	select {
 	case <-s.disconnected:
 		return true
@@ -176,7 +176,7 @@ func (s Socket) isDisconnected() bool {
 
 // listenAndRoute reads packets from the Socket and calls the provided
 // Router function to route them
-func (s Socket) listenAndRoute() {
+func (s *Socket) listenAndRoute() {
 	// only returns once it detects a non-temporary error related to the
 	// underlying connection
 	listen(s.reader, s.router)
@@ -276,7 +276,7 @@ func extractHeader(r io.Reader) (*Header, error) {
 }
 
 // SendPacket sends a packet to libvirt on the socket connection.
-func (s Socket) SendPacket(
+func (s *Socket) SendPacket(
 	serial int32,
 	proc uint32,
 	program uint32,
@@ -327,7 +327,7 @@ func (s Socket) SendPacket(
 }
 
 // SendStream sends a stream of packets to libvirt on the socket connection.
-func (s Socket) SendStream(serial int32, proc uint32, program uint32,
+func (s *Socket) SendStream(serial int32, proc uint32, program uint32,
 	stream io.Reader, abort chan bool) error {
 	// Keep total packet length under 4 MiB to follow possible limitation in libvirt server code
 	buf := make([]byte, 4*MiB-unsafe.Sizeof(_p))
