@@ -185,7 +185,6 @@ func (s *Socket) listenAndRoute() {
 	defer s.mu.Unlock()
 	s.reader = nil
 	s.writer = nil
-	s.conn = nil
 
 	// signal any clients listening that the connection has been disconnected
 	close(s.disconnected)
