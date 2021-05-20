@@ -115,8 +115,6 @@ func New(conn net.Conn, router Router) *Socket {
 		mu:     &sync.Mutex{},
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.conn = conn
 	s.reader = bufio.NewReader(conn)
 	s.writer = bufio.NewWriter(conn)
@@ -180,11 +178,6 @@ func (s *Socket) listenAndRoute() {
 	// only returns once it detects a non-temporary error related to the
 	// underlying connection
 	listen(s.reader, s.router)
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.reader = nil
-	s.writer = nil
 
 	// signal any clients listening that the connection has been disconnected
 	close(s.disconnected)
