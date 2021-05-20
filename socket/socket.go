@@ -293,14 +293,14 @@ func (s *Socket) SendPacket(
 	}
 	p.Len = uint32(size)
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if s.isDisconnected() {
 		// this mirrors what a lot of net code return on use of a no
 		// longer valid connection
 		return syscall.EINVAL
 	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	err := binary.Write(s.writer, binary.BigEndian, p)
 	if err != nil {
