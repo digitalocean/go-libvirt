@@ -224,7 +224,7 @@ func (l *Libvirt) SubscribeQEMUEvents(ctx context.Context, dom string) (<-chan D
 		defer cancel()
 		defer l.unsubscribeQEMUEvents(stream)
 		defer stream.Shutdown()
-		defer func() { close(ch) }()
+		defer close(ch)
 
 		for {
 			select {
