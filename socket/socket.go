@@ -115,8 +115,6 @@ func New(conn net.Conn, router Router) *Socket {
 		mu:     &sync.Mutex{},
 	}
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
 	s.conn = conn
 	s.reader = bufio.NewReader(conn)
 	s.writer = bufio.NewWriter(conn)
@@ -180,12 +178,6 @@ func (s *Socket) listenAndRoute() {
 	// only returns once it detects a non-temporary error related to the
 	// underlying connection
 	listen(s.reader, s.router)
-
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.reader = nil
-	s.writer = nil
-	s.conn = nil
 
 	// signal any clients listening that the connection has been disconnected
 	close(s.disconnected)
@@ -301,14 +293,14 @@ func (s *Socket) SendPacket(
 	}
 	p.Len = uint32(size)
 
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
 	if s.isDisconnected() {
 		// this mirrors what a lot of net code return on use of a no
 		// longer valid connection
 		return syscall.EINVAL
 	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
 	err := binary.Write(s.writer, binary.BigEndian, p)
 	if err != nil {
