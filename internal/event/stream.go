@@ -18,6 +18,9 @@ import (
 	"context"
 )
 
+// emptyEvent is used as a zero-value. Clients will never receive one of these;
+// they are only here to satisfy the compiler. See the comments in process() for
+// more information.
 type emptyEvent struct{}
 
 func (emptyEvent) GetCallbackID() int32 { return 0 }
@@ -41,6 +44,30 @@ type Stream struct {
 	shutdown context.CancelFunc
 }
 
+// NewStream configures a new Event Stream. Incoming events are appended to a
+// queue, which is then relayed to the listening client. Client behavior will
+// not cause incoming events to block. It is the responsibility of the caller
+// to terminate the Stream via Shutdown() when no longer in use.
+func NewStream(program uint32, cbID int32) *Stream {
+	s := &Stream{
+		Program:    program,
+		CallbackID: cbID,
+		in:         make(chan Event),
+		out:        make(chan Event),
+		qlen:       make(chan (chan int)),
+	}
+
+	// Start the processing loop, which will return a routine we can use to
+	// shut the queue down later.
+	s.shutdown = s.start()
+
+	return s
+}
+
+// Len will return the current count of events in the internal queue for a
+// stream. It does this by sending a message to the stream's process() loop,
+// which will then write the current length to the channel contained in that
+// message.
 func (s *Stream) Len() int {
 	// Send a request to the process() loop to get the current length of the
 	// queue
@@ -69,8 +96,7 @@ func (s *Stream) Shutdown() {
 }
 
 // start starts the event processing loop, which will continue to run until
-// terminated by the returned context.CancelFunc. Starting a previously started
-// Stream is an idempotent operation.
+// terminated by the returned context.CancelFunc.
 func (s *Stream) start() context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -79,28 +105,37 @@ func (s *Stream) start() context.CancelFunc {
 	return cancel
 }
 
-// process manages an Stream's lifecycle until canceled by the provided
-// context. Incoming events are appended to a queue which is then relayed to
-// the a listening client. New events pushed onto the queue will not block due
-// to client behavior.
+// process manages an Stream's lifecycle until canceled by the provided context.
+// Incoming events are appended to a queue which is then relayed to the
+// listening client. New events pushed onto the queue will not block if the
+// client is not actively polling for them; the stream will buffer them
+// internally.
 func (s *Stream) process(ctx context.Context) {
 	// Close the output channel so that clients know this stream is finished.
 	// We don't close s.in to avoid creating a race with the stream's Push()
 	// function.
 	defer close(s.out)
 
-	for {
-		// This loop relies on the fact that a send to a nil channel will block
-		// forever. If we have no entries in the queue, we set the send channel
-		// to nil, so the clause that attempts to send an event to the client
-		// will never complete. Clients will never receive an emptyEvent.
+	// This function is used to retrieve the next event from the queue, to be
+	// sent to the client. If there are no more events to send, it returns a nil
+	// channel and a zero-value event.
+	nextEvent := func() (chan Event, Event) {
 		sendCh := chan Event(nil)
 		next := Event(emptyEvent{})
-
 		if len(s.queue) > 0 {
 			sendCh = s.out
 			next = s.queue[0]
 		}
+		return sendCh, next
+	}
+
+	// The select statement in this loop relies on the fact that a send to a nil
+	// channel will block forever. If we have no entries in the queue, the
+	// sendCh variable will be nil, so the clause that attempts to send an event
+	// to the client will never complete. Clients will never receive an
+	// emptyEvent.
+	for {
+		sendCh, nextEvt := nextEvent()
 
 		select {
 		// new event received, append to queue
@@ -111,7 +146,7 @@ func (s *Stream) process(ctx context.Context) {
 			lenCh <- len(s.queue)
 
 		// client received an event, pop from queue
-		case sendCh <- next:
+		case sendCh <- nextEvt:
 			s.queue = s.queue[1:]
 
 		// shutdown requested
@@ -119,24 +154,4 @@ func (s *Stream) process(ctx context.Context) {
 			return
 		}
 	}
-}
-
-// NewStream configures a new Event Stream. Incoming events are appended to a
-// queue, which is then relayed to the listening client. Client behavior will
-// not cause incoming events to block. It is the responsibility of the caller
-// to terminate the Stream via Shutdown() when no longer in use.
-func NewStream(program uint32, cbID int32) *Stream {
-	s := &Stream{
-		Program:    program,
-		CallbackID: cbID,
-		in:         make(chan Event),
-		out:        make(chan Event),
-		qlen:       make(chan (chan int)),
-	}
-
-	// Start the processing loop, which will return a routine we can use to
-	// shut the queue down later.
-	s.shutdown = s.start()
-
-	return s
 }
