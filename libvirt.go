@@ -113,6 +113,30 @@ func (l *Libvirt) Capabilities() ([]byte, error) {
 	return []byte(caps), err
 }
 
+// called at connection time
+// it calls auth-list and authenticates if such auth type is supported
+func (l *Libvirt) authenticate() error {
+	resp, err := l.AuthList()
+	if err != nil {
+		return err
+	}
+
+loop:
+	for _, auth := range resp {
+		switch auth {
+		case constants.AuthNone:
+			break loop
+		case constants.AuthPolkit:
+			_, err := l.AuthPolkit()
+			if err != nil {
+				return err
+			}
+			break loop
+		}
+	}
+	return nil
+}
+
 // ConnectToURI establishes communication with the specified libvirt driver
 // The underlying libvirt socket connection must be previously established.
 func (l *Libvirt) ConnectToURI(uri ConnectURI) error {
@@ -131,26 +155,9 @@ func (l *Libvirt) ConnectToURI(uri ConnectURI) error {
 		return err
 	}
 
-	// libvirt requires that we call auth-list prior to connecting,
-	// event when no authentication is used.
-	resp, err := l.AuthList()
+	err = l.authenticate()
 	if err != nil {
 		return err
-	}
-
-	// Try to authenticate if required and auth type is supported
-loop:
-	for _, auth := range resp {
-		switch auth {
-		case constants.AuthNone:
-			break loop
-		case constants.AuthPolkit:
-			_, err := l.AuthPolkit()
-			if err != nil {
-				return err
-			}
-			break loop
-		}
 	}
 
 	_, err = l.request(constants.ProcConnectOpen, constants.Program, buf)
