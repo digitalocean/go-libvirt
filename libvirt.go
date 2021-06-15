@@ -121,18 +121,18 @@ func (l *Libvirt) authenticate() error {
 		return err
 	}
 
-loop:
 	for _, auth := range resp {
 		switch auth {
 		case constants.AuthNone:
-			break loop
 		case constants.AuthPolkit:
 			_, err := l.AuthPolkit()
 			if err != nil {
 				return err
 			}
-			break loop
+		default:
+			continue
 		}
+		break
 	}
 	return nil
 }
