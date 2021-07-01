@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"sync"
 	"time"
 
@@ -31,6 +32,7 @@ import (
 	"github.com/digitalocean/go-libvirt/internal/event"
 	xdr "github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/socket"
+	"github.com/digitalocean/go-libvirt/socket/dialers"
 )
 
 // ErrEventsNotSupported is returned by Events() if event streams
@@ -680,21 +682,35 @@ func (l *Libvirt) waitAndDisconnect() {
 	close(l.disconnected)
 }
 
-// New configures a new Libvirt object that can be used to perform RPCs via
-// libvirt's socket.  The actual connection will not be established until
-// Connect is called.  The same Libvirt object may be used to re-connect
+// NewWithDialer configures a new Libvirt object that can be used to perform
+// RPCs via libvirt's socket.  The actual connection will not be established
+// until Connect is called.  The same Libvirt object may be used to re-connect
 // multiple times.
-func New(dialer socket.Dialer) *Libvirt {
+func NewWithDialer(dialer socket.Dialer) *Libvirt {
 	l := &Libvirt{
 		s:            0,
 		disconnected: make(chan struct{}),
 		callbacks:    make(map[int32]chan response),
 		events:       make(map[int32]*event.Stream),
 	}
+
+	//
 	l.socket = socket.New(dialer, l)
 
 	// we start with a closed channel since that indicates no connection
 	close(l.disconnected)
 
 	return l
+}
+
+// New configures a new Libvirt RPC connection.
+// This function only remains to retain backwards compatability.
+// When Libvirt's Connect function is called, the Dial will simply return the
+// connection passed in here and start a goroutine listening/reading from it.
+// If at any point the Disconnect function is called, any subsequent Connect
+// call will simply return an already closed connection.
+//
+// Deprecated: Please use NewWithDialer.
+func New(conn net.Conn) *Libvirt {
+	return NewWithDialer(dialers.NewAlreadyConnected(conn))
 }
