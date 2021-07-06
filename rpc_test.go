@@ -271,8 +271,8 @@ func TestAddStream(t *testing.T) {
 func TestRemoveStream(t *testing.T) {
 	id := int32(1)
 
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -300,8 +300,8 @@ func TestRemoveAllStreams(t *testing.T) {
 	id1 := int32(1)
 	id2 := int32(2)
 
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -381,8 +381,8 @@ func TestSerial(t *testing.T) {
 func TestLookup(t *testing.T) {
 	name := "test"
 
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -401,10 +401,10 @@ func TestLookup(t *testing.T) {
 }
 
 func TestDeregisterAll(t *testing.T) {
-	conn := libvirttest.New()
+	dialer := libvirttest.New()
 	c1 := make(chan response)
 	c2 := make(chan response)
-	l := New(conn)
+	l := NewWithDialer(dialer)
 	if len(l.callbacks) != 0 {
 		t.Error("expected callback map to be empty at test start")
 	}
