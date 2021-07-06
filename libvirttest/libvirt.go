@@ -581,24 +581,36 @@ var testGetAllDomainStatsReply = []byte{
 
 // MockLibvirt provides a mock libvirt server for testing.
 type MockLibvirt struct {
-	net.Conn
+	client net.Conn
 	Test   net.Conn
 	Fail   bool
 	serial uint32
+	disconnected chan struct{}
 }
 
 // New creates a new mock Libvirt server.
 func New() *MockLibvirt {
+	m := &MockLibvirt{
+		disconnected: make(chan struct{}),
+	}
+	close(m.disconnected)
+	return m
+}
+
+func (m *MockLibvirt) Dial() (net.Conn, error) {
 	serv, conn := net.Pipe()
 
-	m := &MockLibvirt{
-		Conn: conn,
-		Test: serv,
-	}
+	m.client = conn
+	m.Test = serv
+	m.disconnected = make(chan struct{})
 
-	go m.handle(serv)
+	go func() {
+		m.handle(serv)
+		fmt.Println("libvirttest pipe closed")
+		close(m.disconnected)
+	}()
 
-	return m
+	return m.client, nil
 }
 
 func (m *MockLibvirt) handle(conn net.Conn) {

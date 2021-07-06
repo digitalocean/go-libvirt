@@ -32,6 +32,7 @@ import (
 	"github.com/digitalocean/go-libvirt/internal/event"
 	xdr "github.com/digitalocean/go-libvirt/internal/go-xdr/xdr2"
 	"github.com/digitalocean/go-libvirt/socket"
+	"github.com/digitalocean/go-libvirt/socket/dialers"
 )
 
 // ErrEventsNotSupported is returned by Events() if event streams
@@ -138,9 +139,7 @@ func (l *Libvirt) authenticate() error {
 	return nil
 }
 
-// ConnectToURI establishes communication with the specified libvirt driver
-// The underlying libvirt socket connection must be previously established.
-func (l *Libvirt) ConnectToURI(uri ConnectURI) error {
+func (l *Libvirt) initLibvirtComms(uri ConnectURI) error {
 	payload := struct {
 		Padding [3]byte
 		Name    string
@@ -169,8 +168,32 @@ func (l *Libvirt) ConnectToURI(uri ConnectURI) error {
 	return nil
 }
 
+// ConnectToURI establishes communication with the specified libvirt driver
+// The underlying libvirt socket connection will be created via the dialer.
+// Since the connection can be lost, the Disconnected function can be used
+// to monitor for a lost connection.
+func (l *Libvirt) ConnectToURI(uri ConnectURI) error {
+	err := l.socket.Connect()
+	if err != nil {
+		return err
+	}
+
+	err = l.initLibvirtComms(uri)
+	if err != nil {
+		l.socket.Disconnect()
+		return err
+	}
+
+	l.disconnected = make(chan struct{})
+	go l.waitAndDisconnect()
+
+	return nil
+}
+
 // Connect establishes communication with the libvirt server.
-// The underlying libvirt socket connection must be previously established.
+// The underlying libvirt socket connection will be created via the dialer.
+// Since the connection can be lost, the Disconnected function can be used
+// to monitor for a lost connection.
 func (l *Libvirt) Connect() error {
 	return l.ConnectToURI(QEMUSystem)
 }
@@ -659,8 +682,11 @@ func (l *Libvirt) waitAndDisconnect() {
 	close(l.disconnected)
 }
 
-// New configures a new Libvirt RPC connection.
-func New(conn net.Conn) *Libvirt {
+// NewWithDialer configures a new Libvirt object that can be used to perform
+// RPCs via libvirt's socket.  The actual connection will not be established
+// until Connect is called.  The same Libvirt object may be used to re-connect
+// multiple times.
+func NewWithDialer(dialer socket.Dialer) *Libvirt {
 	l := &Libvirt{
 		s:            0,
 		disconnected: make(chan struct{}),
@@ -668,13 +694,22 @@ func New(conn net.Conn) *Libvirt {
 		events:       make(map[int32]*event.Stream),
 	}
 
-	// this starts the listening and routing
-	// TODO:  The connection and listen goroutine should be moved to the
-	//  Connect function, but this is going to impact the exported API, so
-	//  trying to do as much as possible before doing that.
-	l.socket = socket.New(conn, l)
+	l.socket = socket.New(dialer, l)
 
-	go l.waitAndDisconnect()
+	// we start with a closed channel since that indicates no connection
+	close(l.disconnected)
 
 	return l
+}
+
+// New configures a new Libvirt RPC connection.
+// This function only remains to retain backwards compatability.
+// When Libvirt's Connect function is called, the Dial will simply return the
+// connection passed in here and start a goroutine listening/reading from it.
+// If at any point the Disconnect function is called, any subsequent Connect
+// call will simply return an already closed connection.
+//
+// Deprecated: Please use NewWithDialer.
+func New(conn net.Conn) *Libvirt {
+	return NewWithDialer(dialers.NewAlreadyConnected(conn))
 }

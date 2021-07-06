@@ -25,15 +25,38 @@ import (
 	"github.com/digitalocean/go-libvirt/libvirttest"
 )
 
-func TestConnect(t *testing.T) {
-	conn := libvirttest.New()
+func TestDeprecatedConnectAndDisconnect(t *testing.T) {
+	dialer := libvirttest.New()
+	conn, err := dialer.Dial()
+	if err != nil {
+		t.Fatalf("failed to establish test connection: %v", err)
+	}
 	l := New(conn)
 
-	err := l.Connect()
+	err = l.Connect()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = l.Disconnect()
 	if err != nil {
 		t.Error(err)
 	}
-	defer l.Disconnect()
+}
+
+func TestConnectAndDisconnect(t *testing.T) {
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
+
+	err := l.Connect()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = l.Disconnect()
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 func TestLibvirt_ConnectToURI(t *testing.T) {
@@ -62,8 +85,8 @@ func TestLibvirt_ConnectToURI(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			conn := libvirttest.New()
-			libvirtConn := New(conn)
+			dialer := libvirttest.New()
+			libvirtConn := NewWithDialer(dialer)
 
 			if err := libvirtConn.ConnectToURI(tt.args.uri); (err != nil) != tt.wantErr {
 				t.Errorf("ConnectToURI() error = %v, wantErr %v", err, tt.wantErr)
@@ -73,19 +96,9 @@ func TestLibvirt_ConnectToURI(t *testing.T) {
 	}
 }
 
-func TestDisconnect(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
-
-	err := l.Disconnect()
-	if err != nil {
-		t.Error(err)
-	}
-}
-
 func TestDisconnectCleanup(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -113,8 +126,8 @@ func TestDisconnectCleanup(t *testing.T) {
 }
 
 func TestLostConnectionCleanup(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -128,7 +141,7 @@ func TestLostConnectionCleanup(t *testing.T) {
 	// forcibly just close the fake libvirt tester side of the pipe to lose
 	// the connection.
 	// This should be detected and cleaned up without having to call Disconnect.
-	conn.Test.Close()
+	dialer.Test.Close()
 
 	// now make sure that deregistered the callback
 	// do it via a select just to avoid the 10 minute unit test timeout on
@@ -142,8 +155,8 @@ func TestLostConnectionCleanup(t *testing.T) {
 }
 
 func TestMigrate(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -171,8 +184,8 @@ func TestMigrate(t *testing.T) {
 }
 
 func TestMigrateSetMaxSpeed(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -190,9 +203,47 @@ func TestMigrateSetMaxSpeed(t *testing.T) {
 	}
 }
 
-func TestDomains(t *testing.T) {
-	conn := libvirttest.New()
+func TestDomainsWithDeprecatedNew(t *testing.T) {
+	dialer := libvirttest.New()
+	conn, err := dialer.Dial()
+	if err != nil {
+		t.Fatalf("failed to dial test connection: %v", err)
+	}
 	l := New(conn)
+
+	err = l.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+	defer l.Disconnect()
+
+	domains, err := l.Domains()
+	if err != nil {
+		t.Error(err)
+	}
+
+	wantLen := 2
+	gotLen := len(domains)
+	if gotLen != wantLen {
+		t.Errorf("expected %d domains to be returned, got %d", wantLen, gotLen)
+	}
+
+	for i, d := range domains {
+		wantID := i + 1
+		if d.ID != int32(wantID) {
+			t.Errorf("expected domain ID %q, got %q", wantID, d.ID)
+		}
+
+		wantName := fmt.Sprintf("aaaaaaa-%d", i+1)
+		if d.Name != wantName {
+			t.Errorf("expected domain name %q, got %q", wantName, d.Name)
+		}
+	}
+}
+
+func TestDomains(t *testing.T) {
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -225,8 +276,8 @@ func TestDomains(t *testing.T) {
 }
 
 func TestDomainState(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -246,8 +297,8 @@ func TestDomainState(t *testing.T) {
 }
 
 func TestDomainMemoryStats(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -288,8 +339,8 @@ func TestDomainMemoryStats(t *testing.T) {
 }
 
 func TestEvents(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -336,7 +387,7 @@ func TestEvents(t *testing.T) {
 	}()
 
 	// send an event to the listener goroutine
-	conn.Test.Write(append(testEventHeader, testEvent...))
+	dialer.Test.Write(append(testEventHeader, testEvent...))
 
 	// wait for completion
 	if err := <-done; err != nil {
@@ -345,8 +396,8 @@ func TestEvents(t *testing.T) {
 }
 
 func TestRun(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -383,9 +434,9 @@ func TestRun(t *testing.T) {
 }
 
 func TestRunFail(t *testing.T) {
-	conn := libvirttest.New()
-	conn.Fail = true
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
+	dialer.Fail = true
 
 	err := l.Connect()
 	if err != nil {
@@ -400,8 +451,8 @@ func TestRunFail(t *testing.T) {
 }
 
 func TestSecrets(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -442,8 +493,8 @@ func TestSecrets(t *testing.T) {
 }
 
 func TestStoragePool(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -474,8 +525,8 @@ func TestStoragePool(t *testing.T) {
 }
 
 func TestStoragePools(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -512,8 +563,8 @@ func TestStoragePools(t *testing.T) {
 }
 
 func TestStoragePoolRefresh(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -532,8 +583,8 @@ func TestStoragePoolRefresh(t *testing.T) {
 }
 
 func TestUndefine(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -548,8 +599,8 @@ func TestUndefine(t *testing.T) {
 }
 
 func TestDestroy(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -564,8 +615,8 @@ func TestDestroy(t *testing.T) {
 }
 
 func TestVersion(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -585,8 +636,8 @@ func TestVersion(t *testing.T) {
 }
 
 func TestDefineXML(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -602,8 +653,8 @@ func TestDefineXML(t *testing.T) {
 }
 
 func TestDomainCreateWithFlags(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -622,8 +673,8 @@ func TestDomainCreateWithFlags(t *testing.T) {
 }
 
 func TestShutdown(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -638,8 +689,8 @@ func TestShutdown(t *testing.T) {
 }
 
 func TestReboot(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -654,8 +705,8 @@ func TestReboot(t *testing.T) {
 }
 
 func TestReset(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -669,8 +720,8 @@ func TestReset(t *testing.T) {
 }
 
 func TestSetBlockIOTune(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -684,8 +735,8 @@ func TestSetBlockIOTune(t *testing.T) {
 }
 
 func TestGetBlockIOTune(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
@@ -707,8 +758,8 @@ func TestGetBlockIOTune(t *testing.T) {
 // ConnectGetAllDomainStats is a good test, since its return values include an
 // array of TypedParams embedded in a struct.
 func TestConnectGetAllDomainStats(t *testing.T) {
-	conn := libvirttest.New()
-	l := New(conn)
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
 
 	err := l.Connect()
 	if err != nil {
