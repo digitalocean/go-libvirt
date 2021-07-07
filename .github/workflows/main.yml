@@ -11,7 +11,20 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        libvirt: ['3.1.0', '5.1.0']
+        include:
+          - libvirt: '3.1.0'
+            os: 'ubuntu-18.04'
+          - libvirt: '5.1.0'
+            os: 'ubuntu-18.04'
+
+    runs-on: ${{ matrix.os }}
+    env:
+      CCACHE_TEMPDIR: /tmp/.ccache-temp
+      EXT: xz
+      LIBVIRT: ${{ matrix.libvirt }}
 
     steps:
       - uses: actions/checkout@v2 # respository path: $GITHUB_WORKSPACE
@@ -19,8 +32,48 @@ jobs:
         with:
           go-version: 1.16.2
 
-      - name: Install dependencies
-        run: go get -u golang.org/x/lint/golint
+      - name: Install golint and goyacc
+        run: |
+          go get -u golang.org/x/lint/golint
+          go get golang.org/x/tools/cmd/goyacc
+
+      - name: Enable apt source package downloads and update index
+        run: |
+          sudo sed -i '/deb-src/s/^# //' /etc/apt/sources.list
+          sudo apt update
+
+      - name: Build libvirt from source and install it
+        run: |
+          sudo apt-get -qqy build-dep libvirt
+          sudo apt-get -qqy install curl ccache qemu-system-x86
+          sudo mkdir -p /usr/src && sudo chown $(id -u) /usr/src
+          curl -O -s https://libvirt.org/sources/libvirt-${LIBVIRT}.tar.${EXT}
+          tar -C /usr/src -xf libvirt-${LIBVIRT}.tar.${EXT}
+          pushd /usr/src/libvirt-${LIBVIRT}
+          ccache --show-stats
+          env PATH=/usr/lib/ccache:$PATH \
+             ./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc \
+                         --without-polkit \
+                         --without-esx --without-vbox --without-xen --without-libxl --without-lxc \
+                         --with-qemu
+          make
+          sudo make install
+          ccache --show-stats
+          popd
+          sudo libvirtd -d -l -f $GITHUB_WORKSPACE/.github/testdata/libvirtd.conf
+          sudo virtlogd -d || true
+
+      - name: Setup test artifacts
+        env:
+          TESTDATA: ${{ github.workspace }}/.github/testdata
+        run: |
+          go get -d ./...
+          sudo qemu-img create -f raw -o size=10M /var/lib/libvirt/images/test.raw
+          sudo virsh define $TESTDATA/test-domain.xml
+          sudo virsh start test
+          sudo virsh pool-create $TESTDATA/test-pool.xml
+          sudo virsh secret-define $TESTDATA/test-secret.xml
+
 
       - name: Lint
         run: |
@@ -30,11 +83,8 @@ jobs:
       - name: Unit test
         run: go test -race ./...
 
-      # TODO: integration testing previously available with travis-ci.
-      # - name: integration test
-      #   run: |
-      #     ~much setup~
-      #     go test -race -tags=integration ./...
+      - name: integration test
+        run: go test -race -tags=integration ./...
 
       - name: Build
         run: go build ./...
