@@ -60,7 +60,7 @@ jobs:
           sudo make install
           ccache --show-stats
           popd
-          sudo libvirtd -d -l -f $GITHUB_WORKSPACE/.github/libvirtd.conf
+          sudo libvirtd -d -l -f $GITHUB_WORKSPACE/.github/workflows/libvirtd.conf
           sudo virtlogd -d || true
 
       - name: Setup test artifacts
