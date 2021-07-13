@@ -60,12 +60,12 @@ jobs:
           sudo make install
           ccache --show-stats
           popd
-          sudo libvirtd -d -l -f $GITHUB_WORKSPACE/.github/testdata/libvirtd.conf
+          sudo libvirtd -d -l -f $GITHUB_WORKSPACE/.github/libvirtd.conf
           sudo virtlogd -d || true
 
       - name: Setup test artifacts
         env:
-          TESTDATA: ${{ github.workspace }}/.github/testdata
+          TESTDATA: ${{ github.workspace }}/testdata
         run: |
           go get -d ./...
           sudo qemu-img create -f raw -o size=10M /var/lib/libvirt/images/test.raw
