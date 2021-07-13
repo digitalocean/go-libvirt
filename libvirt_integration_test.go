@@ -29,38 +29,34 @@ import (
 // tcp connections.
 const testAddr = "127.0.0.1:16509"
 
-func TestConnectIntegration(t *testing.T) {
+func TestConnectDisconnectIntegration(t *testing.T) {
 	l := New(testConn(t))
-	defer l.Disconnect()
 
 	if err := l.Connect(); err != nil {
-		t.Error(err)
+		t.Fatal(err)
+	}
+
+	if err := l.Disconnect(); err != nil {
+		t.Fatal(err)
 	}
 }
 
 func TestConnectToURIIntegration(t *testing.T) {
 	l := New(testConn(t))
-	defer l.Disconnect()
 
 	if err := l.ConnectToURI(TestDefault); err != nil {
 		t.Error(err)
 	}
-}
-
-func TestDisconnectIntegration(t *testing.T) {
-	l := New(testConn(t))
-	if err := l.Disconnect(); err != nil {
-		t.Error(err)
-	}
+	defer l.Disconnect()
 }
 
 func TestCapabilities(t *testing.T) {
 	l := New(testConn(t))
-	defer l.Disconnect()
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
 	}
+	defer l.Disconnect()
 
 	resp, err := l.Capabilities()
 	if err != nil {
@@ -85,11 +81,11 @@ func TestCapabilities(t *testing.T) {
 
 func TestSecretsIntegration(t *testing.T) {
 	l := New(testConn(t))
-	defer l.Disconnect()
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
 	}
+	defer l.Disconnect()
 
 	secrets, err := l.Secrets()
 	if err != nil {
@@ -126,11 +122,11 @@ func TestSecretsIntegration(t *testing.T) {
 
 func TestStoragePoolIntegration(t *testing.T) {
 	l := New(testConn(t))
-	defer l.Disconnect()
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
 	}
+	defer l.Disconnect()
 
 	wantName := "test"
 	pool, err := l.StoragePool(wantName)
@@ -146,11 +142,11 @@ func TestStoragePoolIntegration(t *testing.T) {
 
 func TestStoragePoolInvalidIntegration(t *testing.T) {
 	l := New(testConn(t))
-	defer l.Disconnect()
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
 	}
+	defer l.Disconnect()
 
 	_, err := l.StoragePool("test-does-not-exist")
 	if err == nil {
@@ -160,11 +156,11 @@ func TestStoragePoolInvalidIntegration(t *testing.T) {
 
 func TestStoragePoolsIntegration(t *testing.T) {
 	l := New(testConn(t))
-	defer l.Disconnect()
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
 	}
+	defer l.Disconnect()
 
 	pools, err := l.StoragePools(ConnectListStoragePoolsActive)
 	if err != nil {
@@ -186,11 +182,11 @@ func TestStoragePoolsIntegration(t *testing.T) {
 
 func TestStoragePoolsAutostartIntegration(t *testing.T) {
 	l := New(testConn(t))
-	defer l.Disconnect()
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
 	}
+	defer l.Disconnect()
 
 	pools, err := l.StoragePools(ConnectListStoragePoolsAutostart)
 	if err != nil {
@@ -206,11 +202,11 @@ func TestStoragePoolsAutostartIntegration(t *testing.T) {
 
 func TestStoragePoolRefreshIntegration(t *testing.T) {
 	l := New(testConn(t))
-	defer l.Disconnect()
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
 	}
+	defer l.Disconnect()
 
 	pool, err := l.StoragePool("test")
 	if err != nil {
@@ -225,11 +221,11 @@ func TestStoragePoolRefreshIntegration(t *testing.T) {
 
 func TestStoragePoolRefreshInvalidIntegration(t *testing.T) {
 	l := New(testConn(t))
-	defer l.Disconnect()
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
 	}
+	defer l.Disconnect()
 
 	pool, err := l.StoragePool("test-does-not-exist")
 	if err == nil {
