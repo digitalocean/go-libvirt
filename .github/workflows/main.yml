@@ -13,55 +13,29 @@ jobs:
   test:
     strategy:
       matrix:
-        libvirt: ['3.1.0', '5.1.0']
-        include:
-          - libvirt: '3.1.0'
-            os: 'ubuntu-18.04'
-          - libvirt: '5.1.0'
-            os: 'ubuntu-18.04'
+        os: ['ubuntu-18.04', 'ubuntu-20.04']
 
     runs-on: ${{ matrix.os }}
-    env:
-      CCACHE_TEMPDIR: /tmp/.ccache-temp
-      EXT: xz
-      LIBVIRT: ${{ matrix.libvirt }}
-
     steps:
       - uses: actions/checkout@v2 # respository path: $GITHUB_WORKSPACE
       - uses: actions/setup-go@v2
         with:
           go-version: 1.16.2
 
-      - name: Install golint and goyacc
-        run: |
-          go get -u golang.org/x/lint/golint
-          go get golang.org/x/tools/cmd/goyacc
+      - name: Install golint
+        run: go get -u golang.org/x/lint/golint
+      - name: Install goyacc
+        run: go get golang.org/x/tools/cmd/goyacc
 
-      - name: Enable apt source package downloads and update index
+      - name: Install libvirt
         run: |
-          sudo sed -i '/deb-src/s/^# //' /etc/apt/sources.list
-          sudo apt update
+          sudo apt-get update
+          sudo apt-get -qqy install libvirt-daemon-system
 
-      - name: Build libvirt from source and install it
-        run: |
-          sudo apt-get -qqy build-dep libvirt
-          sudo apt-get -qqy install curl ccache qemu-system-x86
-          sudo mkdir -p /usr/src && sudo chown $(id -u) /usr/src
-          curl -O -s https://libvirt.org/sources/libvirt-${LIBVIRT}.tar.${EXT}
-          tar -C /usr/src -xf libvirt-${LIBVIRT}.tar.${EXT}
-          pushd /usr/src/libvirt-${LIBVIRT}
-          ccache --show-stats
-          env PATH=/usr/lib/ccache:$PATH \
-             ./configure --prefix=/usr --localstatedir=/var --sysconfdir=/etc \
-                         --without-polkit \
-                         --without-esx --without-vbox --without-xen --without-libxl --without-lxc \
-                         --with-qemu
-          make
-          sudo make install
-          ccache --show-stats
-          popd
-          sudo libvirtd -d -l -f $GITHUB_WORKSPACE/.github/workflows/libvirtd.conf
-          sudo virtlogd -d || true
+      - name: Stop libvirtd
+        run: sudo systemctl stop libvirtd
+      - name: Start libvirtd with custom config
+        run: sudo libvirtd -d -l -f $GITHUB_WORKSPACE/.github/workflows/libvirtd.conf
 
       - name: Setup test artifacts
         env:
@@ -74,8 +48,7 @@ jobs:
           sudo virsh pool-create $TESTDATA/test-pool.xml
           sudo virsh secret-define $TESTDATA/test-secret.xml
 
-
-      - name: Lint
+      - name: Lint and Vet
         run: |
           golint -set_exit_status ./...
           go vet ./...
@@ -84,7 +57,7 @@ jobs:
         run: go test -race ./...
 
       - name: integration test
-        run: go test -race -tags=integration ./...
+        run: sudo go test -race -tags=integration ./...
 
       - name: Build
         run: go build ./...
