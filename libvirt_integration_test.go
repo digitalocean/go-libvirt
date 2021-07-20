@@ -19,17 +19,32 @@ package libvirt
 import (
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"net"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/digitalocean/go-libvirt/socket"
+	"github.com/digitalocean/go-libvirt/socket/dialers"
 )
 
 // In order for this test to work, libvirtd must be running and listening for
-// tcp connections.
-const testAddr = "127.0.0.1:16509"
+// tcp connections.  Then the items (domain, secret, storage pool) in the top level testdata directory
+// need to have been previously defined.  (See the "Setup test artifacts" steps
+// in .github/workflows/main.yml for how to use virsh for this.)
+//
+// TODO:  The setup steps should be moved into a script that can be manually
+// called or used by ci.
 
-func TestConnectDisconnectIntegration(t *testing.T) {
+const (
+	testAddr = "127.0.0.1"
+	testPort = "16509"
+
+	testDomainName = "test"
+)
+
+func TestDeprecatedConnectDisconnectIntegration(t *testing.T) {
 	l := New(testConn(t))
 
 	if err := l.Connect(); err != nil {
@@ -41,8 +56,20 @@ func TestConnectDisconnectIntegration(t *testing.T) {
 	}
 }
 
+func TestConnectDisconnectIntegration(t *testing.T) {
+	l := NewWithDialer(testDialer(t))
+
+	if err := l.Connect(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := l.Disconnect(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestConnectToURIIntegration(t *testing.T) {
-	l := New(testConn(t))
+	l := NewWithDialer(testDialer(t))
 
 	if err := l.ConnectToURI(TestDefault); err != nil {
 		t.Error(err)
@@ -50,17 +77,12 @@ func TestConnectToURIIntegration(t *testing.T) {
 	defer l.Disconnect()
 }
 
-func TestCapabilities(t *testing.T) {
-	l := New(testConn(t))
-
-	if err := l.Connect(); err != nil {
-		t.Fatal(err)
-	}
-	defer l.Disconnect()
+func checkCapabilities(t *testing.T, l *Libvirt) error {
+	t.Helper()
 
 	resp, err := l.Capabilities()
 	if err != nil {
-		t.Fatal(err)
+		return err
 	}
 
 	// verify UUID exists within returned XML
@@ -71,16 +93,121 @@ func TestCapabilities(t *testing.T) {
 	}
 
 	if err := xml.Unmarshal(resp, &caps); err != nil {
-		t.Fatal(err)
+		return err
 	}
 
 	if caps.Host.UUID == "" {
-		t.Error("expected capabilities to contain a UUID")
+		return errors.New("expected capabilities to contain a UUID")
+	}
+
+	return nil
+}
+
+func TestDeprecatedCapabilities(t *testing.T) {
+	l := New(testConn(t))
+
+	if err := l.Connect(); err != nil {
+		t.Fatal(err)
+	}
+	defer l.Disconnect()
+
+	if err := checkCapabilities(t, l); err != nil {
+		t.Errorf("check capabilities error: %v", err)
+	}
+}
+
+func TestCapabilities(t *testing.T) {
+	l := NewWithDialer(testDialer(t))
+
+	if err := l.Connect(); err != nil {
+		t.Fatal(err)
+	}
+	defer l.Disconnect()
+
+	if err := checkCapabilities(t, l); err != nil {
+		t.Errorf("check capabilities error: %v", err)
+	}
+}
+
+func TestUsingNeverConnected(t *testing.T) {
+	l := NewWithDialer(testDialer(t))
+
+	// should fail because Connect was never called
+	_, err := l.DomainLookupByName(testDomainName)
+	if err == nil {
+		t.Fatal("using a never connected libvirt should fail")
+	}
+}
+
+func TestUsingAfterDisconnect(t *testing.T) {
+	l := NewWithDialer(testDialer(t))
+
+	if err := l.Connect(); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := l.Disconnect(); err != nil {
+		t.Fatal(err)
+	}
+
+	// should fail because Disconnect was already called
+	_, err := l.DomainLookupByName(testDomainName)
+	if err == nil {
+		t.Fatal("using a disconnected libvirt should fail")
+	}
+}
+
+func TestLostConnection(t *testing.T) {
+	// In order to be able to close the connection external to libvirt,
+	// we use an already established dialer.
+	conn := testConn(t)
+	l := NewWithDialer(dialers.NewAlreadyConnected(conn))
+
+	if err := l.Connect(); err != nil {
+		t.Fatal(err)
+	}
+
+	// forcibly close the connection out from under the Libvirt object
+	conn.Close()
+
+	// this should return an error about the connection being lost
+	_, err := l.DomainLookupByName(testDomainName)
+	if err == nil {
+		t.Error("using a libvirt with a lost connection should fail")
+	}
+
+	// Disconnect should still return success when the connection was already
+	// lost.
+	if err := l.Disconnect(); err != nil {
+		t.Fatalf("disconnect should still succeed after connection is lost"+
+			": %v", err)
+	}
+
+}
+
+func TestMultipleConnections(t *testing.T) {
+	l := NewWithDialer(testDialer(t))
+
+	if err := l.Connect(); err != nil {
+		t.Fatal(err)
+	}
+	if err := l.Disconnect(); err != nil {
+		t.Fatal(err)
+	}
+
+	// Now connect again and make sure stuff still works
+	if err := l.Connect(); err != nil {
+		t.Fatal(err)
+	}
+	defer l.Disconnect()
+
+	if err := checkCapabilities(t, l); err != nil {
+		t.Errorf("failed to use reconnected libvirt: %v", err)
 	}
 }
 
 func TestSecretsIntegration(t *testing.T) {
-	l := New(testConn(t))
+	l := NewWithDialer(testDialer(t))
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
@@ -121,7 +248,7 @@ func TestSecretsIntegration(t *testing.T) {
 }
 
 func TestStoragePoolIntegration(t *testing.T) {
-	l := New(testConn(t))
+	l := NewWithDialer(testDialer(t))
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
@@ -141,7 +268,7 @@ func TestStoragePoolIntegration(t *testing.T) {
 }
 
 func TestStoragePoolInvalidIntegration(t *testing.T) {
-	l := New(testConn(t))
+	l := NewWithDialer(testDialer(t))
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
@@ -155,7 +282,7 @@ func TestStoragePoolInvalidIntegration(t *testing.T) {
 }
 
 func TestStoragePoolsIntegration(t *testing.T) {
-	l := New(testConn(t))
+	l := NewWithDialer(testDialer(t))
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
@@ -181,7 +308,7 @@ func TestStoragePoolsIntegration(t *testing.T) {
 }
 
 func TestStoragePoolsAutostartIntegration(t *testing.T) {
-	l := New(testConn(t))
+	l := NewWithDialer(testDialer(t))
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
@@ -201,7 +328,7 @@ func TestStoragePoolsAutostartIntegration(t *testing.T) {
 }
 
 func TestStoragePoolRefreshIntegration(t *testing.T) {
-	l := New(testConn(t))
+	l := NewWithDialer(testDialer(t))
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
@@ -220,7 +347,7 @@ func TestStoragePoolRefreshIntegration(t *testing.T) {
 }
 
 func TestStoragePoolRefreshInvalidIntegration(t *testing.T) {
-	l := New(testConn(t))
+	l := NewWithDialer(testDialer(t))
 
 	if err := l.Connect(); err != nil {
 		t.Fatal(err)
@@ -239,7 +366,7 @@ func TestStoragePoolRefreshInvalidIntegration(t *testing.T) {
 }
 
 func TestXMLIntegration(t *testing.T) {
-	l := New(testConn(t))
+	l := NewWithDialer(testDialer(t))
 
 	if err := l.Connect(); err != nil {
 		t.Error(err)
@@ -260,7 +387,7 @@ func TestXMLIntegration(t *testing.T) {
 
 func TestVolumeUploadDownloadIntegration(t *testing.T) {
 	testdata := []byte("Hello, world!")
-	l := New(testConn(t))
+	l := NewWithDialer(testDialer(t))
 
 	if err := l.Connect(); err != nil {
 		t.Error(err)
@@ -313,7 +440,7 @@ func TestVolumeUploadDownloadIntegration(t *testing.T) {
 // verify we're able to concurrently communicate with libvirtd.
 // see: https://github.com/digitalocean/go-libvirt/pull/52
 func Test_concurrentWrite(t *testing.T) {
-	l := New(testConn(t))
+	l := NewWithDialer(testDialer(t))
 
 	if err := l.Connect(); err != nil {
 		t.Error(err)
@@ -353,8 +480,21 @@ func Test_concurrentWrite(t *testing.T) {
 	}
 }
 
+func testDialer(t *testing.T) socket.Dialer {
+	t.Helper()
+
+	return dialers.NewRemote(
+		testAddr,
+		dialers.UsePort(testPort),
+		dialers.WithRemoteTimeout(time.Second*2),
+	)
+}
+
 func testConn(t *testing.T) net.Conn {
-	conn, err := net.DialTimeout("tcp", testAddr, time.Second*2)
+	t.Helper()
+
+	dialer := testDialer(t)
+	conn, err := dialer.Dial()
 	if err != nil {
 		t.Fatal(err)
 	}
