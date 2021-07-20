@@ -129,6 +129,8 @@ func New(dialer Dialer, router Router) *Socket {
 	return s
 }
 
+// Connect uses the dialer provided on creation to establish
+// underlying physical connection to the desired libvirt.
 func (s *Socket) Connect() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

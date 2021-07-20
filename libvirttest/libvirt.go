@@ -597,6 +597,7 @@ func New() *MockLibvirt {
 	return m
 }
 
+// Dial creates a pipe to use for the server and client
 func (m *MockLibvirt) Dial() (net.Conn, error) {
 	serv, conn := net.Pipe()
 
