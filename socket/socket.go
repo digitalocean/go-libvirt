@@ -135,7 +135,7 @@ func (s *Socket) Connect() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.conn != nil {
+	if !s.isDisconnected() {
 		return errors.New("already connected to socket")
 	}
 	conn, err := s.dialer.Dial()
