@@ -26,6 +26,7 @@ import (
 	"fmt"
 	"net"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
@@ -205,7 +206,10 @@ func (l *Libvirt) Disconnect() error {
 	// before unsubscribing and deregistering the events and requests, to
 	// prevent new requests from racing.
 	_, err := l.request(constants.ProcConnectClose, constants.Program, nil)
-	if err != nil {
+
+	// syscall.EINVAL is returned when attempting to write to a lost connection,
+	// In this case we don't want to fail.
+	if err != nil && err != syscall.EINVAL {
 		return err
 	}
 	err = l.socket.Disconnect()
