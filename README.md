@@ -33,10 +33,13 @@ re-run the code generator. To do this, follow these steps:
 
 - First, download a copy of the libvirt sources corresponding to the version you
   want to use.
-- Next, run `autogen.sh` in the libvirt directory. The autotools will check for
-  necessary libraries and prepare libvirt for building. We don't actually need
-  to build libvirt, but we do require some header files that are produced in
-  this step.
+- Change directories into where you've unpacked your distribution of libvirt.
+- The second step depends on the version of libvirt you'd like to build against.
+  It's not necessary to actually build libvirt, but it is necessary to run libvirt's
+  "configure" step because it generates required files.
+  - For libvirt < v6.7.0, run `autogen.sh`. The autotools will check for necessary
+    libraries and prepare libvirt for building.
+  - For libvirt >= v6.7.0, run `meson setup build`.
 - Finally, set the environment variable `LIBVIRT_SOURCE` to the directory you
   put libvirt into, and run `go generate ./...` from the go-libvirt directory.
   This runs both of the go-libvirt's code generators.
