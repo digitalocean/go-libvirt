@@ -228,6 +228,13 @@ func (l *Libvirt) Disconnect() error {
 	return err
 }
 
+// Disconnected allows callers to detect if the underlying connection
+// to libvirt has been closed. If the returned channel is closed, then
+// the connection to libvirt has been lost (or disconnected intentionally).
+func (l *Libvirt) Disconnected() <-chan struct{} {
+	return l.disconnected
+}
+
 // Domains returns a list of all domains managed by libvirt.
 //
 // Deprecated: use ConnectListAllDomains instead.

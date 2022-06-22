@@ -154,6 +154,40 @@ func TestLostConnectionCleanup(t *testing.T) {
 	}
 }
 
+func TestMonitorDisconnect(t *testing.T) {
+	dialer := libvirttest.New()
+	lv := NewWithDialer(dialer)
+
+	// Haven't connected yet.
+	select {
+	case <-lv.Disconnected():
+	default:
+		t.Fatalf("chan is open but should be closed")
+	}
+
+	err := lv.Connect()
+	if err != nil {
+		t.Fatalf("connect failed: %v", err)
+	}
+
+	select {
+	case <-lv.Disconnected():
+		t.Fatalf("chan should be open but is closed")
+	default:
+	}
+
+	err = lv.Disconnect()
+	if err != nil {
+		t.Fatalf("disconnect failed: %v", err)
+	}
+
+	select {
+	case <-lv.Disconnected():
+	default:
+		t.Fatalf("chan still open after Disconnect")
+	}
+}
+
 func TestMigrate(t *testing.T) {
 	dialer := libvirttest.New()
 	l := NewWithDialer(dialer)
