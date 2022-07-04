@@ -7,7 +7,7 @@ libvirt
 Package `go-libvirt` provides a pure Go interface for interacting with libvirt.
 
 Rather than using libvirt's C bindings, this package makes use of
-libvirt's RPC interface, as documented [here](https://libvirt.org/internals/rpc.html).
+libvirt's RPC interface, as documented [here](https://libvirt.org/kbase/internals/rpc.html).
 Connections to the libvirt server may be local, or remote. RPC packets are encoded
 using the XDR standard as defined by [RFC 4506](https://tools.ietf.org/html/rfc4506.html).
 
