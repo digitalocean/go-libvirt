@@ -1,4 +1,4 @@
-// Copyright 2018 The go-libvirt Authors.
+// Copyright 2022 The go-libvirt Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -708,8 +708,7 @@ func (m *MockLibvirt) handleQEMU(procedure uint32, conn net.Conn) {
 // reply automatically injects the correct serial
 // number into the provided response buffer.
 func (m *MockLibvirt) reply(buf []byte) []byte {
-	atomic.AddUint32(&m.serial, 1)
-	binary.BigEndian.PutUint32(buf[20:24], m.serial)
-
+	serial := atomic.AddUint32(&m.serial, 1)
+	binary.BigEndian.PutUint32(buf[20:24], serial)
 	return buf
 }
