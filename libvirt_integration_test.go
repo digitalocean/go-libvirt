@@ -170,6 +170,8 @@ func TestLostConnection(t *testing.T) {
 	// forcibly close the connection out from under the Libvirt object
 	conn.Close()
 
+	<-l.Disconnected()
+
 	// this should return an error about the connection being lost
 	_, err := l.DomainLookupByName(testDomainName)
 	if err == nil {
