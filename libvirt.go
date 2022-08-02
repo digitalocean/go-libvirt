@@ -179,6 +179,13 @@ func (l *Libvirt) ConnectToURI(uri ConnectURI) error {
 		return err
 	}
 
+	// Start watching the underlying socket connection immediately.
+	// If we don't, and Libvirt goes away partway through initLibvirtComms,
+	// then the callbacks that initLibvirtComms has registered will never
+	// be closed, and therefore it will be stuck waiting for data from a
+	// channel that will never arrive.
+	go l.waitAndDisconnect()
+
 	err = l.initLibvirtComms(uri)
 	if err != nil {
 		l.socket.Disconnect()
@@ -186,7 +193,6 @@ func (l *Libvirt) ConnectToURI(uri ConnectURI) error {
 	}
 
 	l.disconnected = make(chan struct{})
-	go l.waitAndDisconnect()
 
 	return nil
 }
@@ -689,6 +695,20 @@ func (l *Libvirt) waitAndDisconnect() {
 	// Deregister all callbacks to prevent blocking on clients with
 	// outstanding requests
 	l.deregisterAll()
+
+	select {
+	case <-l.disconnected:
+		// l.disconnected is already closed, i.e., Libvirt.ConnectToURI
+		// was unable to complete all phases of its connection and
+		// so this hadn't been assigned to an open channel yet (it
+		// is set to a closed channel in Libvirt.New*)
+		//
+		// Just return to avoid closing an already-closed channel.
+		return
+	default:
+		// if we make it here then reading from l.disconnected is blocking,
+		// which suggests that it is open and must be closed.
+	}
 
 	close(l.disconnected)
 }
