@@ -296,16 +296,15 @@ func TestStoragePoolsIntegration(t *testing.T) {
 		t.Error(err)
 	}
 
-	wantLen := 1
-	gotLen := len(pools)
-	if gotLen != wantLen {
-		t.Fatalf("expected %d storage pool, got %d", wantLen, gotLen)
+	found := make(map[string]struct{})
+	for _, pool := range pools {
+		found[pool.Name] = struct{}{}
 	}
 
-	wantName := "test"
-	gotName := pools[0].Name
-	if gotName != wantName {
-		t.Errorf("expected name %q, got %q", wantName, gotName)
+	want := "test"
+	_, ok := found[want]
+	if !ok {
+		t.Errorf("did not find %q in %v", want, found)
 	}
 }
 
