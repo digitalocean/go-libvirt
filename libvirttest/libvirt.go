@@ -16,8 +16,10 @@
 package libvirttest
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
+	"io"
 	"net"
 	"os"
 	"sync/atomic"
@@ -708,7 +710,11 @@ func (m *MockLibvirt) handleQEMU(procedure uint32, conn net.Conn) {
 // reply automatically injects the correct serial
 // number into the provided response buffer.
 func (m *MockLibvirt) reply(buf []byte) []byte {
+	var rspbuf bytes.Buffer
+	io.Copy(&rspbuf, bytes.NewReader(buf))
+	rsp := rspbuf.Bytes()
+
 	serial := atomic.AddUint32(&m.serial, 1)
-	binary.BigEndian.PutUint32(buf[20:24], serial)
-	return buf
+	binary.BigEndian.PutUint32(rsp[20:24], serial)
+	return rsp
 }
