@@ -283,7 +283,7 @@ func TestRemoveStream(t *testing.T) {
 	stream := event.NewStream(constants.QEMUProgram, id)
 	defer stream.Shutdown()
 
-	l.events[id] = stream
+	l.addStream(stream)
 
 	fmt.Println("removing stream")
 	err = l.removeStream(id)
@@ -318,12 +318,12 @@ func TestRemoveAllStreams(t *testing.T) {
 	stream := event.NewStream(constants.QEMUProgram, id1)
 	defer stream.Shutdown()
 
-	l.events[id1] = stream
+	l.addStream(stream)
 
 	stream2 := event.NewStream(constants.QEMUProgram, id2)
 	defer stream2.Shutdown()
 
-	l.events[id2] = stream2
+	l.addStream(stream2)
 
 	l.removeAllStreams()
 
