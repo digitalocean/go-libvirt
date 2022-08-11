@@ -18,6 +18,7 @@ package libvirttest
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -620,7 +621,10 @@ func (m *MockLibvirt) handle(conn net.Conn) {
 	for {
 		// packetLengthSize + headerSize
 		buf := make([]byte, 28)
-		conn.Read(buf)
+		_, err := conn.Read(buf)
+		if errors.Is(err, io.EOF) {
+			return
+		}
 
 		// extract program
 		prog := binary.BigEndian.Uint32(buf[4:8])
