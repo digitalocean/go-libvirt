@@ -25,3 +25,6 @@ under the "Contributors" section using the format:
 `First Last <email@example.com>`.
 
 Finally, submit a pull request for review!
+
+Feel free to join us in [`#go-libvirt` on libera chat](https://web.libera.chat/)
+if you'd like to discuss the project.
