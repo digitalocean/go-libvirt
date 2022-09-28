@@ -32,6 +32,10 @@ import (
 // ErrUnsupported is returned if a procedure is not supported by libvirt
 var ErrUnsupported = errors.New("unsupported procedure requested")
 
+// ErrInterrupted is returned if the socket is closed while waiting for the
+// result of a procedure call.
+var ErrInterrupted = errors.New("procedure interrupted while awaiting response")
+
 // internal rpc response
 type response struct {
 	Payload []byte
@@ -289,7 +293,16 @@ func (l *Libvirt) processIncomingStream(c chan response, inStream io.Writer) (re
 }
 
 func (l *Libvirt) getResponse(c chan response) (response, error) {
-	resp := <-c
+	resp, ok := <-c
+
+	if !ok {
+		// The channel was closed before a response was received. This means
+		// that the socket was unexpectedly closed during the RPC call. In
+		// this case, we must assume the worst, such as libvirt crashed while
+		// attempting to execute the call.
+		return resp, ErrInterrupted
+	}
+
 	if resp.Status == socket.StatusError {
 		return resp, decodeError(resp.Payload)
 	}
