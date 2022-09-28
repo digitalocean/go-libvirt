@@ -489,3 +489,12 @@ func TestRouteDeadlock(t *testing.T) {
 	fmt.Println("checking for deadlock after context cancellation")
 	send(0, 50)
 }
+
+func TestGetResponseInterrupted(t *testing.T) {
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
+	c := make(chan response)
+	close(c)
+	_, err := l.getResponse(c)
+	assert.Equal(t, ErrInterrupted, err)
+}
