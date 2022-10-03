@@ -275,7 +275,7 @@ func main() {
 Running the Integration Tests
 -----------------------------
 
-Github actions workflows are defined in .github/worflows and can be triggered
+Github actions workflows are defined in .github/workflows and can be triggered
 manually in the github GUI after pushing a branch.  There are not currently
 convenient scripts for setting up and running integration tests locally, but
 installing libvirt and defining only the artifacts described by the files in
