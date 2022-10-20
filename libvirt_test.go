@@ -832,3 +832,30 @@ func TestConnectGetAllDomainStats(t *testing.T) {
 		t.Fatalf("unexpected typed param value %v", stats[1].Params[1].Value)
 	}
 }
+
+func TestIsConnected(t *testing.T) {
+	dialer := libvirttest.New()
+	l := NewWithDialer(dialer)
+
+	if l.IsConnected() {
+		t.Error("expected IsConnected == false, got true")
+	}
+
+	err := l.Connect()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if !l.IsConnected() {
+		t.Error("expected IsConnected == true, got false")
+	}
+
+	err = l.Disconnect()
+	if err != nil {
+		t.Error(err)
+	}
+
+	if l.IsConnected() {
+		t.Error("expected IsConnected == false, got true")
+	}
+}
