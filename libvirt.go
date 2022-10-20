@@ -241,6 +241,17 @@ func (l *Libvirt) Disconnected() <-chan struct{} {
 	return l.disconnected
 }
 
+// IsConnected indicates whether or not there is currently a connection to
+// libvirtd.
+func (l *Libvirt) IsConnected() bool {
+	select {
+	case <-l.Disconnected():
+		return false
+	default:
+		return true
+	}
+}
+
 // Domains returns a list of all domains managed by libvirt.
 //
 // Deprecated: use ConnectListAllDomains instead.
