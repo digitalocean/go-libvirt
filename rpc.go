@@ -89,11 +89,14 @@ func (l *Libvirt) Route(h *socket.Header, buf []byte) {
 	// Route events to their respective listener
 	var event event.Event
 
-	switch {
-	case h.Program == constants.QEMUProgram && h.Procedure == constants.QEMUProcDomainMonitorEvent:
+	switch h.Program {
+	case constants.QEMUProgram:
+		if h.Procedure != constants.QEMUProcDomainMonitorEvent {
+			break
+		}
 		event = &DomainEvent{}
-	case h.Program == constants.Program && h.Procedure == constants.ProcDomainEventCallbackLifecycle:
-		event = &DomainEventCallbackLifecycleMsg{}
+	case constants.Program:
+		event = eventFromProcedureID(h.Procedure)
 	}
 
 	if event != nil {
@@ -108,6 +111,58 @@ func (l *Libvirt) Route(h *socket.Header, buf []byte) {
 
 	// send response to caller
 	l.callback(h.Serial, response{Payload: buf, Status: h.Status})
+}
+
+func eventFromProcedureID(procID uint32) event.Event {
+	switch procID {
+	case constants.ProcDomainEventCallbackLifecycle:
+		return &DomainEventCallbackLifecycleMsg{}
+	case constants.ProcDomainEventCallbackReboot:
+		return &DomainEventCallbackRebootMsg{}
+	case constants.ProcDomainEventCallbackRtcChange:
+		return &DomainEventCallbackRtcChangeMsg{}
+	case constants.ProcDomainEventCallbackWatchdog:
+		return &DomainEventCallbackWatchdogMsg{}
+	case constants.ProcDomainEventCallbackIOError:
+		return &DomainEventCallbackIOErrorMsg{}
+	case constants.ProcDomainEventCallbackIOErrorReason:
+		return &DomainEventCallbackIOErrorReasonMsg{}
+	case constants.ProcDomainEventCallbackGraphics:
+		return &DomainEventCallbackGraphicsMsg{}
+	case constants.ProcDomainEventCallbackBlockJob:
+		return &DomainEventCallbackBlockJobMsg{}
+	case constants.ProcDomainEventCallbackDiskChange:
+		return &DomainEventCallbackDiskChangeMsg{}
+	case constants.ProcDomainEventCallbackTrayChange:
+		return &DomainEventCallbackTrayChangeMsg{}
+	case constants.ProcDomainEventCallbackPmwakeup:
+		return &DomainEventCallbackPmwakeupMsg{}
+	case constants.ProcDomainEventCallbackPmsuspend:
+		return &DomainEventCallbackPmsuspendMsg{}
+	case constants.ProcDomainEventCallbackBalloonChange:
+		return &DomainEventCallbackBalloonChangeMsg{}
+	case constants.ProcDomainEventCallbackPmsuspendDisk:
+		return &DomainEventCallbackPmsuspendDiskMsg{}
+	case constants.ProcDomainEventCallbackControlError:
+		return &DomainEventCallbackControlErrorMsg{}
+	case constants.ProcDomainEventCallbackDeviceRemoved:
+		return &DomainEventCallbackDeviceRemovedMsg{}
+	case constants.ProcDomainEventCallbackTunable:
+		return &DomainEventCallbackTunableMsg{}
+	case constants.ProcDomainEventCallbackDeviceAdded:
+		return &DomainEventCallbackDeviceAddedMsg{}
+	case constants.ProcDomainEventCallbackAgentLifecycle:
+		return &DomainEventCallbackAgentLifecycleMsg{}
+	case constants.ProcDomainEventCallbackMigrationIteration:
+		return &DomainEventCallbackMigrationIterationMsg{}
+	case constants.ProcDomainEventCallbackJobCompleted:
+		return &DomainEventCallbackJobCompletedMsg{}
+	case constants.ProcDomainEventCallbackDeviceRemovalFailed:
+		return &DomainEventCallbackDeviceRemovalFailedMsg{}
+	case constants.ProcDomainEventCallbackMetadataChange:
+		return &DomainEventCallbackMetadataChangeMsg{}
+	}
+	return nil
 }
 
 // serial provides atomic access to the next sequential request serial number.

@@ -101,6 +101,116 @@ func (m DomainEventCallbackLifecycleMsg) GetCallbackID() int32 {
 	return m.CallbackID
 }
 
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackRebootMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackRtcChangeMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackWatchdogMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackIOErrorMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackIOErrorReasonMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackGraphicsMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackBlockJobMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackDiskChangeMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackTrayChangeMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackPmwakeupMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackPmsuspendMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackBalloonChangeMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackPmsuspendDiskMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackControlErrorMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackDeviceRemovedMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackTunableMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackDeviceAddedMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackAgentLifecycleMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackMigrationIterationMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackJobCompletedMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackDeviceRemovalFailedMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
+// GetCallbackID returns the callback ID.
+func (e *DomainEventCallbackMetadataChangeMsg) GetCallbackID() int32 {
+	return e.CallbackID
+}
+
 // qemuError represents a QEMU process error.
 type qemuError struct {
 	Error struct {
