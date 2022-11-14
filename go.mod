@@ -4,5 +4,5 @@ go 1.15
 
 require (
 	github.com/stretchr/testify v1.8.1
-	golang.org/x/tools v0.1.12
+	golang.org/x/tools v0.3.0
 )
