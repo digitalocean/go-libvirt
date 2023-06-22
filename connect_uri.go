@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/digitalocean/go-libvirt/socket"
@@ -67,9 +68,35 @@ func dialerForURI(uri *url.URL) (socket.Dialer, error) {
 			options = append(options, dialers.UsePort(port))
 		}
 		return dialers.NewRemote(uri.Hostname(), options...), nil
+	case "tls":
+		options := []dialers.TLSOption{}
+		if port := uri.Port(); port != "" {
+			options = append(options, dialers.UseTLSPort(port))
+		}
+		if pkiPath := uri.Query().Get("pkipath"); pkiPath != "" {
+			options = append(options, dialers.UsePKIPath(pkiPath))
+		}
+		if nv, err := noVerifyOption(uri); err != nil {
+			return nil, err
+		} else if nv {
+			options = append(options, dialers.WithInsecureNoVerify())
+		}
+		return dialers.NewTLS(uri.Hostname(), options...), nil
 	default:
 		return nil, fmt.Errorf("unsupported libvirt transport %s", transport)
 	}
+}
+
+func noVerifyOption(uri *url.URL) (bool, error) {
+	nv := uri.Query().Get("no_verify")
+	if nv == "" {
+		return false, nil
+	}
+	val, err := strconv.Atoi(nv)
+	if err != nil {
+		return false, fmt.Errorf("invalid value for no_verify: %w", err)
+	}
+	return val != 0, nil
 }
 
 func checkModeOption(uri *url.URL) error {
