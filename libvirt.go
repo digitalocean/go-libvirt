@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"sync"
 	"syscall"
@@ -527,6 +528,7 @@ func (l *Libvirt) LifecycleEvents(ctx context.Context) (<-chan DomainEventLifecy
 
 // Run executes the given QAPI command against a domain's QEMU instance.
 // For a list of available QAPI commands, see:
+//
 //	http://git.qemu.org/?p=qemu.git;a=blob;f=qapi-schema.json;hb=HEAD
 func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 	d, err := l.lookup(dom)
@@ -728,7 +730,8 @@ type BlockLimit struct {
 // 'blkdeviotune' command on a VM in virsh.
 //
 // Example usage:
-//  SetBlockIOTune("vm-name", "vda", BlockLimit{libvirt.QEMUBlockIOWriteBytesSec, 1000000})
+//
+//	SetBlockIOTune("vm-name", "vda", BlockLimit{libvirt.QEMUBlockIOWriteBytesSec, 1000000})
 //
 // Deprecated: use DomainSetBlockIOTune instead.
 func (l *Libvirt) SetBlockIOTune(dom string, disk string, limits ...BlockLimit) error {
@@ -887,4 +890,27 @@ func (l *Libvirt) NetworkUpdateCompat(Net Network, Command NetworkUpdateCommand,
 		return l.NetworkUpdate(Net, uint32(Section), uint32(Command), ParentIndex, XML, Flags)
 	}
 	return l.NetworkUpdate(Net, uint32(Command), uint32(Section), ParentIndex, XML, Flags)
+}
+
+// OpenConsole is the go wrapper for REMOTE_PROC_DOMAIN_OPEN_CONSOLE.
+func (l *Libvirt) OpenConsole(Dom Domain, DevName OptString, inStream io.Reader, outStream io.Writer, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainOpenConsoleArgs{
+		Dom:     Dom,
+		DevName: DevName,
+		Flags:   Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	_, err = l.requestStream(201, constants.Program, buf, inStream, outStream)
+	if err != nil {
+		return
+	}
+
+	return
 }
