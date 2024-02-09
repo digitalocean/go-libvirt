@@ -9,10 +9,10 @@ if [ -z "${LIBVIRT_SOURCE}" ]; then
 fi
 
 # Make sure c-for-go is installed
-if ! which c-for-go > /dev/null; then
+if [ ! -x bin/c-for-go ] ; then
     echo "c-for-go not found. Attempting to install it..."
-    if ! go get github.com/xlab/c-for-go/...; then
-        echo "failed to install c-for-go. Please install it manually from https://github.com/xlab/c-for-go"
+    if ! scripts/install-c-for-go.sh ; then
+        echo "failed to install c-for-go."
         exit 1
     fi
 fi
@@ -33,7 +33,7 @@ DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # lacks a mechanism for us to pass it a search path for header files.
 LVDIR=lv_source
 ln -sF ${LIBVIRT_SOURCE} ${LVDIR}
-if ! c-for-go -nostamp -nocgo -ccincl libvirt.yml; then
+if ! bin/c-for-go -nostamp -nocgo -ccincl libvirt.yml; then
     echo "c-for-go failed"
     exit 1
 fi
