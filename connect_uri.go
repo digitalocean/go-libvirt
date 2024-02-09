@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os/user"
 	"strconv"
 	"strings"
 
@@ -125,6 +126,43 @@ func dialerForURI(uri *url.URL) (socket.Dialer, error) {
 				"\"no_verify\" option invalid with %s transport, use known_hosts_verify=ignore instead",
 				transport)
 		}
+		return dialers.NewSSH(uri.Hostname(), options...), nil
+	case "ssh":
+		// Emulate ssh using golang ssh library. Note that this means that
+		// system ssh config is not respected as it would be when shelling out
+		// to the ssh binary.
+		currentUser, err := user.Current()
+		if err != nil {
+			return nil, err
+		}
+		options := []dialers.SSHOption{
+			dialers.WithSystemSSHDefaults(currentUser),
+		}
+		options, err = processCommonSSHOptions(uri, options)
+		if err != nil {
+			return nil, err
+		}
+		if nv, err := noVerifyOption(uri); err != nil {
+			return nil, err
+		} else if nv {
+			options = append(options, dialers.WithInsecureIgnoreHostKey())
+		}
+
+		fieldErrs := []error{}
+		for _, f := range []string{
+			"known_hosts",
+			"known_hosts_verify",
+			"sshauth",
+		} {
+			if field := uri.Query().Get(f); field != "" {
+				fieldErrs = append(fieldErrs,
+					fmt.Errorf("%v option invalid with ssh transport, use libssh transport instead", f))
+			}
+		}
+		if len(fieldErrs) > 0 {
+			return nil, errors.Join(fieldErrs...)
+		}
+
 		return dialers.NewSSH(uri.Hostname(), options...), nil
 	default:
 		return nil, fmt.Errorf("unsupported libvirt transport %s", transport)

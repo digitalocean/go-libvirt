@@ -117,6 +117,14 @@ func WithRemoteSocket(socket string) SSHOption {
 	}
 }
 
+// WithSystemSSHDefaults uses default values for the system ssh client,
+// rather than the defaults that libvirtclient uses with libssh.
+func WithSystemSSHDefaults(currentUser *user.User) SSHOption {
+	return UseKnownHostsFile(filepath.Join(currentUser.HomeDir,
+		".ssh",
+		"known_hosts"))
+}
+
 func defaultSSHKeyFile() string {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
