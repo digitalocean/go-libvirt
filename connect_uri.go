@@ -82,6 +82,50 @@ func dialerForURI(uri *url.URL) (socket.Dialer, error) {
 			options = append(options, dialers.WithInsecureNoVerify())
 		}
 		return dialers.NewTLS(uri.Hostname(), options...), nil
+	case "libssh", "libssh2":
+		options := []dialers.SSHOption{}
+		options, err := processCommonSSHOptions(uri, options)
+		if err != nil {
+			return nil, err
+		}
+		if knownHosts := uri.Query().Get("known_hosts"); knownHosts != "" {
+			options = append(options, dialers.UseKnownHostsFile(knownHosts))
+		}
+		if hostVerify := uri.Query().Get("known_hosts_verify"); hostVerify != "" {
+			switch hostVerify {
+			case "normal":
+			case "auto":
+				options = append(options, dialers.WithAcceptUnknownHostKey())
+			case "ignore":
+				options = append(options, dialers.WithInsecureIgnoreHostKey())
+			default:
+				return nil, fmt.Errorf("invalid ssh known hosts verify method %v", hostVerify)
+			}
+		}
+		if auth := uri.Query().Get("sshauth"); auth != "" {
+			authMethods := &dialers.SSHAuthMethods{}
+			for _, a := range strings.Split(auth, ",") {
+				switch strings.ToLower(a) {
+				case "agent":
+					authMethods.Agent()
+				case "privkey":
+					authMethods.PrivKey()
+				case "password":
+					authMethods.Password()
+				case "keyboard-interactive":
+					authMethods.KeyboardInteractive()
+				default:
+					return nil, fmt.Errorf("invalid ssh auth method %v", a)
+				}
+			}
+			options = append(options, dialers.WithSSHAuthMethods(authMethods))
+		}
+		if noVerify := uri.Query().Get("no_verify"); noVerify != "" {
+			return nil, fmt.Errorf(
+				"\"no_verify\" option invalid with %s transport, use known_hosts_verify=ignore instead",
+				transport)
+		}
+		return dialers.NewSSH(uri.Hostname(), options...), nil
 	default:
 		return nil, fmt.Errorf("unsupported libvirt transport %s", transport)
 	}
@@ -110,4 +154,26 @@ func checkModeOption(uri *url.URL) error {
 		return fmt.Errorf("invalid ssh mode %v", mode)
 	}
 	return nil
+}
+
+func processCommonSSHOptions(uri *url.URL, options []dialers.SSHOption) ([]dialers.SSHOption, error) {
+	if port := uri.Port(); port != "" {
+		options = append(options, dialers.UseSSHPort(port))
+	}
+	if username := uri.User.Username(); username != "" {
+		options = append(options, dialers.UseSSHUsername(username))
+	}
+	if password, ok := uri.User.Password(); ok {
+		options = append(options, dialers.UseSSHPassword(password))
+	}
+	if socket := uri.Query().Get("socket"); socket != "" {
+		options = append(options, dialers.WithRemoteSocket(socket))
+	}
+	if keyFile := uri.Query().Get("keyfile"); keyFile != "" {
+		options = append(options, dialers.UseKeyFile(keyFile))
+	}
+	if err := checkModeOption(uri); err != nil {
+		return options, err
+	}
+	return options, nil
 }
