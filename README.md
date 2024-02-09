@@ -130,22 +130,16 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"net/url"
 	"time"
 
 	"github.com/digitalocean/go-libvirt"
 )
 
 func main() {
-	// This dials libvirt on the local machine, but you can substitute the first
-	// two parameters with "tcp", "<ip address>:<port>" to connect to libvirt on
-	// a remote machine.
-	c, err := net.DialTimeout("unix", "/var/run/libvirt/libvirt-sock", 2*time.Second)
+	uri, _ := url.Parse(string(libvirt.QEMUSystem))
+	l, err := libvirt.ConnectToURI(uri)
 	if err != nil {
-		log.Fatalf("failed to dial libvirt: %v", err)
-	}
-
-	l := libvirt.New(c)
-	if err := l.Connect(); err != nil {
 		log.Fatalf("failed to connect: %v", err)
 	}
 
