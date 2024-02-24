@@ -129,9 +129,7 @@ package main
 import (
 	"fmt"
 	"log"
-	"net"
 	"net/url"
-	"time"
 
 	"github.com/digitalocean/go-libvirt"
 )
