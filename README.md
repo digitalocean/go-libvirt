@@ -141,13 +141,14 @@ func main() {
 		log.Fatalf("failed to connect: %v", err)
 	}
 
-	v, err := l.Version()
+	v, err := l.ConnectGetLibVersion()
 	if err != nil {
 		log.Fatalf("failed to retrieve libvirt version: %v", err)
 	}
 	fmt.Println("Version:", v)
 
-	domains, err := l.Domains()
+	flags := libvirt.ConnectListDomainsActive | libvirt.ConnectListDomainsInactive
+	domains, _, err := l.ConnectListAllDomains(1, flags)
 	if err != nil {
 		log.Fatalf("failed to retrieve domains: %v", err)
 	}
@@ -158,10 +159,11 @@ func main() {
 		fmt.Printf("%d\t%s\t%x\n", d.ID, d.Name, d.UUID)
 	}
 
-	if err := l.Disconnect(); err != nil {
+	if err = l.Disconnect(); err != nil {
 		log.Fatalf("failed to disconnect: %v", err)
 	}
 }
+
 
 ```
 
