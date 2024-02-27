@@ -29,6 +29,9 @@ fi
 # Set DIR to the absolute path to the scripts/ directory.
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
+# Ensure fresh output is in libvirt/
+rm -rf libvirt/
+
 # Temporarily symlink the libvirt sources to a subdirectory because c-for-go
 # lacks a mechanism for us to pass it a search path for header files.
 LVDIR=lv_source
@@ -39,4 +42,3 @@ if ! bin/c-for-go -nostamp -nocgo -ccincl libvirt.yml; then
 fi
 mv libvirt/const.go ${DIR}/../const.gen.go
 rm ${LVDIR}
-rm -rf libvirt/
