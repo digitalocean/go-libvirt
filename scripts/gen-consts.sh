@@ -14,12 +14,15 @@ if [ -z "${LIBVIRT_SOURCE}" ]; then
     exit 1
 fi
 if [ -z "$GOBIN" ]; then
-    export GOBIN=$TOP/bin
+    export GOBIN="$TOP/bin"
 fi
+
+# Ensure this specific tooling comes first on the PATH
+export PATH="$GOBIN:$PATH"
 
 # Make sure c-for-go is installed
 echo "Attempting to install c-for-go..."
-if ! go install github.com/xlab/c-for-go@v1.1 ; then
+if ! go install github.com/xlab/c-for-go@v1.1.0 ; then
     echo "failed to install c-for-go."
     exit 1
 fi
@@ -37,10 +40,19 @@ rm -rf libvirt/
 # Temporarily symlink the libvirt sources to a subdirectory because c-for-go
 # lacks a mechanism for us to pass it a search path for header files.
 LVDIR=lv_source
-ln -sF ${LIBVIRT_SOURCE} ${LVDIR}
+ln -sF "${LIBVIRT_SOURCE}" "${LVDIR}"
 if ! c-for-go -nostamp -nocgo -ccincl libvirt.yml; then
     echo "c-for-go failed"
     exit 1
 fi
-mv libvirt/const.go ${SCRIPTS}/../const.gen.go
-rm ${LVDIR}
+
+# Use the generated 'const.go'
+mv libvirt/const.go "${SCRIPTS}/../const.gen.go"
+
+# Remove unused generated files
+rm -f \
+    libvirt/cgo_helpers.go \
+    libvirt/doc.go \
+    libvirt/types.go
+
+rm "${LVDIR}"
