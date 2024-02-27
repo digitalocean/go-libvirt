@@ -72,7 +72,7 @@ func (i item) String() string {
 	tokType := i.typ
 	if tokType >= yyPrivate {
 		if tokType < yyPrivate+len(yyTok2) {
-			tokType = yyTok2[tokType-yyPrivate]
+			tokType = int(yyTok2[tokType-yyPrivate])
 		}
 	}
 	rv := fmt.Sprintf("%s %q %d:%d", yyTokname(tokType), i.val, i.line, i.column)
