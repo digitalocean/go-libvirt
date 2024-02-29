@@ -28,6 +28,7 @@ PARSER:
     # run on that code. This isn't ideal, but changes to c-for-go are needed to
     # fix it.
     IncludePaths: [./lv_source/include, ./lv_source/build/include]
+    SysIncludePaths: [./lv_source/include, ./lv_source/build/include]
     SourcesPaths:
         - libvirt/libvirt.h
         - libvirt/virterror.h
@@ -35,6 +36,10 @@ PARSER:
 TRANSLATOR:
     ConstRules:
         defines: eval
+    TypeTips:
+        enum:
+            - { target: "ConnectGetAllDomainStatsFlags", tips: [ unsigned ] }
+            - { target: "ConnectListAllNodeDeviceFlags", tips: [ unsigned ] }
     Rules:
         global:
             - {action: accept, from: "^vir"}

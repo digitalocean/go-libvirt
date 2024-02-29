@@ -1439,6 +1439,17 @@ type NetworkCreateXMLRet struct {
 	Net Network
 }
 
+// NetworkCreateXMLFlagsArgs is libvirt's remote_network_create_xml_flags_args
+type NetworkCreateXMLFlagsArgs struct {
+	XML string
+	Flags uint32
+}
+
+// NetworkCreateXMLFlagsRet is libvirt's remote_network_create_xml_flags_ret
+type NetworkCreateXMLFlagsRet struct {
+	Net Network
+}
+
 // NetworkDefineXMLArgs is libvirt's remote_network_define_xml_args
 type NetworkDefineXMLArgs struct {
 	XML string
@@ -1446,6 +1457,17 @@ type NetworkDefineXMLArgs struct {
 
 // NetworkDefineXMLRet is libvirt's remote_network_define_xml_ret
 type NetworkDefineXMLRet struct {
+	Net Network
+}
+
+// NetworkDefineXMLFlagsArgs is libvirt's remote_network_define_xml_flags_args
+type NetworkDefineXMLFlagsArgs struct {
+	XML string
+	Flags uint32
+}
+
+// NetworkDefineXMLFlagsRet is libvirt's remote_network_define_xml_flags_ret
+type NetworkDefineXMLFlagsRet struct {
 	Net Network
 }
 
@@ -1553,6 +1575,17 @@ type NwfilterDefineXMLArgs struct {
 
 // NwfilterDefineXMLRet is libvirt's remote_nwfilter_define_xml_ret
 type NwfilterDefineXMLRet struct {
+	OptNwfilter Nwfilter
+}
+
+// NwfilterDefineXMLFlagsArgs is libvirt's remote_nwfilter_define_xml_flags_args
+type NwfilterDefineXMLFlagsArgs struct {
+	XML string
+	Flags uint32
+}
+
+// NwfilterDefineXMLFlagsRet is libvirt's remote_nwfilter_define_xml_flags_ret
+type NwfilterDefineXMLFlagsRet struct {
 	OptNwfilter Nwfilter
 }
 
@@ -2168,6 +2201,65 @@ type NodeDeviceCreateXMLRet struct {
 // NodeDeviceDestroyArgs is libvirt's remote_node_device_destroy_args
 type NodeDeviceDestroyArgs struct {
 	Name string
+}
+
+// NodeDeviceDefineXMLArgs is libvirt's remote_node_device_define_xml_args
+type NodeDeviceDefineXMLArgs struct {
+	XMLDesc string
+	Flags uint32
+}
+
+// NodeDeviceDefineXMLRet is libvirt's remote_node_device_define_xml_ret
+type NodeDeviceDefineXMLRet struct {
+	Dev NodeDevice
+}
+
+// NodeDeviceUndefineArgs is libvirt's remote_node_device_undefine_args
+type NodeDeviceUndefineArgs struct {
+	Name string
+	Flags uint32
+}
+
+// NodeDeviceCreateArgs is libvirt's remote_node_device_create_args
+type NodeDeviceCreateArgs struct {
+	Name string
+	Flags uint32
+}
+
+// NodeDeviceGetAutostartArgs is libvirt's remote_node_device_get_autostart_args
+type NodeDeviceGetAutostartArgs struct {
+	Name string
+}
+
+// NodeDeviceGetAutostartRet is libvirt's remote_node_device_get_autostart_ret
+type NodeDeviceGetAutostartRet struct {
+	Autostart int32
+}
+
+// NodeDeviceSetAutostartArgs is libvirt's remote_node_device_set_autostart_args
+type NodeDeviceSetAutostartArgs struct {
+	Name string
+	Autostart int32
+}
+
+// NodeDeviceIsPersistentArgs is libvirt's remote_node_device_is_persistent_args
+type NodeDeviceIsPersistentArgs struct {
+	Name string
+}
+
+// NodeDeviceIsPersistentRet is libvirt's remote_node_device_is_persistent_ret
+type NodeDeviceIsPersistentRet struct {
+	Persistent int32
+}
+
+// NodeDeviceIsActiveArgs is libvirt's remote_node_device_is_active_args
+type NodeDeviceIsActiveArgs struct {
+	Name string
+}
+
+// NodeDeviceIsActiveRet is libvirt's remote_node_device_is_active_ret
+type NodeDeviceIsActiveRet struct {
+	Active int32
 }
 
 // ConnectDomainEventRegisterRet is libvirt's remote_connect_domain_event_register_ret
@@ -3588,7 +3680,7 @@ type DomainStatsRecord struct {
 type ConnectGetAllDomainStatsArgs struct {
 	Doms []Domain
 	Stats uint32
-	Flags ConnectGetAllDomainStatsFlags
+	Flags uint32
 }
 
 // DomainEventCallbackAgentLifecycleMsg is libvirt's remote_domain_event_callback_agent_lifecycle_msg
@@ -3838,6 +3930,13 @@ type DomainGetLaunchSecurityInfoArgs struct {
 // DomainGetLaunchSecurityInfoRet is libvirt's remote_domain_get_launch_security_info_ret
 type DomainGetLaunchSecurityInfoRet struct {
 	Params []TypedParam
+}
+
+// DomainSetLaunchSecurityStateArgs is libvirt's remote_domain_set_launch_security_state_args
+type DomainSetLaunchSecurityStateArgs struct {
+	Dom Domain
+	Params []TypedParam
+	Flags uint32
 }
 
 // NwfilterBindingLookupByPortDevArgs is libvirt's remote_nwfilter_binding_lookup_by_port_dev_args
@@ -4128,6 +4227,21 @@ type DomainGetMessagesArgs struct {
 // DomainGetMessagesRet is libvirt's remote_domain_get_messages_ret
 type DomainGetMessagesRet struct {
 	Msgs []string
+}
+
+// DomainStartDirtyRateCalcArgs is libvirt's remote_domain_start_dirty_rate_calc_args
+type DomainStartDirtyRateCalcArgs struct {
+	Dom Domain
+	Seconds int32
+	Flags uint32
+}
+
+// DomainEventMemoryDeviceSizeChangeMsg is libvirt's remote_domain_event_memory_device_size_change_msg
+type DomainEventMemoryDeviceSizeChangeMsg struct {
+	CallbackID int32
+	Dom Domain
+	Alias string
+	Size uint64
 }
 
 
@@ -14219,7 +14333,7 @@ func (l *Libvirt) DomainOpenGraphicsFd(Dom Domain, Idx uint32, Flags DomainOpenG
 }
 
 // ConnectGetAllDomainStats is the go wrapper for REMOTE_PROC_CONNECT_GET_ALL_DOMAIN_STATS.
-func (l *Libvirt) ConnectGetAllDomainStats(Doms []Domain, Stats uint32, Flags ConnectGetAllDomainStatsFlags) (rRetStats []DomainStatsRecord, err error) {
+func (l *Libvirt) ConnectGetAllDomainStats(Doms []Domain, Stats uint32, Flags uint32) (rRetStats []DomainStatsRecord, err error) {
 	var buf []byte
 
 	args := ConnectGetAllDomainStatsArgs {
@@ -16485,6 +16599,371 @@ func (l *Libvirt) DomainGetMessages(Dom Domain, Flags uint32) (rMsgs []string, e
 	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
 	// Msgs: []string
 	_, err = dec.Decode(&rMsgs)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainStartDirtyRateCalc is the go wrapper for REMOTE_PROC_DOMAIN_START_DIRTY_RATE_CALC.
+func (l *Libvirt) DomainStartDirtyRateCalc(Dom Domain, Seconds int32, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainStartDirtyRateCalcArgs {
+		Dom: Dom,
+		Seconds: Seconds,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(427, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NodeDeviceDefineXML is the go wrapper for REMOTE_PROC_NODE_DEVICE_DEFINE_XML.
+func (l *Libvirt) NodeDeviceDefineXML(XMLDesc string, Flags uint32) (rDev NodeDevice, err error) {
+	var buf []byte
+
+	args := NodeDeviceDefineXMLArgs {
+		XMLDesc: XMLDesc,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(428, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Dev: NodeDevice
+	_, err = dec.Decode(&rDev)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NodeDeviceUndefine is the go wrapper for REMOTE_PROC_NODE_DEVICE_UNDEFINE.
+func (l *Libvirt) NodeDeviceUndefine(Name string, Flags uint32) (err error) {
+	var buf []byte
+
+	args := NodeDeviceUndefineArgs {
+		Name: Name,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(429, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NodeDeviceCreate is the go wrapper for REMOTE_PROC_NODE_DEVICE_CREATE.
+func (l *Libvirt) NodeDeviceCreate(Name string, Flags uint32) (err error) {
+	var buf []byte
+
+	args := NodeDeviceCreateArgs {
+		Name: Name,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(430, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NwfilterDefineXMLFlags is the go wrapper for REMOTE_PROC_NWFILTER_DEFINE_XML_FLAGS.
+func (l *Libvirt) NwfilterDefineXMLFlags(XML string, Flags uint32) (rOptNwfilter Nwfilter, err error) {
+	var buf []byte
+
+	args := NwfilterDefineXMLFlagsArgs {
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(431, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// OptNwfilter: Nwfilter
+	_, err = dec.Decode(&rOptNwfilter)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkDefineXMLFlags is the go wrapper for REMOTE_PROC_NETWORK_DEFINE_XML_FLAGS.
+func (l *Libvirt) NetworkDefineXMLFlags(XML string, Flags uint32) (rNet Network, err error) {
+	var buf []byte
+
+	args := NetworkDefineXMLFlagsArgs {
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(432, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Net: Network
+	_, err = dec.Decode(&rNet)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NodeDeviceGetAutostart is the go wrapper for REMOTE_PROC_NODE_DEVICE_GET_AUTOSTART.
+func (l *Libvirt) NodeDeviceGetAutostart(Name string) (rAutostart int32, err error) {
+	var buf []byte
+
+	args := NodeDeviceGetAutostartArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(433, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Autostart: int32
+	_, err = dec.Decode(&rAutostart)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NodeDeviceSetAutostart is the go wrapper for REMOTE_PROC_NODE_DEVICE_SET_AUTOSTART.
+func (l *Libvirt) NodeDeviceSetAutostart(Name string, Autostart int32) (err error) {
+	var buf []byte
+
+	args := NodeDeviceSetAutostartArgs {
+		Name: Name,
+		Autostart: Autostart,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(434, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NodeDeviceIsPersistent is the go wrapper for REMOTE_PROC_NODE_DEVICE_IS_PERSISTENT.
+func (l *Libvirt) NodeDeviceIsPersistent(Name string) (rPersistent int32, err error) {
+	var buf []byte
+
+	args := NodeDeviceIsPersistentArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(435, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Persistent: int32
+	_, err = dec.Decode(&rPersistent)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NodeDeviceIsActive is the go wrapper for REMOTE_PROC_NODE_DEVICE_IS_ACTIVE.
+func (l *Libvirt) NodeDeviceIsActive(Name string) (rActive int32, err error) {
+	var buf []byte
+
+	args := NodeDeviceIsActiveArgs {
+		Name: Name,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(436, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Active: int32
+	_, err = dec.Decode(&rActive)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkCreateXMLFlags is the go wrapper for REMOTE_PROC_NETWORK_CREATE_XML_FLAGS.
+func (l *Libvirt) NetworkCreateXMLFlags(XML string, Flags uint32) (rNet Network, err error) {
+	var buf []byte
+
+	args := NetworkCreateXMLFlagsArgs {
+		XML: XML,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(437, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Net: Network
+	_, err = dec.Decode(&rNet)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainEventMemoryDeviceSizeChange is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_MEMORY_DEVICE_SIZE_CHANGE.
+func (l *Libvirt) DomainEventMemoryDeviceSizeChange() (err error) {
+	var buf []byte
+
+
+	_, err = l.requestStream(438, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainSetLaunchSecurityState is the go wrapper for REMOTE_PROC_DOMAIN_SET_LAUNCH_SECURITY_STATE.
+func (l *Libvirt) DomainSetLaunchSecurityState(Dom Domain, Params []TypedParam, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainSetLaunchSecurityStateArgs {
+		Dom: Dom,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(439, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
