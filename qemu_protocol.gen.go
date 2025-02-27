@@ -112,6 +112,18 @@ type QEMUDomainMonitorEventMsg struct {
 	Details OptString
 }
 
+// QEMUDomainMonitorCommandWithFilesArgs is libvirt's qemu_domain_monitor_command_with_files_args
+type QEMUDomainMonitorCommandWithFilesArgs struct {
+	Dom Domain
+	Cmd string
+	Flags uint32
+}
+
+// QEMUDomainMonitorCommandWithFilesRet is libvirt's qemu_domain_monitor_command_with_files_ret
+type QEMUDomainMonitorCommandWithFilesRet struct {
+	Result string
+}
+
 
 
 
@@ -283,6 +295,41 @@ func (l *Libvirt) QEMUDomainMonitorEvent() (err error) {
 
 
 	_, err = l.requestStream(6, constants.QEMUProgram, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// QEMUDomainMonitorCommandWithFiles is the go wrapper for QEMU_PROC_DOMAIN_MONITOR_COMMAND_WITH_FILES.
+func (l *Libvirt) QEMUDomainMonitorCommandWithFiles(Dom Domain, Cmd string, Flags uint32) (rResult string, err error) {
+	var buf []byte
+
+	args := QEMUDomainMonitorCommandWithFilesArgs {
+		Dom: Dom,
+		Cmd: Cmd,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(7, constants.QEMUProgram, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Result: string
+	_, err = dec.Decode(&rResult)
 	if err != nil {
 		return
 	}
