@@ -782,6 +782,13 @@ type DomainSaveFlagsArgs struct {
 	Flags uint32
 }
 
+// DomainSaveParamsArgs is libvirt's remote_domain_save_params_args
+type DomainSaveParamsArgs struct {
+	Dom Domain
+	Params []TypedParam
+	Flags uint32
+}
+
 // DomainRestoreArgs is libvirt's remote_domain_restore_args
 type DomainRestoreArgs struct {
 	From string
@@ -791,6 +798,12 @@ type DomainRestoreArgs struct {
 type DomainRestoreFlagsArgs struct {
 	From string
 	Dxml OptString
+	Flags uint32
+}
+
+// DomainRestoreParamsArgs is libvirt's remote_domain_restore_params_args
+type DomainRestoreParamsArgs struct {
+	Params []TypedParam
 	Flags uint32
 }
 
@@ -2190,7 +2203,7 @@ type NodeDeviceResetArgs struct {
 // NodeDeviceCreateXMLArgs is libvirt's remote_node_device_create_xml_args
 type NodeDeviceCreateXMLArgs struct {
 	XMLDesc string
-	Flags uint32
+	Flags NodeDeviceCreateXMLFlags
 }
 
 // NodeDeviceCreateXMLRet is libvirt's remote_node_device_create_xml_ret
@@ -2206,7 +2219,7 @@ type NodeDeviceDestroyArgs struct {
 // NodeDeviceDefineXMLArgs is libvirt's remote_node_device_define_xml_args
 type NodeDeviceDefineXMLArgs struct {
 	XMLDesc string
-	Flags uint32
+	Flags NodeDeviceDefineXMLFlags
 }
 
 // NodeDeviceDefineXMLRet is libvirt's remote_node_device_define_xml_ret
@@ -2541,6 +2554,12 @@ type DomainGetJobStatsRet struct {
 // DomainAbortJobArgs is libvirt's remote_domain_abort_job_args
 type DomainAbortJobArgs struct {
 	Dom Domain
+}
+
+// DomainAbortJobFlagsArgs is libvirt's remote_domain_abort_job_flags_args
+type DomainAbortJobFlagsArgs struct {
+	Dom Domain
+	Flags uint32
 }
 
 // DomainMigrateGetMaxDowntimeArgs is libvirt's remote_domain_migrate_get_max_downtime_args
@@ -3532,6 +3551,37 @@ type NetworkEventLifecycleMsg struct {
 	Detail int32
 }
 
+// NetworkEventCallbackMetadataChangeMsg is libvirt's remote_network_event_callback_metadata_change_msg
+type NetworkEventCallbackMetadataChangeMsg struct {
+	CallbackID int32
+	Net Network
+	Type int32
+	Nsuri OptString
+}
+
+// NetworkSetMetadataArgs is libvirt's remote_network_set_metadata_args
+type NetworkSetMetadataArgs struct {
+	OptNetwork Network
+	Type int32
+	Metadata OptString
+	Key OptString
+	Uri OptString
+	Flags uint32
+}
+
+// NetworkGetMetadataArgs is libvirt's remote_network_get_metadata_args
+type NetworkGetMetadataArgs struct {
+	OptNetwork Network
+	Type int32
+	Uri OptString
+	Flags uint32
+}
+
+// NetworkGetMetadataRet is libvirt's remote_network_get_metadata_ret
+type NetworkGetMetadataRet struct {
+	Metadata string
+}
+
 // ConnectStoragePoolEventRegisterAnyArgs is libvirt's remote_connect_storage_pool_event_register_any_args
 type ConnectStoragePoolEventRegisterAnyArgs struct {
 	EventID int32
@@ -4242,6 +4292,13 @@ type DomainEventMemoryDeviceSizeChangeMsg struct {
 	Dom Domain
 	Alias string
 	Size uint64
+}
+
+// DomainFdAssociateArgs is libvirt's remote_domain_fd_associate_args
+type DomainFdAssociateArgs struct {
+	Dom Domain
+	Name string
+	Flags uint32
 }
 
 
@@ -7984,7 +8041,7 @@ func (l *Libvirt) NodeGetSecurityModel() (rModel []int8, rDoi []int8, err error)
 }
 
 // NodeDeviceCreateXML is the go wrapper for REMOTE_PROC_NODE_DEVICE_CREATE_XML.
-func (l *Libvirt) NodeDeviceCreateXML(XMLDesc string, Flags uint32) (rDev NodeDevice, err error) {
+func (l *Libvirt) NodeDeviceCreateXML(XMLDesc string, Flags NodeDeviceCreateXMLFlags) (rDev NodeDevice, err error) {
 	var buf []byte
 
 	args := NodeDeviceCreateXMLArgs {
@@ -16631,7 +16688,7 @@ func (l *Libvirt) DomainStartDirtyRateCalc(Dom Domain, Seconds int32, Flags uint
 }
 
 // NodeDeviceDefineXML is the go wrapper for REMOTE_PROC_NODE_DEVICE_DEFINE_XML.
-func (l *Libvirt) NodeDeviceDefineXML(XMLDesc string, Flags uint32) (rDev NodeDevice, err error) {
+func (l *Libvirt) NodeDeviceDefineXML(XMLDesc string, Flags NodeDeviceDefineXMLFlags) (rDev NodeDevice, err error) {
 	var buf []byte
 
 	args := NodeDeviceDefineXMLArgs {
@@ -16964,6 +17021,176 @@ func (l *Libvirt) DomainSetLaunchSecurityState(Dom Domain, Params []TypedParam, 
 
 
 	_, err = l.requestStream(439, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainSaveParams is the go wrapper for REMOTE_PROC_DOMAIN_SAVE_PARAMS.
+func (l *Libvirt) DomainSaveParams(Dom Domain, Params []TypedParam, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainSaveParamsArgs {
+		Dom: Dom,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(440, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainRestoreParams is the go wrapper for REMOTE_PROC_DOMAIN_RESTORE_PARAMS.
+func (l *Libvirt) DomainRestoreParams(Params []TypedParam, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainRestoreParamsArgs {
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(441, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainAbortJobFlags is the go wrapper for REMOTE_PROC_DOMAIN_ABORT_JOB_FLAGS.
+func (l *Libvirt) DomainAbortJobFlags(Dom Domain, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainAbortJobFlagsArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(442, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainFdAssociate is the go wrapper for REMOTE_PROC_DOMAIN_FD_ASSOCIATE.
+func (l *Libvirt) DomainFdAssociate(Dom Domain, Name string, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainFdAssociateArgs {
+		Dom: Dom,
+		Name: Name,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(443, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkSetMetadata is the go wrapper for REMOTE_PROC_NETWORK_SET_METADATA.
+func (l *Libvirt) NetworkSetMetadata(OptNetwork Network, Type int32, Metadata OptString, Key OptString, Uri OptString, Flags uint32) (err error) {
+	var buf []byte
+
+	args := NetworkSetMetadataArgs {
+		OptNetwork: OptNetwork,
+		Type: Type,
+		Metadata: Metadata,
+		Key: Key,
+		Uri: Uri,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(444, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkGetMetadata is the go wrapper for REMOTE_PROC_NETWORK_GET_METADATA.
+func (l *Libvirt) NetworkGetMetadata(OptNetwork Network, Type int32, Uri OptString, Flags uint32) (rMetadata string, err error) {
+	var buf []byte
+
+	args := NetworkGetMetadataArgs {
+		OptNetwork: OptNetwork,
+		Type: Type,
+		Uri: Uri,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(445, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Metadata: string
+	_, err = dec.Decode(&rMetadata)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkEventCallbackMetadataChange is the go wrapper for REMOTE_PROC_NETWORK_EVENT_CALLBACK_METADATA_CHANGE.
+func (l *Libvirt) NetworkEventCallbackMetadataChange() (err error) {
+	var buf []byte
+
+
+	_, err = l.requestStream(446, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}

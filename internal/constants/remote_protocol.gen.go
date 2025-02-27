@@ -909,6 +909,20 @@ const (
 	ProcDomainEventMemoryDeviceSizeChange = 438
 	// ProcDomainSetLaunchSecurityState is libvirt's REMOTE_PROC_DOMAIN_SET_LAUNCH_SECURITY_STATE
 	ProcDomainSetLaunchSecurityState = 439
+	// ProcDomainSaveParams is libvirt's REMOTE_PROC_DOMAIN_SAVE_PARAMS
+	ProcDomainSaveParams = 440
+	// ProcDomainRestoreParams is libvirt's REMOTE_PROC_DOMAIN_RESTORE_PARAMS
+	ProcDomainRestoreParams = 441
+	// ProcDomainAbortJobFlags is libvirt's REMOTE_PROC_DOMAIN_ABORT_JOB_FLAGS
+	ProcDomainAbortJobFlags = 442
+	// ProcDomainFdAssociate is libvirt's REMOTE_PROC_DOMAIN_FD_ASSOCIATE
+	ProcDomainFdAssociate = 443
+	// ProcNetworkSetMetadata is libvirt's REMOTE_PROC_NETWORK_SET_METADATA
+	ProcNetworkSetMetadata = 444
+	// ProcNetworkGetMetadata is libvirt's REMOTE_PROC_NETWORK_GET_METADATA
+	ProcNetworkGetMetadata = 445
+	// ProcNetworkEventCallbackMetadataChange is libvirt's REMOTE_PROC_NETWORK_EVENT_CALLBACK_METADATA_CHANGE
+	ProcNetworkEventCallbackMetadataChange = 446
 
 
 	// From consts:
@@ -1004,6 +1018,8 @@ const (
 	NodeMemoryParametersMax = 64
 	// DomainMigrateParamListMax is libvirt's REMOTE_DOMAIN_MIGRATE_PARAM_LIST_MAX
 	DomainMigrateParamListMax = 64
+	// DomainSaveParamsMax is libvirt's REMOTE_DOMAIN_SAVE_PARAMS_MAX
+	DomainSaveParamsMax = 64
 	// DomainJobStatsMax is libvirt's REMOTE_DOMAIN_JOB_STATS_MAX
 	DomainJobStatsMax = 64
 	// ConnectCPUModelsMax is libvirt's REMOTE_CONNECT_CPU_MODELS_MAX
