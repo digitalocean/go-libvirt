@@ -13,7 +13,7 @@ jobs:
   test:
     strategy:
       matrix:
-        os: ['ubuntu-20.04', 'ubuntu-22.04']
+        os: ['ubuntu-22.04', 'ubuntu-24.04']
         toolchain: ['oldstable', 'stable']
 
     runs-on: ${{ matrix.os }}
