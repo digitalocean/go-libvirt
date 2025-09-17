@@ -331,13 +331,11 @@ func _() {
 	_ = x[DomainSnapshotRevertRunning-1]
 	_ = x[DomainSnapshotRevertPaused-2]
 	_ = x[DomainSnapshotRevertForce-4]
-	_ = x[DomainSnapshotRevertResetNvram-8]
 }
 
 const (
 	_DomainSnapshotRevertFlags_name_0 = "DomainSnapshotRevertRunningDomainSnapshotRevertPaused"
 	_DomainSnapshotRevertFlags_name_1 = "DomainSnapshotRevertForce"
-	_DomainSnapshotRevertFlags_name_2 = "DomainSnapshotRevertResetNvram"
 )
 
 var (
@@ -351,8 +349,6 @@ func (i DomainSnapshotRevertFlags) String() string {
 		return _DomainSnapshotRevertFlags_name_0[_DomainSnapshotRevertFlags_index_0[i]:_DomainSnapshotRevertFlags_index_0[i+1]]
 	case i == 4:
 		return _DomainSnapshotRevertFlags_name_1
-	case i == 8:
-		return _DomainSnapshotRevertFlags_name_2
 	default:
 		return "DomainSnapshotRevertFlags(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
@@ -442,12 +438,11 @@ func _() {
 	_ = x[DomainRunningWakeup-8]
 	_ = x[DomainRunningCrashed-9]
 	_ = x[DomainRunningPostcopy-10]
-	_ = x[DomainRunningPostcopyFailed-11]
 }
 
-const _DomainRunningReason_name = "DomainRunningUnknownDomainRunningBootedDomainRunningMigratedDomainRunningRestoredDomainRunningFromSnapshotDomainRunningUnpausedDomainRunningMigrationCanceledDomainRunningSaveCanceledDomainRunningWakeupDomainRunningCrashedDomainRunningPostcopyDomainRunningPostcopyFailed"
+const _DomainRunningReason_name = "DomainRunningUnknownDomainRunningBootedDomainRunningMigratedDomainRunningRestoredDomainRunningFromSnapshotDomainRunningUnpausedDomainRunningMigrationCanceledDomainRunningSaveCanceledDomainRunningWakeupDomainRunningCrashedDomainRunningPostcopy"
 
-var _DomainRunningReason_index = [...]uint16{0, 20, 39, 60, 81, 106, 127, 157, 182, 201, 221, 242, 269}
+var _DomainRunningReason_index = [...]uint8{0, 20, 39, 60, 81, 106, 127, 157, 182, 201, 221, 242}
 
 func (i DomainRunningReason) String() string {
 	if i < 0 || i >= DomainRunningReason(len(_DomainRunningReason_index)-1) {
@@ -490,12 +485,11 @@ func _() {
 	_ = x[DomainPausedStartingUp-11]
 	_ = x[DomainPausedPostcopy-12]
 	_ = x[DomainPausedPostcopyFailed-13]
-	_ = x[DomainPausedAPIError-14]
 }
 
-const _DomainPausedReason_name = "DomainPausedUnknownDomainPausedUserDomainPausedMigrationDomainPausedSaveDomainPausedDumpDomainPausedIoerrorDomainPausedWatchdogDomainPausedFromSnapshotDomainPausedShuttingDownDomainPausedSnapshotDomainPausedCrashedDomainPausedStartingUpDomainPausedPostcopyDomainPausedPostcopyFailedDomainPausedAPIError"
+const _DomainPausedReason_name = "DomainPausedUnknownDomainPausedUserDomainPausedMigrationDomainPausedSaveDomainPausedDumpDomainPausedIoerrorDomainPausedWatchdogDomainPausedFromSnapshotDomainPausedShuttingDownDomainPausedSnapshotDomainPausedCrashedDomainPausedStartingUpDomainPausedPostcopyDomainPausedPostcopyFailed"
 
-var _DomainPausedReason_index = [...]uint16{0, 19, 35, 56, 72, 88, 107, 127, 151, 175, 195, 214, 236, 256, 282, 302}
+var _DomainPausedReason_index = [...]uint16{0, 19, 35, 56, 72, 88, 107, 127, 151, 175, 195, 214, 236, 256, 282}
 
 func (i DomainPausedReason) String() string {
 	if i < 0 || i >= DomainPausedReason(len(_DomainPausedReason_index)-1) {
@@ -667,7 +661,6 @@ func _() {
 	_ = x[DomainStartBypassCache-4]
 	_ = x[DomainStartForceBoot-8]
 	_ = x[DomainStartValidate-16]
-	_ = x[DomainStartResetNvram-32]
 }
 
 const (
@@ -675,7 +668,6 @@ const (
 	_DomainCreateFlags_name_1 = "DomainStartBypassCache"
 	_DomainCreateFlags_name_2 = "DomainStartForceBoot"
 	_DomainCreateFlags_name_3 = "DomainStartValidate"
-	_DomainCreateFlags_name_4 = "DomainStartResetNvram"
 )
 
 var (
@@ -692,8 +684,6 @@ func (i DomainCreateFlags) String() string {
 		return _DomainCreateFlags_name_2
 	case i == 16:
 		return _DomainCreateFlags_name_3
-	case i == 32:
-		return _DomainCreateFlags_name_4
 	default:
 		return "DomainCreateFlags(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
@@ -809,34 +799,30 @@ func _() {
 	_ = x[MigrateTLS-65536]
 	_ = x[MigrateParallel-131072]
 	_ = x[MigrateNonSharedSynchronousWrites-262144]
-	_ = x[MigratePostcopyResume-524288]
-	_ = x[MigrateZerocopy-1048576]
 }
 
-const _DomainMigrateFlags_name = "MigrateLiveMigratePeer2peerMigrateTunnelledMigratePersistDestMigrateUndefineSourceMigratePausedMigrateNonSharedDiskMigrateNonSharedIncMigrateChangeProtectionMigrateUnsafeMigrateOfflineMigrateCompressedMigrateAbortOnErrorMigrateAutoConvergeMigrateRdmaPinAllMigratePostcopyMigrateTLSMigrateParallelMigrateNonSharedSynchronousWritesMigratePostcopyResumeMigrateZerocopy"
+const _DomainMigrateFlags_name = "MigrateLiveMigratePeer2peerMigrateTunnelledMigratePersistDestMigrateUndefineSourceMigratePausedMigrateNonSharedDiskMigrateNonSharedIncMigrateChangeProtectionMigrateUnsafeMigrateOfflineMigrateCompressedMigrateAbortOnErrorMigrateAutoConvergeMigrateRdmaPinAllMigratePostcopyMigrateTLSMigrateParallelMigrateNonSharedSynchronousWrites"
 
 var _DomainMigrateFlags_map = map[DomainMigrateFlags]string{
-	1:       _DomainMigrateFlags_name[0:11],
-	2:       _DomainMigrateFlags_name[11:27],
-	4:       _DomainMigrateFlags_name[27:43],
-	8:       _DomainMigrateFlags_name[43:61],
-	16:      _DomainMigrateFlags_name[61:82],
-	32:      _DomainMigrateFlags_name[82:95],
-	64:      _DomainMigrateFlags_name[95:115],
-	128:     _DomainMigrateFlags_name[115:134],
-	256:     _DomainMigrateFlags_name[134:157],
-	512:     _DomainMigrateFlags_name[157:170],
-	1024:    _DomainMigrateFlags_name[170:184],
-	2048:    _DomainMigrateFlags_name[184:201],
-	4096:    _DomainMigrateFlags_name[201:220],
-	8192:    _DomainMigrateFlags_name[220:239],
-	16384:   _DomainMigrateFlags_name[239:256],
-	32768:   _DomainMigrateFlags_name[256:271],
-	65536:   _DomainMigrateFlags_name[271:281],
-	131072:  _DomainMigrateFlags_name[281:296],
-	262144:  _DomainMigrateFlags_name[296:329],
-	524288:  _DomainMigrateFlags_name[329:350],
-	1048576: _DomainMigrateFlags_name[350:365],
+	1:      _DomainMigrateFlags_name[0:11],
+	2:      _DomainMigrateFlags_name[11:27],
+	4:      _DomainMigrateFlags_name[27:43],
+	8:      _DomainMigrateFlags_name[43:61],
+	16:     _DomainMigrateFlags_name[61:82],
+	32:     _DomainMigrateFlags_name[82:95],
+	64:     _DomainMigrateFlags_name[95:115],
+	128:    _DomainMigrateFlags_name[115:134],
+	256:    _DomainMigrateFlags_name[134:157],
+	512:    _DomainMigrateFlags_name[157:170],
+	1024:   _DomainMigrateFlags_name[170:184],
+	2048:   _DomainMigrateFlags_name[184:201],
+	4096:   _DomainMigrateFlags_name[201:220],
+	8192:   _DomainMigrateFlags_name[220:239],
+	16384:  _DomainMigrateFlags_name[239:256],
+	32768:  _DomainMigrateFlags_name[256:271],
+	65536:  _DomainMigrateFlags_name[271:281],
+	131072: _DomainMigrateFlags_name[281:296],
+	262144: _DomainMigrateFlags_name[296:329],
 }
 
 func (i DomainMigrateFlags) String() string {
@@ -943,12 +929,11 @@ func _() {
 	var x [1]struct{}
 	_ = x[DomainDestroyDefault-0]
 	_ = x[DomainDestroyGraceful-1]
-	_ = x[DomainDestroyRemoveLogs-2]
 }
 
-const _DomainDestroyFlagsValues_name = "DomainDestroyDefaultDomainDestroyGracefulDomainDestroyRemoveLogs"
+const _DomainDestroyFlagsValues_name = "DomainDestroyDefaultDomainDestroyGraceful"
 
-var _DomainDestroyFlagsValues_index = [...]uint8{0, 20, 41, 64}
+var _DomainDestroyFlagsValues_index = [...]uint8{0, 20, 41}
 
 func (i DomainDestroyFlagsValues) String() string {
 	if i < 0 || i >= DomainDestroyFlagsValues(len(_DomainDestroyFlagsValues_index)-1) {
@@ -963,13 +948,11 @@ func _() {
 	_ = x[DomainSaveBypassCache-1]
 	_ = x[DomainSaveRunning-2]
 	_ = x[DomainSavePaused-4]
-	_ = x[DomainSaveResetNvram-8]
 }
 
 const (
 	_DomainSaveRestoreFlags_name_0 = "DomainSaveBypassCacheDomainSaveRunning"
 	_DomainSaveRestoreFlags_name_1 = "DomainSavePaused"
-	_DomainSaveRestoreFlags_name_2 = "DomainSaveResetNvram"
 )
 
 var (
@@ -983,8 +966,6 @@ func (i DomainSaveRestoreFlags) String() string {
 		return _DomainSaveRestoreFlags_name_0[_DomainSaveRestoreFlags_index_0[i]:_DomainSaveRestoreFlags_index_0[i+1]]
 	case i == 4:
 		return _DomainSaveRestoreFlags_name_1
-	case i == 8:
-		return _DomainSaveRestoreFlags_name_2
 	default:
 		return "DomainSaveRestoreFlags(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
@@ -1132,12 +1113,11 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[DomainBlockResizeBytes-1]
-	_ = x[DomainBlockResizeCapacity-2]
 }
 
-const _DomainBlockResizeFlags_name = "DomainBlockResizeBytesDomainBlockResizeCapacity"
+const _DomainBlockResizeFlags_name = "DomainBlockResizeBytes"
 
-var _DomainBlockResizeFlags_index = [...]uint8{0, 22, 47}
+var _DomainBlockResizeFlags_index = [...]uint8{0, 22}
 
 func (i DomainBlockResizeFlags) String() string {
 	i -= 1
@@ -1192,8 +1172,6 @@ func _() {
 	_ = x[DomainUndefineNvram-4]
 	_ = x[DomainUndefineKeepNvram-8]
 	_ = x[DomainUndefineCheckpointsMetadata-16]
-	_ = x[DomainUndefineTpm-32]
-	_ = x[DomainUndefineKeepTpm-64]
 }
 
 const (
@@ -1201,8 +1179,6 @@ const (
 	_DomainUndefineFlagsValues_name_1 = "DomainUndefineNvram"
 	_DomainUndefineFlagsValues_name_2 = "DomainUndefineKeepNvram"
 	_DomainUndefineFlagsValues_name_3 = "DomainUndefineCheckpointsMetadata"
-	_DomainUndefineFlagsValues_name_4 = "DomainUndefineTpm"
-	_DomainUndefineFlagsValues_name_5 = "DomainUndefineKeepTpm"
 )
 
 var (
@@ -1220,10 +1196,6 @@ func (i DomainUndefineFlagsValues) String() string {
 		return _DomainUndefineFlagsValues_name_2
 	case i == 16:
 		return _DomainUndefineFlagsValues_name_3
-	case i == 32:
-		return _DomainUndefineFlagsValues_name_4
-	case i == 64:
-		return _DomainUndefineFlagsValues_name_5
 	default:
 		return "DomainUndefineFlagsValues(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
@@ -1395,7 +1367,6 @@ func _() {
 	_ = x[DomainStatsIothread-128]
 	_ = x[DomainStatsMemory-256]
 	_ = x[DomainStatsDirtyrate-512]
-	_ = x[DomainStatsVm-1024]
 }
 
 const (
@@ -1408,7 +1379,6 @@ const (
 	_DomainStatsTypes_name_6 = "DomainStatsIothread"
 	_DomainStatsTypes_name_7 = "DomainStatsMemory"
 	_DomainStatsTypes_name_8 = "DomainStatsDirtyrate"
-	_DomainStatsTypes_name_9 = "DomainStatsVm"
 )
 
 var (
@@ -1436,8 +1406,6 @@ func (i DomainStatsTypes) String() string {
 		return _DomainStatsTypes_name_7
 	case i == 512:
 		return _DomainStatsTypes_name_8
-	case i == 1024:
-		return _DomainStatsTypes_name_9
 	default:
 		return "DomainStatsTypes(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
@@ -1911,12 +1879,11 @@ func _() {
 	_ = x[DomainEventStartedRestored-2]
 	_ = x[DomainEventStartedFromSnapshot-3]
 	_ = x[DomainEventStartedWakeup-4]
-	_ = x[DomainEventStartedRecreated-5]
 }
 
-const _DomainEventStartedDetailType_name = "DomainEventStartedBootedDomainEventStartedMigratedDomainEventStartedRestoredDomainEventStartedFromSnapshotDomainEventStartedWakeupDomainEventStartedRecreated"
+const _DomainEventStartedDetailType_name = "DomainEventStartedBootedDomainEventStartedMigratedDomainEventStartedRestoredDomainEventStartedFromSnapshotDomainEventStartedWakeup"
 
-var _DomainEventStartedDetailType_index = [...]uint8{0, 24, 50, 76, 106, 130, 157}
+var _DomainEventStartedDetailType_index = [...]uint8{0, 24, 50, 76, 106, 130}
 
 func (i DomainEventStartedDetailType) String() string {
 	if i < 0 || i >= DomainEventStartedDetailType(len(_DomainEventStartedDetailType_index)-1) {
@@ -1957,12 +1924,11 @@ func _() {
 	_ = x[DomainEventResumedMigrated-1]
 	_ = x[DomainEventResumedFromSnapshot-2]
 	_ = x[DomainEventResumedPostcopy-3]
-	_ = x[DomainEventResumedPostcopyFailed-4]
 }
 
-const _DomainEventResumedDetailType_name = "DomainEventResumedUnpausedDomainEventResumedMigratedDomainEventResumedFromSnapshotDomainEventResumedPostcopyDomainEventResumedPostcopyFailed"
+const _DomainEventResumedDetailType_name = "DomainEventResumedUnpausedDomainEventResumedMigratedDomainEventResumedFromSnapshotDomainEventResumedPostcopy"
 
-var _DomainEventResumedDetailType_index = [...]uint8{0, 26, 52, 82, 108, 140}
+var _DomainEventResumedDetailType_index = [...]uint8{0, 26, 52, 82, 108}
 
 func (i DomainEventResumedDetailType) String() string {
 	if i < 0 || i >= DomainEventResumedDetailType(len(_DomainEventResumedDetailType_index)-1) {
@@ -1981,12 +1947,11 @@ func _() {
 	_ = x[DomainEventStoppedSaved-4]
 	_ = x[DomainEventStoppedFailed-5]
 	_ = x[DomainEventStoppedFromSnapshot-6]
-	_ = x[DomainEventStoppedRecreated-7]
 }
 
-const _DomainEventStoppedDetailType_name = "DomainEventStoppedShutdownDomainEventStoppedDestroyedDomainEventStoppedCrashedDomainEventStoppedMigratedDomainEventStoppedSavedDomainEventStoppedFailedDomainEventStoppedFromSnapshotDomainEventStoppedRecreated"
+const _DomainEventStoppedDetailType_name = "DomainEventStoppedShutdownDomainEventStoppedDestroyedDomainEventStoppedCrashedDomainEventStoppedMigratedDomainEventStoppedSavedDomainEventStoppedFailedDomainEventStoppedFromSnapshot"
 
-var _DomainEventStoppedDetailType_index = [...]uint8{0, 26, 53, 78, 104, 127, 151, 181, 208}
+var _DomainEventStoppedDetailType_index = [...]uint8{0, 26, 53, 78, 104, 127, 151, 181}
 
 func (i DomainEventStoppedDetailType) String() string {
 	if i < 0 || i >= DomainEventStoppedDetailType(len(_DomainEventStoppedDetailType_index)-1) {
@@ -2161,12 +2126,11 @@ func _() {
 	_ = x[DomainJobOperationStrSnapshotRevert-7]
 	_ = x[DomainJobOperationStrDump-8]
 	_ = x[DomainJobOperationStrBackup-9]
-	_ = x[DomainJobOperationStrSnapshotDelete-10]
 }
 
-const _DomainJobOperation_name = "DomainJobOperationStrUnknownDomainJobOperationStrStartDomainJobOperationStrSaveDomainJobOperationStrRestoreDomainJobOperationStrMigrationInDomainJobOperationStrMigrationOutDomainJobOperationStrSnapshotDomainJobOperationStrSnapshotRevertDomainJobOperationStrDumpDomainJobOperationStrBackupDomainJobOperationStrSnapshotDelete"
+const _DomainJobOperation_name = "DomainJobOperationStrUnknownDomainJobOperationStrStartDomainJobOperationStrSaveDomainJobOperationStrRestoreDomainJobOperationStrMigrationInDomainJobOperationStrMigrationOutDomainJobOperationStrSnapshotDomainJobOperationStrSnapshotRevertDomainJobOperationStrDumpDomainJobOperationStrBackup"
 
-var _DomainJobOperation_index = [...]uint16{0, 28, 54, 79, 107, 139, 172, 201, 236, 261, 288, 323}
+var _DomainJobOperation_index = [...]uint16{0, 28, 54, 79, 107, 139, 172, 201, 236, 261, 288}
 
 func (i DomainJobOperation) String() string {
 	if i < 0 || i >= DomainJobOperation(len(_DomainJobOperation_index)-1) {
@@ -2379,12 +2343,11 @@ func _() {
 	_ = x[DomainEventIDBlockThreshold-24]
 	_ = x[DomainEventIDMemoryFailure-25]
 	_ = x[DomainEventIDMemoryDeviceSizeChange-26]
-	_ = x[DomainEventIDNicMacChange-27]
 }
 
-const _DomainEventID_name = "DomainEventIDLifecycleDomainEventIDRebootDomainEventIDRtcChangeDomainEventIDWatchdogDomainEventIDIoErrorDomainEventIDGraphicsDomainEventIDIoErrorReasonDomainEventIDControlErrorDomainEventIDBlockJobDomainEventIDDiskChangeDomainEventIDTrayChangeDomainEventIDPmwakeupDomainEventIDPmsuspendDomainEventIDBalloonChangeDomainEventIDPmsuspendDiskDomainEventIDDeviceRemovedDomainEventIDBlockJob2DomainEventIDTunableDomainEventIDAgentLifecycleDomainEventIDDeviceAddedDomainEventIDMigrationIterationDomainEventIDJobCompletedDomainEventIDDeviceRemovalFailedDomainEventIDMetadataChangeDomainEventIDBlockThresholdDomainEventIDMemoryFailureDomainEventIDMemoryDeviceSizeChangeDomainEventIDNicMacChange"
+const _DomainEventID_name = "DomainEventIDLifecycleDomainEventIDRebootDomainEventIDRtcChangeDomainEventIDWatchdogDomainEventIDIoErrorDomainEventIDGraphicsDomainEventIDIoErrorReasonDomainEventIDControlErrorDomainEventIDBlockJobDomainEventIDDiskChangeDomainEventIDTrayChangeDomainEventIDPmwakeupDomainEventIDPmsuspendDomainEventIDBalloonChangeDomainEventIDPmsuspendDiskDomainEventIDDeviceRemovedDomainEventIDBlockJob2DomainEventIDTunableDomainEventIDAgentLifecycleDomainEventIDDeviceAddedDomainEventIDMigrationIterationDomainEventIDJobCompletedDomainEventIDDeviceRemovalFailedDomainEventIDMetadataChangeDomainEventIDBlockThresholdDomainEventIDMemoryFailureDomainEventIDMemoryDeviceSizeChange"
 
-var _DomainEventID_index = [...]uint16{0, 22, 41, 63, 84, 104, 125, 151, 176, 197, 220, 243, 264, 286, 312, 338, 364, 386, 406, 433, 457, 488, 513, 545, 572, 599, 625, 660, 685}
+var _DomainEventID_index = [...]uint16{0, 22, 41, 63, 84, 104, 125, 151, 176, 197, 220, 243, 264, 286, 312, 338, 364, 386, 406, 433, 457, 488, 513, 545, 572, 599, 625, 660}
 
 func (i DomainEventID) String() string {
 	if i < 0 || i >= DomainEventID(len(_DomainEventID_index)-1) {
@@ -2623,7 +2586,6 @@ func _() {
 	_ = x[DomainGuestInfoFilesystem-16]
 	_ = x[DomainGuestInfoDisks-32]
 	_ = x[DomainGuestInfoInterfaces-64]
-	_ = x[DomainGuestInfoLoad-128]
 }
 
 const (
@@ -2633,7 +2595,6 @@ const (
 	_DomainGuestInfoTypes_name_3 = "DomainGuestInfoFilesystem"
 	_DomainGuestInfoTypes_name_4 = "DomainGuestInfoDisks"
 	_DomainGuestInfoTypes_name_5 = "DomainGuestInfoInterfaces"
-	_DomainGuestInfoTypes_name_6 = "DomainGuestInfoLoad"
 )
 
 var (
@@ -2655,8 +2616,6 @@ func (i DomainGuestInfoTypes) String() string {
 		return _DomainGuestInfoTypes_name_4
 	case i == 64:
 		return _DomainGuestInfoTypes_name_5
-	case i == 128:
-		return _DomainGuestInfoTypes_name_6
 	default:
 		return "DomainGuestInfoTypes(" + strconv.FormatInt(int64(i), 10) + ")"
 	}
@@ -2724,28 +2683,18 @@ func _() {
 	var x [1]struct{}
 	_ = x[DomainMessageDeprecation-1]
 	_ = x[DomainMessageTainting-2]
-	_ = x[DomainMessageIoerrors-4]
 }
 
-const (
-	_DomainMessageType_name_0 = "DomainMessageDeprecationDomainMessageTainting"
-	_DomainMessageType_name_1 = "DomainMessageIoerrors"
-)
+const _DomainMessageType_name = "DomainMessageDeprecationDomainMessageTainting"
 
-var (
-	_DomainMessageType_index_0 = [...]uint8{0, 24, 45}
-)
+var _DomainMessageType_index = [...]uint8{0, 24, 45}
 
 func (i DomainMessageType) String() string {
-	switch {
-	case 1 <= i && i <= 2:
-		i -= 1
-		return _DomainMessageType_name_0[_DomainMessageType_index_0[i]:_DomainMessageType_index_0[i+1]]
-	case i == 4:
-		return _DomainMessageType_name_1
-	default:
-		return "DomainMessageType(" + strconv.FormatInt(int64(i), 10) + ")"
+	i -= 1
+	if i < 0 || i >= DomainMessageType(len(_DomainMessageType_index)-1) {
+		return "DomainMessageType(" + strconv.FormatInt(int64(i+1), 10) + ")"
 	}
+	return _DomainMessageType_name[_DomainMessageType_index[i]:_DomainMessageType_index[i+1]]
 }
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
@@ -2945,28 +2894,18 @@ func _() {
 	var x [1]struct{}
 	_ = x[ConnectBaselineCPUExpandFeatures-1]
 	_ = x[ConnectBaselineCPUMigratable-2]
-	_ = x[ConnectBaselineCPUIgnoreHost-4]
 }
 
-const (
-	_ConnectBaselineCPUFlags_name_0 = "ConnectBaselineCPUExpandFeaturesConnectBaselineCPUMigratable"
-	_ConnectBaselineCPUFlags_name_1 = "ConnectBaselineCPUIgnoreHost"
-)
+const _ConnectBaselineCPUFlags_name = "ConnectBaselineCPUExpandFeaturesConnectBaselineCPUMigratable"
 
-var (
-	_ConnectBaselineCPUFlags_index_0 = [...]uint8{0, 32, 60}
-)
+var _ConnectBaselineCPUFlags_index = [...]uint8{0, 32, 60}
 
 func (i ConnectBaselineCPUFlags) String() string {
-	switch {
-	case 1 <= i && i <= 2:
-		i -= 1
-		return _ConnectBaselineCPUFlags_name_0[_ConnectBaselineCPUFlags_index_0[i]:_ConnectBaselineCPUFlags_index_0[i+1]]
-	case i == 4:
-		return _ConnectBaselineCPUFlags_name_1
-	default:
-		return "ConnectBaselineCPUFlags(" + strconv.FormatInt(int64(i), 10) + ")"
+	i -= 1
+	if i < 0 || i >= ConnectBaselineCPUFlags(len(_ConnectBaselineCPUFlags_index)-1) {
+		return "ConnectBaselineCPUFlags(" + strconv.FormatInt(int64(i+1), 10) + ")"
 	}
+	return _ConnectBaselineCPUFlags_name[_ConnectBaselineCPUFlags_index[i]:_ConnectBaselineCPUFlags_index[i+1]]
 }
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
@@ -3230,12 +3169,11 @@ func _() {
 	// Re-run the stringer command to generate them again.
 	var x [1]struct{}
 	_ = x[NetworkEventIDLifecycle-0]
-	_ = x[NetworkEventIDMetadataChange-1]
 }
 
-const _NetworkEventID_name = "NetworkEventIDLifecycleNetworkEventIDMetadataChange"
+const _NetworkEventID_name = "NetworkEventIDLifecycle"
 
-var _NetworkEventID_index = [...]uint8{0, 23, 51}
+var _NetworkEventID_index = [...]uint8{0, 23}
 
 func (i NetworkEventID) String() string {
 	if i < 0 || i >= NetworkEventID(len(_NetworkEventID_index)-1) {
@@ -3306,15 +3244,11 @@ func _() {
 	_ = x[ConnectListNodeDevicesCapApQueue-524288]
 	_ = x[ConnectListNodeDevicesCapApMatrix-1048576]
 	_ = x[ConnectListNodeDevicesCapVpd-2097152]
-	_ = x[ConnectListNodeDevicesCapCcwgroupDev-4194304]
-	_ = x[ConnectListNodeDevicesCapCcwgroupMember-8388608]
-	_ = x[ConnectListNodeDevicesPersistent-268435456]
-	_ = x[ConnectListNodeDevicesTransient-536870912]
 	_ = x[ConnectListNodeDevicesInactive-1073741824]
 	_ = x[ConnectListNodeDevicesActive-2147483648]
 }
 
-const _ConnectListAllNodeDeviceFlags_name = "ConnectListNodeDevicesCapSystemConnectListNodeDevicesCapPciDevConnectListNodeDevicesCapUsbDevConnectListNodeDevicesCapUsbInterfaceConnectListNodeDevicesCapNetConnectListNodeDevicesCapScsiHostConnectListNodeDevicesCapScsiTargetConnectListNodeDevicesCapScsiConnectListNodeDevicesCapStorageConnectListNodeDevicesCapFcHostConnectListNodeDevicesCapVportsConnectListNodeDevicesCapScsiGenericConnectListNodeDevicesCapDrmConnectListNodeDevicesCapMdevTypesConnectListNodeDevicesCapMdevConnectListNodeDevicesCapCcwDevConnectListNodeDevicesCapCssDevConnectListNodeDevicesCapVdpaConnectListNodeDevicesCapApCardConnectListNodeDevicesCapApQueueConnectListNodeDevicesCapApMatrixConnectListNodeDevicesCapVpdConnectListNodeDevicesCapCcwgroupDevConnectListNodeDevicesCapCcwgroupMemberConnectListNodeDevicesPersistentConnectListNodeDevicesTransientConnectListNodeDevicesInactiveConnectListNodeDevicesActive"
+const _ConnectListAllNodeDeviceFlags_name = "ConnectListNodeDevicesCapSystemConnectListNodeDevicesCapPciDevConnectListNodeDevicesCapUsbDevConnectListNodeDevicesCapUsbInterfaceConnectListNodeDevicesCapNetConnectListNodeDevicesCapScsiHostConnectListNodeDevicesCapScsiTargetConnectListNodeDevicesCapScsiConnectListNodeDevicesCapStorageConnectListNodeDevicesCapFcHostConnectListNodeDevicesCapVportsConnectListNodeDevicesCapScsiGenericConnectListNodeDevicesCapDrmConnectListNodeDevicesCapMdevTypesConnectListNodeDevicesCapMdevConnectListNodeDevicesCapCcwDevConnectListNodeDevicesCapCssDevConnectListNodeDevicesCapVdpaConnectListNodeDevicesCapApCardConnectListNodeDevicesCapApQueueConnectListNodeDevicesCapApMatrixConnectListNodeDevicesCapVpdConnectListNodeDevicesInactiveConnectListNodeDevicesActive"
 
 var _ConnectListAllNodeDeviceFlags_map = map[ConnectListAllNodeDeviceFlags]string{
 	1:          _ConnectListAllNodeDeviceFlags_name[0:31],
@@ -3339,12 +3273,8 @@ var _ConnectListAllNodeDeviceFlags_map = map[ConnectListAllNodeDeviceFlags]strin
 	524288:     _ConnectListAllNodeDeviceFlags_name[598:630],
 	1048576:    _ConnectListAllNodeDeviceFlags_name[630:663],
 	2097152:    _ConnectListAllNodeDeviceFlags_name[663:691],
-	4194304:    _ConnectListAllNodeDeviceFlags_name[691:727],
-	8388608:    _ConnectListAllNodeDeviceFlags_name[727:766],
-	268435456:  _ConnectListAllNodeDeviceFlags_name[766:798],
-	536870912:  _ConnectListAllNodeDeviceFlags_name[798:829],
-	1073741824: _ConnectListAllNodeDeviceFlags_name[829:859],
-	2147483648: _ConnectListAllNodeDeviceFlags_name[859:887],
+	1073741824: _ConnectListAllNodeDeviceFlags_name[691:721],
+	2147483648: _ConnectListAllNodeDeviceFlags_name[721:749],
 }
 
 func (i ConnectListAllNodeDeviceFlags) String() string {
@@ -3821,28 +3751,18 @@ func _() {
 	var x [1]struct{}
 	_ = x[StorageVolCreatePreallocMetadata-1]
 	_ = x[StorageVolCreateReflink-2]
-	_ = x[StorageVolCreateValidate-4]
 }
 
-const (
-	_StorageVolCreateFlags_name_0 = "StorageVolCreatePreallocMetadataStorageVolCreateReflink"
-	_StorageVolCreateFlags_name_1 = "StorageVolCreateValidate"
-)
+const _StorageVolCreateFlags_name = "StorageVolCreatePreallocMetadataStorageVolCreateReflink"
 
-var (
-	_StorageVolCreateFlags_index_0 = [...]uint8{0, 32, 55}
-)
+var _StorageVolCreateFlags_index = [...]uint8{0, 32, 55}
 
 func (i StorageVolCreateFlags) String() string {
-	switch {
-	case 1 <= i && i <= 2:
-		i -= 1
-		return _StorageVolCreateFlags_name_0[_StorageVolCreateFlags_index_0[i]:_StorageVolCreateFlags_index_0[i+1]]
-	case i == 4:
-		return _StorageVolCreateFlags_name_1
-	default:
-		return "StorageVolCreateFlags(" + strconv.FormatInt(int64(i), 10) + ")"
+	i -= 1
+	if i < 0 || i >= StorageVolCreateFlags(len(_StorageVolCreateFlags_index)-1) {
+		return "StorageVolCreateFlags(" + strconv.FormatInt(int64(i+1), 10) + ")"
 	}
+	return _StorageVolCreateFlags_name[_StorageVolCreateFlags_index[i]:_StorageVolCreateFlags_index[i+1]]
 }
 func _() {
 	// An "invalid array index" compiler error signifies that the constant values have changed.
@@ -4241,14 +4161,11 @@ func _() {
 	_ = x[ErrNoHostname-108]
 	_ = x[ErrCheckpointInconsistent-109]
 	_ = x[ErrMultipleDomains-110]
-	_ = x[ErrNoNetworkMetadata-111]
-	_ = x[ErrAgentCommandTimeout-112]
-	_ = x[ErrAgentCommandFailed-113]
 }
 
-const _ErrorNumber_name = "ErrOkErrInternalErrorErrNoMemoryErrNoSupportErrUnknownHostErrNoConnectErrInvalidConnErrInvalidDomainErrInvalidArgErrOperationFailedErrGetFailedErrPostFailedErrHTTPErrorErrSexprSerialErrNoXenErrXenCallErrOsTypeErrNoKernelErrNoRootErrNoSourceErrNoTargetErrNoNameErrNoOsErrNoDeviceErrNoXenstoreErrDriverFullErrCallFailedErrXMLErrorErrDomExistErrOperationDeniedErrOpenFailedErrReadFailedErrParseFailedErrConfSyntaxErrWriteFailedErrXMLDetailErrInvalidNetworkErrNetworkExistErrSystemErrorErrRPCErrGnutlsErrorWarNoNetworkErrNoDomainErrNoNetworkErrInvalidMacErrAuthFailedErrInvalidStoragePoolErrInvalidStorageVolWarNoStorageErrNoStoragePoolErrNoStorageVolWarNoNodeErrInvalidNodeDeviceErrNoNodeDeviceErrNoSecurityModelErrOperationInvalidWarNoInterfaceErrNoInterfaceErrInvalidInterfaceErrMultipleInterfacesWarNoNwfilterErrInvalidNwfilterErrNoNwfilterErrBuildFirewallWarNoSecretErrInvalidSecretErrNoSecretErrConfigUnsupportedErrOperationTimeoutErrMigratePersistFailedErrHookScriptFailedErrInvalidDomainSnapshotErrNoDomainSnapshotErrInvalidStreamErrArgumentUnsupportedErrStorageProbeFailedErrStoragePoolBuiltErrSnapshotRevertRiskyErrOperationAbortedErrAuthCancelledErrNoDomainMetadataErrMigrateUnsafeErrOverflowErrBlockCopyActiveErrOperationUnsupportedErrSSHErrAgentUnresponsiveErrResourceBusyErrAccessDeniedErrDbusServiceErrStorageVolExistErrCPUIncompatibleErrXMLInvalidSchemaErrMigrateFinishOkErrAuthUnavailableErrNoServerErrNoClientErrAgentUnsyncedErrLibsshErrDeviceMissingErrInvalidNwfilterBindingErrNoNwfilterBindingErrInvalidDomainCheckpointErrNoDomainCheckpointErrNoDomainBackupErrInvalidNetworkPortErrNetworkPortExistErrNoNetworkPortErrNoHostnameErrCheckpointInconsistentErrMultipleDomainsErrNoNetworkMetadataErrAgentCommandTimeoutErrAgentCommandFailed"
+const _ErrorNumber_name = "ErrOkErrInternalErrorErrNoMemoryErrNoSupportErrUnknownHostErrNoConnectErrInvalidConnErrInvalidDomainErrInvalidArgErrOperationFailedErrGetFailedErrPostFailedErrHTTPErrorErrSexprSerialErrNoXenErrXenCallErrOsTypeErrNoKernelErrNoRootErrNoSourceErrNoTargetErrNoNameErrNoOsErrNoDeviceErrNoXenstoreErrDriverFullErrCallFailedErrXMLErrorErrDomExistErrOperationDeniedErrOpenFailedErrReadFailedErrParseFailedErrConfSyntaxErrWriteFailedErrXMLDetailErrInvalidNetworkErrNetworkExistErrSystemErrorErrRPCErrGnutlsErrorWarNoNetworkErrNoDomainErrNoNetworkErrInvalidMacErrAuthFailedErrInvalidStoragePoolErrInvalidStorageVolWarNoStorageErrNoStoragePoolErrNoStorageVolWarNoNodeErrInvalidNodeDeviceErrNoNodeDeviceErrNoSecurityModelErrOperationInvalidWarNoInterfaceErrNoInterfaceErrInvalidInterfaceErrMultipleInterfacesWarNoNwfilterErrInvalidNwfilterErrNoNwfilterErrBuildFirewallWarNoSecretErrInvalidSecretErrNoSecretErrConfigUnsupportedErrOperationTimeoutErrMigratePersistFailedErrHookScriptFailedErrInvalidDomainSnapshotErrNoDomainSnapshotErrInvalidStreamErrArgumentUnsupportedErrStorageProbeFailedErrStoragePoolBuiltErrSnapshotRevertRiskyErrOperationAbortedErrAuthCancelledErrNoDomainMetadataErrMigrateUnsafeErrOverflowErrBlockCopyActiveErrOperationUnsupportedErrSSHErrAgentUnresponsiveErrResourceBusyErrAccessDeniedErrDbusServiceErrStorageVolExistErrCPUIncompatibleErrXMLInvalidSchemaErrMigrateFinishOkErrAuthUnavailableErrNoServerErrNoClientErrAgentUnsyncedErrLibsshErrDeviceMissingErrInvalidNwfilterBindingErrNoNwfilterBindingErrInvalidDomainCheckpointErrNoDomainCheckpointErrNoDomainBackupErrInvalidNetworkPortErrNetworkPortExistErrNoNetworkPortErrNoHostnameErrCheckpointInconsistentErrMultipleDomains"
 
-var _ErrorNumber_index = [...]uint16{0, 5, 21, 32, 44, 58, 70, 84, 100, 113, 131, 143, 156, 168, 182, 190, 200, 209, 220, 229, 240, 251, 260, 267, 278, 291, 304, 317, 328, 339, 357, 370, 383, 397, 410, 424, 436, 453, 468, 482, 488, 502, 514, 525, 537, 550, 563, 584, 604, 616, 632, 647, 656, 676, 691, 709, 728, 742, 756, 775, 796, 809, 827, 840, 856, 867, 883, 894, 914, 933, 956, 975, 999, 1018, 1034, 1056, 1077, 1096, 1118, 1137, 1153, 1172, 1188, 1199, 1217, 1240, 1246, 1266, 1281, 1296, 1310, 1328, 1346, 1365, 1383, 1401, 1412, 1423, 1439, 1448, 1464, 1489, 1509, 1535, 1556, 1573, 1594, 1613, 1629, 1642, 1667, 1685, 1705, 1727, 1748}
+var _ErrorNumber_index = [...]uint16{0, 5, 21, 32, 44, 58, 70, 84, 100, 113, 131, 143, 156, 168, 182, 190, 200, 209, 220, 229, 240, 251, 260, 267, 278, 291, 304, 317, 328, 339, 357, 370, 383, 397, 410, 424, 436, 453, 468, 482, 488, 502, 514, 525, 537, 550, 563, 584, 604, 616, 632, 647, 656, 676, 691, 709, 728, 742, 756, 775, 796, 809, 827, 840, 856, 867, 883, 894, 914, 933, 956, 975, 999, 1018, 1034, 1056, 1077, 1096, 1118, 1137, 1153, 1172, 1188, 1199, 1217, 1240, 1246, 1266, 1281, 1296, 1310, 1328, 1346, 1365, 1383, 1401, 1412, 1423, 1439, 1448, 1464, 1489, 1509, 1535, 1556, 1573, 1594, 1613, 1629, 1642, 1667, 1685}
 
 func (i ErrorNumber) String() string {
 	if i < 0 || i >= ErrorNumber(len(_ErrorNumber_index)-1) {

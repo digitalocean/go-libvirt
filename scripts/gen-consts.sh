@@ -33,7 +33,7 @@ if ! go install golang.org/x/tools/cmd/goyacc@v0.18.0; then
     echo "failed to install goyacc. Please install it manually from https://golang.org/x/tools/cmd/goyacc"
     exit 1
 fi
-#
+
 # Make sure stringer is installed (needed for the constant string names)
 echo "Attempting to install stringer"
 if ! go install golang.org/x/tools/cmd/stringer@v0.37.0; then
