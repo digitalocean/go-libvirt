@@ -2,8 +2,6 @@ module github.com/digitalocean/go-libvirt
 
 go 1.23.0
 
-toolchain go1.24.1
-
 require (
 	github.com/stretchr/testify v1.11.1
 	golang.org/x/crypto v0.41.0

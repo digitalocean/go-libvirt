@@ -278,7 +278,7 @@ type ConnectGetDomainCapabilitiesArgs struct {
 	Arch OptString
 	Machine OptString
 	Virttype OptString
-	Flags uint32
+	Flags ConnectGetDomainCapabilitiesFlags
 }
 
 // ConnectGetDomainCapabilitiesRet is libvirt's remote_connect_get_domain_capabilities_ret
@@ -782,6 +782,13 @@ type DomainSaveFlagsArgs struct {
 	Flags uint32
 }
 
+// DomainSaveParamsArgs is libvirt's remote_domain_save_params_args
+type DomainSaveParamsArgs struct {
+	Dom Domain
+	Params []TypedParam
+	Flags uint32
+}
+
 // DomainRestoreArgs is libvirt's remote_domain_restore_args
 type DomainRestoreArgs struct {
 	From string
@@ -791,6 +798,12 @@ type DomainRestoreArgs struct {
 type DomainRestoreFlagsArgs struct {
 	From string
 	Dxml OptString
+	Flags uint32
+}
+
+// DomainRestoreParamsArgs is libvirt's remote_domain_restore_params_args
+type DomainRestoreParamsArgs struct {
+	Params []TypedParam
 	Flags uint32
 }
 
@@ -855,7 +868,7 @@ type DomainMigratePrepareArgs struct {
 	UriIn OptString
 	Flags uint64
 	Dname OptString
-	Resource uint64
+	Bandwidth uint64
 }
 
 // DomainMigratePrepareRet is libvirt's remote_domain_migrate_prepare_ret
@@ -871,7 +884,7 @@ type DomainMigratePerformArgs struct {
 	Uri string
 	Flags uint64
 	Dname OptString
-	Resource uint64
+	Bandwidth uint64
 }
 
 // DomainMigrateFinishArgs is libvirt's remote_domain_migrate_finish_args
@@ -892,7 +905,7 @@ type DomainMigratePrepare2Args struct {
 	UriIn OptString
 	Flags uint64
 	Dname OptString
-	Resource uint64
+	Bandwidth uint64
 	DomXML string
 }
 
@@ -1351,6 +1364,21 @@ type DomainGetBlockIOTuneArgs struct {
 type DomainGetBlockIOTuneRet struct {
 	Params []TypedParam
 	Nparams int32
+}
+
+// DomainSetThrottleGroupArgs is libvirt's remote_domain_set_throttle_group_args
+type DomainSetThrottleGroupArgs struct {
+	Dom Domain
+	Group string
+	Params []TypedParam
+	Flags uint32
+}
+
+// DomainDelThrottleGroupArgs is libvirt's remote_domain_del_throttle_group_args
+type DomainDelThrottleGroupArgs struct {
+	Dom Domain
+	Group OptString
+	Flags uint32
 }
 
 // DomainGetCPUStatsArgs is libvirt's remote_domain_get_cpu_stats_args
@@ -2190,7 +2218,7 @@ type NodeDeviceResetArgs struct {
 // NodeDeviceCreateXMLArgs is libvirt's remote_node_device_create_xml_args
 type NodeDeviceCreateXMLArgs struct {
 	XMLDesc string
-	Flags uint32
+	Flags NodeDeviceCreateXMLFlags
 }
 
 // NodeDeviceCreateXMLRet is libvirt's remote_node_device_create_xml_ret
@@ -2206,7 +2234,7 @@ type NodeDeviceDestroyArgs struct {
 // NodeDeviceDefineXMLArgs is libvirt's remote_node_device_define_xml_args
 type NodeDeviceDefineXMLArgs struct {
 	XMLDesc string
-	Flags uint32
+	Flags NodeDeviceDefineXMLFlags
 }
 
 // NodeDeviceDefineXMLRet is libvirt's remote_node_device_define_xml_ret
@@ -2260,6 +2288,13 @@ type NodeDeviceIsActiveArgs struct {
 // NodeDeviceIsActiveRet is libvirt's remote_node_device_is_active_ret
 type NodeDeviceIsActiveRet struct {
 	Active int32
+}
+
+// NodeDeviceUpdateArgs is libvirt's remote_node_device_update_args
+type NodeDeviceUpdateArgs struct {
+	Name string
+	XMLDesc string
+	Flags NodeDeviceUpdateFlags
 }
 
 // ConnectDomainEventRegisterRet is libvirt's remote_connect_domain_event_register_ret
@@ -2394,7 +2429,7 @@ type SecretLookupByUsageRet struct {
 type DomainMigratePrepareTunnelArgs struct {
 	Flags uint64
 	Dname OptString
-	Resource uint64
+	Bandwidth uint64
 	DomXML string
 }
 
@@ -2541,6 +2576,12 @@ type DomainGetJobStatsRet struct {
 // DomainAbortJobArgs is libvirt's remote_domain_abort_job_args
 type DomainAbortJobArgs struct {
 	Dom Domain
+}
+
+// DomainAbortJobFlagsArgs is libvirt's remote_domain_abort_job_flags_args
+type DomainAbortJobFlagsArgs struct {
+	Dom Domain
+	Flags uint32
 }
 
 // DomainMigrateGetMaxDowntimeArgs is libvirt's remote_domain_migrate_get_max_downtime_args
@@ -3069,7 +3110,7 @@ type DomainMigrateBegin3Args struct {
 	Xmlin OptString
 	Flags uint64
 	Dname OptString
-	Resource uint64
+	Bandwidth uint64
 }
 
 // DomainMigrateBegin3Ret is libvirt's remote_domain_migrate_begin3_ret
@@ -3084,7 +3125,7 @@ type DomainMigratePrepare3Args struct {
 	UriIn OptString
 	Flags uint64
 	Dname OptString
-	Resource uint64
+	Bandwidth uint64
 	DomXML string
 }
 
@@ -3099,7 +3140,7 @@ type DomainMigratePrepareTunnel3Args struct {
 	CookieIn []byte
 	Flags uint64
 	Dname OptString
-	Resource uint64
+	Bandwidth uint64
 	DomXML string
 }
 
@@ -3117,7 +3158,7 @@ type DomainMigratePerform3Args struct {
 	Uri OptString
 	Flags uint64
 	Dname OptString
-	Resource uint64
+	Bandwidth uint64
 }
 
 // DomainMigratePerform3Ret is libvirt's remote_domain_migrate_perform3_ret
@@ -3530,6 +3571,37 @@ type NetworkEventLifecycleMsg struct {
 	Net Network
 	Event int32
 	Detail int32
+}
+
+// NetworkEventCallbackMetadataChangeMsg is libvirt's remote_network_event_callback_metadata_change_msg
+type NetworkEventCallbackMetadataChangeMsg struct {
+	CallbackID int32
+	Net Network
+	Type int32
+	Nsuri OptString
+}
+
+// NetworkSetMetadataArgs is libvirt's remote_network_set_metadata_args
+type NetworkSetMetadataArgs struct {
+	OptNetwork Network
+	Type int32
+	Metadata OptString
+	Key OptString
+	Uri OptString
+	Flags uint32
+}
+
+// NetworkGetMetadataArgs is libvirt's remote_network_get_metadata_args
+type NetworkGetMetadataArgs struct {
+	OptNetwork Network
+	Type int32
+	Uri OptString
+	Flags uint32
+}
+
+// NetworkGetMetadataRet is libvirt's remote_network_get_metadata_ret
+type NetworkGetMetadataRet struct {
+	Metadata string
 }
 
 // ConnectStoragePoolEventRegisterAnyArgs is libvirt's remote_connect_storage_pool_event_register_any_args
@@ -4236,12 +4308,51 @@ type DomainStartDirtyRateCalcArgs struct {
 	Flags uint32
 }
 
+// DomainGraphicsReloadArgs is libvirt's remote_domain_graphics_reload_args
+type DomainGraphicsReloadArgs struct {
+	Dom Domain
+	Type uint32
+	Flags uint32
+}
+
 // DomainEventMemoryDeviceSizeChangeMsg is libvirt's remote_domain_event_memory_device_size_change_msg
 type DomainEventMemoryDeviceSizeChangeMsg struct {
 	CallbackID int32
 	Dom Domain
 	Alias string
 	Size uint64
+}
+
+// DomainFdAssociateArgs is libvirt's remote_domain_fd_associate_args
+type DomainFdAssociateArgs struct {
+	Dom Domain
+	Name string
+	Flags uint32
+}
+
+// DomainGetAutostartOnceArgs is libvirt's remote_domain_get_autostart_once_args
+type DomainGetAutostartOnceArgs struct {
+	Dom Domain
+}
+
+// DomainGetAutostartOnceRet is libvirt's remote_domain_get_autostart_once_ret
+type DomainGetAutostartOnceRet struct {
+	Autostart int32
+}
+
+// DomainSetAutostartOnceArgs is libvirt's remote_domain_set_autostart_once_args
+type DomainSetAutostartOnceArgs struct {
+	Dom Domain
+	Autostart int32
+}
+
+// DomainEventNicMacChangeMsg is libvirt's remote_domain_event_nic_mac_change_msg
+type DomainEventNicMacChangeMsg struct {
+	CallbackID int32
+	Dom Domain
+	Alias string
+	OldMAC string
+	NewMAC string
 }
 
 
@@ -6007,14 +6118,14 @@ func (l *Libvirt) ConnectSupportsFeature(Feature int32) (rSupported int32, err e
 }
 
 // DomainMigratePrepare is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PREPARE.
-func (l *Libvirt) DomainMigratePrepare(UriIn OptString, Flags uint64, Dname OptString, Resource uint64) (rCookie []byte, rUriOut OptString, err error) {
+func (l *Libvirt) DomainMigratePrepare(UriIn OptString, Flags uint64, Dname OptString, Bandwidth uint64) (rCookie []byte, rUriOut OptString, err error) {
 	var buf []byte
 
 	args := DomainMigratePrepareArgs {
 		UriIn: UriIn,
 		Flags: Flags,
 		Dname: Dname,
-		Resource: Resource,
+		Bandwidth: Bandwidth,
 	}
 
 	buf, err = encode(&args)
@@ -6048,7 +6159,7 @@ func (l *Libvirt) DomainMigratePrepare(UriIn OptString, Flags uint64, Dname OptS
 }
 
 // DomainMigratePerform is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PERFORM.
-func (l *Libvirt) DomainMigratePerform(Dom Domain, Cookie []byte, Uri string, Flags uint64, Dname OptString, Resource uint64) (err error) {
+func (l *Libvirt) DomainMigratePerform(Dom Domain, Cookie []byte, Uri string, Flags uint64, Dname OptString, Bandwidth uint64) (err error) {
 	var buf []byte
 
 	args := DomainMigratePerformArgs {
@@ -6057,7 +6168,7 @@ func (l *Libvirt) DomainMigratePerform(Dom Domain, Cookie []byte, Uri string, Fl
 		Uri: Uri,
 		Flags: Flags,
 		Dname: Dname,
-		Resource: Resource,
+		Bandwidth: Bandwidth,
 	}
 
 	buf, err = encode(&args)
@@ -7512,14 +7623,14 @@ func (l *Libvirt) DomainEventLifecycle() (err error) {
 }
 
 // DomainMigratePrepare2 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PREPARE2.
-func (l *Libvirt) DomainMigratePrepare2(UriIn OptString, Flags uint64, Dname OptString, Resource uint64, DomXML string) (rCookie []byte, rUriOut OptString, err error) {
+func (l *Libvirt) DomainMigratePrepare2(UriIn OptString, Flags uint64, Dname OptString, Bandwidth uint64, DomXML string) (rCookie []byte, rUriOut OptString, err error) {
 	var buf []byte
 
 	args := DomainMigratePrepare2Args {
 		UriIn: UriIn,
 		Flags: Flags,
 		Dname: Dname,
-		Resource: Resource,
+		Bandwidth: Bandwidth,
 		DomXML: DomXML,
 	}
 
@@ -7984,7 +8095,7 @@ func (l *Libvirt) NodeGetSecurityModel() (rModel []int8, rDoi []int8, err error)
 }
 
 // NodeDeviceCreateXML is the go wrapper for REMOTE_PROC_NODE_DEVICE_CREATE_XML.
-func (l *Libvirt) NodeDeviceCreateXML(XMLDesc string, Flags uint32) (rDev NodeDevice, err error) {
+func (l *Libvirt) NodeDeviceCreateXML(XMLDesc string, Flags NodeDeviceCreateXMLFlags) (rDev NodeDevice, err error) {
 	var buf []byte
 
 	args := NodeDeviceCreateXMLArgs {
@@ -8734,13 +8845,13 @@ func (l *Libvirt) SecretLookupByUsage(UsageType int32, UsageID string) (rOptSecr
 }
 
 // DomainMigratePrepareTunnel is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PREPARE_TUNNEL.
-func (l *Libvirt) DomainMigratePrepareTunnel(Flags uint64, outStream io.Reader, Dname OptString, Resource uint64, DomXML string) (err error) {
+func (l *Libvirt) DomainMigratePrepareTunnel(Flags uint64, outStream io.Reader, Dname OptString, Bandwidth uint64, DomXML string) (err error) {
 	var buf []byte
 
 	args := DomainMigratePrepareTunnelArgs {
 		Flags: Flags,
 		Dname: Dname,
-		Resource: Resource,
+		Bandwidth: Bandwidth,
 		DomXML: DomXML,
 	}
 
@@ -10621,7 +10732,7 @@ func (l *Libvirt) DomainGetState(Dom Domain, Flags uint32) (rState int32, rReaso
 }
 
 // DomainMigrateBegin3 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_BEGIN3.
-func (l *Libvirt) DomainMigrateBegin3(Dom Domain, Xmlin OptString, Flags uint64, Dname OptString, Resource uint64) (rCookieOut []byte, rXML string, err error) {
+func (l *Libvirt) DomainMigrateBegin3(Dom Domain, Xmlin OptString, Flags uint64, Dname OptString, Bandwidth uint64) (rCookieOut []byte, rXML string, err error) {
 	var buf []byte
 
 	args := DomainMigrateBegin3Args {
@@ -10629,7 +10740,7 @@ func (l *Libvirt) DomainMigrateBegin3(Dom Domain, Xmlin OptString, Flags uint64,
 		Xmlin: Xmlin,
 		Flags: Flags,
 		Dname: Dname,
-		Resource: Resource,
+		Bandwidth: Bandwidth,
 	}
 
 	buf, err = encode(&args)
@@ -10663,7 +10774,7 @@ func (l *Libvirt) DomainMigrateBegin3(Dom Domain, Xmlin OptString, Flags uint64,
 }
 
 // DomainMigratePrepare3 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PREPARE3.
-func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn OptString, Flags uint64, Dname OptString, Resource uint64, DomXML string) (rCookieOut []byte, rUriOut OptString, err error) {
+func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn OptString, Flags uint64, Dname OptString, Bandwidth uint64, DomXML string) (rCookieOut []byte, rUriOut OptString, err error) {
 	var buf []byte
 
 	args := DomainMigratePrepare3Args {
@@ -10671,7 +10782,7 @@ func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn OptString, Flags 
 		UriIn: UriIn,
 		Flags: Flags,
 		Dname: Dname,
-		Resource: Resource,
+		Bandwidth: Bandwidth,
 		DomXML: DomXML,
 	}
 
@@ -10706,14 +10817,14 @@ func (l *Libvirt) DomainMigratePrepare3(CookieIn []byte, UriIn OptString, Flags 
 }
 
 // DomainMigratePrepareTunnel3 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PREPARE_TUNNEL3.
-func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, outStream io.Reader, Flags uint64, Dname OptString, Resource uint64, DomXML string) (rCookieOut []byte, err error) {
+func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, outStream io.Reader, Flags uint64, Dname OptString, Bandwidth uint64, DomXML string) (rCookieOut []byte, err error) {
 	var buf []byte
 
 	args := DomainMigratePrepareTunnel3Args {
 		CookieIn: CookieIn,
 		Flags: Flags,
 		Dname: Dname,
-		Resource: Resource,
+		Bandwidth: Bandwidth,
 		DomXML: DomXML,
 	}
 
@@ -10743,7 +10854,7 @@ func (l *Libvirt) DomainMigratePrepareTunnel3(CookieIn []byte, outStream io.Read
 }
 
 // DomainMigratePerform3 is the go wrapper for REMOTE_PROC_DOMAIN_MIGRATE_PERFORM3.
-func (l *Libvirt) DomainMigratePerform3(Dom Domain, Xmlin OptString, CookieIn []byte, Dconnuri OptString, Uri OptString, Flags uint64, Dname OptString, Resource uint64) (rCookieOut []byte, err error) {
+func (l *Libvirt) DomainMigratePerform3(Dom Domain, Xmlin OptString, CookieIn []byte, Dconnuri OptString, Uri OptString, Flags uint64, Dname OptString, Bandwidth uint64) (rCookieOut []byte, err error) {
 	var buf []byte
 
 	args := DomainMigratePerform3Args {
@@ -10754,7 +10865,7 @@ func (l *Libvirt) DomainMigratePerform3(Dom Domain, Xmlin OptString, CookieIn []
 		Uri: Uri,
 		Flags: Flags,
 		Dname: Dname,
-		Resource: Resource,
+		Bandwidth: Bandwidth,
 	}
 
 	buf, err = encode(&args)
@@ -14272,7 +14383,7 @@ func (l *Libvirt) NetworkGetDhcpLeases(Net Network, Mac OptString, NeedResults i
 }
 
 // ConnectGetDomainCapabilities is the go wrapper for REMOTE_PROC_CONNECT_GET_DOMAIN_CAPABILITIES.
-func (l *Libvirt) ConnectGetDomainCapabilities(Emulatorbin OptString, Arch OptString, Machine OptString, Virttype OptString, Flags uint32) (rCapabilities string, err error) {
+func (l *Libvirt) ConnectGetDomainCapabilities(Emulatorbin OptString, Arch OptString, Machine OptString, Virttype OptString, Flags ConnectGetDomainCapabilitiesFlags) (rCapabilities string, err error) {
 	var buf []byte
 
 	args := ConnectGetDomainCapabilitiesArgs {
@@ -16631,7 +16742,7 @@ func (l *Libvirt) DomainStartDirtyRateCalc(Dom Domain, Seconds int32, Flags uint
 }
 
 // NodeDeviceDefineXML is the go wrapper for REMOTE_PROC_NODE_DEVICE_DEFINE_XML.
-func (l *Libvirt) NodeDeviceDefineXML(XMLDesc string, Flags uint32) (rDev NodeDevice, err error) {
+func (l *Libvirt) NodeDeviceDefineXML(XMLDesc string, Flags NodeDeviceDefineXMLFlags) (rDev NodeDevice, err error) {
 	var buf []byte
 
 	args := NodeDeviceDefineXMLArgs {
@@ -16964,6 +17075,342 @@ func (l *Libvirt) DomainSetLaunchSecurityState(Dom Domain, Params []TypedParam, 
 
 
 	_, err = l.requestStream(439, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainSaveParams is the go wrapper for REMOTE_PROC_DOMAIN_SAVE_PARAMS.
+func (l *Libvirt) DomainSaveParams(Dom Domain, Params []TypedParam, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainSaveParamsArgs {
+		Dom: Dom,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(440, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainRestoreParams is the go wrapper for REMOTE_PROC_DOMAIN_RESTORE_PARAMS.
+func (l *Libvirt) DomainRestoreParams(Params []TypedParam, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainRestoreParamsArgs {
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(441, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainAbortJobFlags is the go wrapper for REMOTE_PROC_DOMAIN_ABORT_JOB_FLAGS.
+func (l *Libvirt) DomainAbortJobFlags(Dom Domain, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainAbortJobFlagsArgs {
+		Dom: Dom,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(442, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainFdAssociate is the go wrapper for REMOTE_PROC_DOMAIN_FD_ASSOCIATE.
+func (l *Libvirt) DomainFdAssociate(Dom Domain, Name string, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainFdAssociateArgs {
+		Dom: Dom,
+		Name: Name,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(443, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkSetMetadata is the go wrapper for REMOTE_PROC_NETWORK_SET_METADATA.
+func (l *Libvirt) NetworkSetMetadata(OptNetwork Network, Type int32, Metadata OptString, Key OptString, Uri OptString, Flags uint32) (err error) {
+	var buf []byte
+
+	args := NetworkSetMetadataArgs {
+		OptNetwork: OptNetwork,
+		Type: Type,
+		Metadata: Metadata,
+		Key: Key,
+		Uri: Uri,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(444, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkGetMetadata is the go wrapper for REMOTE_PROC_NETWORK_GET_METADATA.
+func (l *Libvirt) NetworkGetMetadata(OptNetwork Network, Type int32, Uri OptString, Flags uint32) (rMetadata string, err error) {
+	var buf []byte
+
+	args := NetworkGetMetadataArgs {
+		OptNetwork: OptNetwork,
+		Type: Type,
+		Uri: Uri,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(445, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Metadata: string
+	_, err = dec.Decode(&rMetadata)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NetworkEventCallbackMetadataChange is the go wrapper for REMOTE_PROC_NETWORK_EVENT_CALLBACK_METADATA_CHANGE.
+func (l *Libvirt) NetworkEventCallbackMetadataChange() (err error) {
+	var buf []byte
+
+
+	_, err = l.requestStream(446, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// NodeDeviceUpdate is the go wrapper for REMOTE_PROC_NODE_DEVICE_UPDATE.
+func (l *Libvirt) NodeDeviceUpdate(Name string, XMLDesc string, Flags NodeDeviceUpdateFlags) (err error) {
+	var buf []byte
+
+	args := NodeDeviceUpdateArgs {
+		Name: Name,
+		XMLDesc: XMLDesc,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(447, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainGraphicsReload is the go wrapper for REMOTE_PROC_DOMAIN_GRAPHICS_RELOAD.
+func (l *Libvirt) DomainGraphicsReload(Dom Domain, Type uint32, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainGraphicsReloadArgs {
+		Dom: Dom,
+		Type: Type,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(448, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainGetAutostartOnce is the go wrapper for REMOTE_PROC_DOMAIN_GET_AUTOSTART_ONCE.
+func (l *Libvirt) DomainGetAutostartOnce(Dom Domain) (rAutostart int32, err error) {
+	var buf []byte
+
+	args := DomainGetAutostartOnceArgs {
+		Dom: Dom,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+	var r response
+	r, err = l.requestStream(449, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	// Return value unmarshaling
+	tpd := typedParamDecoder{}
+	ct := map[string]xdr.TypeDecoder{"libvirt.TypedParam": tpd}
+	rdr := bytes.NewReader(r.Payload)
+	dec := xdr.NewDecoderCustomTypes(rdr, 0, ct)
+	// Autostart: int32
+	_, err = dec.Decode(&rAutostart)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainSetAutostartOnce is the go wrapper for REMOTE_PROC_DOMAIN_SET_AUTOSTART_ONCE.
+func (l *Libvirt) DomainSetAutostartOnce(Dom Domain, Autostart int32) (err error) {
+	var buf []byte
+
+	args := DomainSetAutostartOnceArgs {
+		Dom: Dom,
+		Autostart: Autostart,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(450, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainSetThrottleGroup is the go wrapper for REMOTE_PROC_DOMAIN_SET_THROTTLE_GROUP.
+func (l *Libvirt) DomainSetThrottleGroup(Dom Domain, Group string, Params []TypedParam, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainSetThrottleGroupArgs {
+		Dom: Dom,
+		Group: Group,
+		Params: Params,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(451, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainDelThrottleGroup is the go wrapper for REMOTE_PROC_DOMAIN_DEL_THROTTLE_GROUP.
+func (l *Libvirt) DomainDelThrottleGroup(Dom Domain, Group OptString, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainDelThrottleGroupArgs {
+		Dom: Dom,
+		Group: Group,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(452, constants.Program, buf, nil, nil)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+// DomainEventNicMacChange is the go wrapper for REMOTE_PROC_DOMAIN_EVENT_NIC_MAC_CHANGE.
+func (l *Libvirt) DomainEventNicMacChange() (err error) {
+	var buf []byte
+
+
+	_, err = l.requestStream(453, constants.Program, buf, nil, nil)
 	if err != nil {
 		return
 	}
