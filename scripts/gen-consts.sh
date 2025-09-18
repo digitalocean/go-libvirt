@@ -34,6 +34,13 @@ if ! go install golang.org/x/tools/cmd/goyacc@v0.18.0; then
     exit 1
 fi
 
+# Make sure stringer is installed (needed for the constant string names)
+echo "Attempting to install stringer"
+if ! go install golang.org/x/tools/cmd/stringer@v0.37.0; then
+    echo "failed to install stringer. Please install it manually from https://golang.org/x/tools/cmd/stringer"
+    exit 1
+fi
+
 # Ensure fresh output is in libvirt/
 rm -rf libvirt/
 
@@ -46,8 +53,14 @@ if ! c-for-go -nostamp -nocgo -ccincl libvirt.yml; then
     exit 1
 fi
 
+# Generate strings from the constants...
+echo -e "constant strings processing"
+constants=$(sed -nE 's/^type ([[:upper:]].+) u?int32/\1/p' libvirt/const.go | paste -s -d, -)
+stringer -type="$constants" -output libvirt/const_strings.go
+
 # Use the generated 'const.go'
 mv libvirt/const.go "${SCRIPTS}/../const.gen.go"
+mv libvirt/const_strings.go "${SCRIPTS}/../const_strings.gen.go"
 
 # Remove unused generated files
 rm -f \
