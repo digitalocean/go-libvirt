@@ -18,7 +18,7 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4 # respository path: $GITHUB_WORKSPACE
+      - uses: actions/checkout@v5 # respository path: $GITHUB_WORKSPACE
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.toolchain }}
