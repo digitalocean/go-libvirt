@@ -17418,3 +17418,27 @@ func (l *Libvirt) DomainEventNicMacChange() (err error) {
 	return
 }
 
+// DomainOpenConsoleBidirectional is the go wrapper for REMOTE_PROC_DOMAIN_OPEN_CONSOLE.
+func (l *Libvirt) DomainOpenConsoleBidirectional(Dom Domain, DevName OptString, outStream io.Reader, inStream io.Writer, Flags uint32) (err error) {
+	var buf []byte
+
+	args := DomainOpenConsoleArgs {
+		Dom: Dom,
+		DevName: DevName,
+		Flags: Flags,
+	}
+
+	buf, err = encode(&args)
+	if err != nil {
+		return
+	}
+
+
+	_, err = l.requestStream(201, constants.Program, buf, outStream, inStream)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
