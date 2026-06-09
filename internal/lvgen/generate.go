@@ -255,6 +255,7 @@ func Generate(name string, proto io.Reader) error {
 	// When parsing is done, we can link the procedures we've found to their
 	// argument types.
 	procLink()
+	addBidirectionalProcs()
 
 	// Generate and write the output.
 	constsName := fmt.Sprintf("../constants/%v.gen.go", name)
@@ -569,6 +570,30 @@ func changeFlagType(procName string, s *Structure, flagTypes map[string]ast.Expr
 			}
 		}
 	}
+}
+
+// bidirectionalStreamProcs lists read-stream procedures that libvirt actually
+// exposes as duplex streams but only annotates with @readstream. For each we
+// emit an additional wrapper that also wires the write direction.
+var bidirectionalStreamProcs = map[string]string{
+	"DomainOpenConsole": "DomainOpenConsoleBidirectional",
+}
+
+// addBidirectionalProcs adds bidirectional variants of each RPC call mentioned
+// in bidirectionalStreamProcs.
+func addBidirectionalProcs() {
+	var extra []Proc
+	for _, proc := range Gen.Procs {
+		newName, ok := bidirectionalStreamProcs[proc.Name]
+		if !ok || proc.ReadStreamIdx == -1 {
+			continue
+		}
+		dup := proc
+		dup.Name = newName
+		dup.WriteStreamIdx = proc.ReadStreamIdx
+		extra = append(extra, dup)
+	}
+	Gen.Procs = append(Gen.Procs, extra...)
 }
 
 //---------------------------------------------------------------------------
