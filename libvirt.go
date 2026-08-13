@@ -406,8 +406,8 @@ func (l *Libvirt) SubscribeQEMUEvents(ctx context.Context, dom string) (<-chan D
 	go func() {
 		ctx, cancel := context.WithCancel(ctx)
 		defer cancel()
-		defer l.unsubscribeQEMUEvents(stream)
 		defer stream.Shutdown()
+		defer l.unsubscribeQEMUEvents(stream)
 		defer close(ch)
 
 		for {

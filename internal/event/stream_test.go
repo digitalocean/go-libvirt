@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -82,4 +83,31 @@ func TestStreamParallel(t *testing.T) {
 
 	wg.Wait()
 	assert.Zero(t, s.Len())
+}
+
+// TestStreamPushAfterShutdown ensures that Push does not block forever if
+// called after the Stream's processing goroutine has already exited via
+// Shutdown(). Without a done-channel escape hatch, a Push racing a Shutdown
+// (e.g. an event arriving just as a caller tears down its stream) blocks
+// forever, wedging whichever goroutine called Push.
+func TestStreamPushAfterShutdown(t *testing.T) {
+	s := NewStream(1, 2)
+	s.Shutdown()
+
+	// Wait for process() to actually exit - closing s.out confirms this
+	// deterministically, so there's no reliance on sleep/timing.
+	_, ok := <-s.Recv()
+	assert.False(t, ok)
+
+	done := make(chan struct{})
+	go func() {
+		s.Push(testEvent{0})
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Push blocked forever after Shutdown; done-channel guard missing or broken")
+	}
 }

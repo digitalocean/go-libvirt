@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/digitalocean/go-libvirt/internal/constants"
 	"github.com/digitalocean/go-libvirt/internal/event"
@@ -488,6 +489,47 @@ func TestRouteDeadlock(t *testing.T) {
 	// finally verify that canceling the context doesn't cause a deadlock.
 	fmt.Println("checking for deadlock after context cancellation")
 	send(0, 50)
+}
+
+// TestQEMUEventHandoffWindow reproduces the handoff window that used to
+// exist during SubscribeQEMUEvents teardown: the stream's local reader
+// (stream.Shutdown()) torn down before it was deregistered from routing
+// (l.removeStream, via unsubscribeQEMUEvents). If an event for that
+// callback ID arrived from libvirtd in that window, the shared
+// socket-reader goroutine would call Route -> stream -> Push on a stream
+// with nothing left to drain it, blocking forever. This simulates that
+// exact ordering directly, since the real background goroutine's internal
+// scheduling can't be raced deterministically from a test.
+func TestQEMUEventHandoffWindow(t *testing.T) {
+	id := int32(1)
+
+	l := &Libvirt{events: make(map[int32]*event.Stream)}
+	stream := event.NewStream(constants.QEMUProgram, id)
+	l.addStream(stream)
+
+	// Simulate the pre-fix teardown order: local reader gone, but the
+	// stream is still registered for routing.
+	stream.Shutdown()
+	_, ok := <-stream.Recv()
+	assert.False(t, ok)
+
+	eventHeader := &socket.Header{
+		Program:   constants.QEMUProgram,
+		Procedure: constants.QEMUProcDomainMonitorEvent,
+		Status:    socket.StatusOK,
+	}
+
+	done := make(chan struct{})
+	go func() {
+		l.Route(eventHeader, testEvent)
+		close(done)
+	}()
+
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
+		t.Fatal("Route/Push blocked delivering an event to a torn-down stream")
+	}
 }
 
 func TestGetResponseInterrupted(t *testing.T) {

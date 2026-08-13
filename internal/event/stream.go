@@ -41,6 +41,7 @@ type Stream struct {
 	in, out chan Event
 
 	// terminates processing
+	ctx      context.Context
 	shutdown context.CancelFunc
 }
 
@@ -81,9 +82,13 @@ func (s *Stream) Recv() chan Event {
 	return s.out
 }
 
-// Push appends a new event to the queue.
+// Push appends a new event to the queue. If the Stream has already been shut
+// down and nothing is left to receive it, Push returns without blocking.
 func (s *Stream) Push(e Event) {
-	s.in <- e
+	select {
+	case s.in <- e:
+	case <-s.ctx.Done():
+	}
 }
 
 // Shutdown gracefully terminates Stream processing, releasing all internal
@@ -99,6 +104,7 @@ func (s *Stream) Shutdown() {
 // terminated by the returned context.CancelFunc.
 func (s *Stream) start() context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
+	s.ctx = ctx
 
 	go s.process(ctx)
 
