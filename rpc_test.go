@@ -16,7 +16,10 @@ package libvirt
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
+	"io"
+	"net"
 	"sync"
 	"testing"
 	"time"
@@ -539,4 +542,229 @@ func TestGetResponseInterrupted(t *testing.T) {
 	close(c)
 	_, err := l.getResponse(c)
 	assert.Equal(t, ErrInterrupted, err)
+}
+
+// Bidirectional console (proc 201) regression tests for the requestStream
+// both-streams teardown deadlocks. See digitalocean/go-libvirt#260
+
+// consoleTestServer is the server end of a net.Pipe used to script a fake
+// libvirtd that speaks the streaming subset of the remote protocol
+type consoleTestServer struct {
+	conn net.Conn
+}
+
+func (s *consoleTestServer) readPacket() (socket.Header, []byte, error) {
+	var lenBuf [4]byte
+	if _, err := io.ReadFull(s.conn, lenBuf[:]); err != nil {
+		return socket.Header{}, nil, err
+	}
+	length := binary.BigEndian.Uint32(lenBuf[:])
+	buf := make([]byte, int(length)-4)
+	if _, err := io.ReadFull(s.conn, buf); err != nil {
+		return socket.Header{}, nil, err
+	}
+	h := socket.Header{
+		Program:   binary.BigEndian.Uint32(buf[0:4]),
+		Version:   binary.BigEndian.Uint32(buf[4:8]),
+		Procedure: binary.BigEndian.Uint32(buf[8:12]),
+		Type:      binary.BigEndian.Uint32(buf[12:16]),
+		Serial:    int32(binary.BigEndian.Uint32(buf[16:20])),
+		Status:    binary.BigEndian.Uint32(buf[20:24]),
+	}
+	if len(buf) <= 24 {
+		return h, nil, nil
+	}
+	return h, buf[24:], nil
+}
+
+func (s *consoleTestServer) writePacket(serial int32, proc, typ, status uint32, payload []byte) error {
+	buf := make([]byte, 28+len(payload))
+	binary.BigEndian.PutUint32(buf[0:4], uint32(len(buf)))
+	binary.BigEndian.PutUint32(buf[4:8], constants.Program)
+	binary.BigEndian.PutUint32(buf[8:12], constants.ProtocolVersion)
+	binary.BigEndian.PutUint32(buf[12:16], proc)
+	binary.BigEndian.PutUint32(buf[16:20], typ)
+	binary.BigEndian.PutUint32(buf[20:24], uint32(serial))
+	binary.BigEndian.PutUint32(buf[24:28], status)
+	copy(buf[28:], payload)
+	_, err := s.conn.Write(buf)
+	return err
+}
+
+// setupConsoleTest returns a Libvirt whose socket listener is running against
+// a net.Pipe, plus the server end for scripting the fake libvirtd. It bypasses
+// Connect() and the auth handshake to keep the tests focused on stream
+// orchestration.
+func setupConsoleTest(t *testing.T) (*Libvirt, *consoleTestServer) {
+	t.Helper()
+	client, server := net.Pipe()
+	t.Cleanup(func() {
+		client.Close()
+		server.Close()
+	})
+	l := New(client)
+	if err := l.socket.Connect(); err != nil {
+		t.Fatalf("socket connect failed: %v", err)
+	}
+	return l, &consoleTestServer{conn: server}
+}
+
+// TestDomainOpenConsoleBidirectionalStdinEOF ensures that closing stdin
+// cleanly terminates the whole stream
+func TestDomainOpenConsoleBidirectionalStdinEOF(t *testing.T) {
+	l, srv := setupConsoleTest(t)
+
+	stdinData := []byte("root\r")
+	consoleOutput := []byte("login: ")
+
+	serverDone := make(chan struct{})
+	go func() {
+		defer close(serverDone)
+
+		hdr, _, err := srv.readPacket()
+		if !assert.NoError(t, err) {
+			return
+		}
+		assert.Equal(t, uint32(socket.Call), hdr.Type)
+		serial, proc := hdr.Serial, hdr.Procedure
+
+		// Acknowledge the console-open request.
+		if !assert.NoError(t, srv.writePacket(serial, proc, socket.Reply, socket.StatusOK, nil)) {
+			return
+		}
+
+		// Drain the client->server stream until the client signals
+		// end-of-stream (stdin EOF).
+		var got bytes.Buffer
+		for {
+			hdr, payload, err := srv.readPacket()
+			if !assert.NoError(t, err) {
+				return
+			}
+			assert.Equal(t, uint32(socket.Stream), hdr.Type)
+			if hdr.Status == socket.StatusOK {
+				break
+			}
+			got.Write(payload)
+		}
+		assert.Equal(t, stdinData, got.Bytes())
+
+		// Emit console output, then end the server->client stream.
+		if !assert.NoError(t, srv.writePacket(serial, proc, socket.Stream, socket.StatusContinue, consoleOutput)) {
+			return
+		}
+		assert.NoError(t, srv.writePacket(serial, proc, socket.Stream, socket.StatusOK, nil))
+	}()
+
+	var console bytes.Buffer
+	done := make(chan error, 1)
+	go func() {
+		done <- l.DomainOpenConsoleBidirectional(Domain{}, nil, bytes.NewReader(stdinData), &console, 0)
+	}()
+
+	select {
+	case err := <-done:
+		assert.NoError(t, err)
+		assert.Equal(t, consoleOutput, console.Bytes())
+	case <-time.After(2 * time.Second):
+		t.Fatal("DomainOpenConsoleBidirectional did not return after stdin EOF and stream end")
+	}
+	<-serverDone
+}
+
+// TestDomainOpenConsoleBidirectionalServerEndsFirst ensures that when libvirtd
+// ends the console stream while local stdin is still open and idle the call
+// returns instead of waiting for stdin forever.
+func TestDomainOpenConsoleBidirectionalServerEndsFirst(t *testing.T) {
+	l, srv := setupConsoleTest(t)
+
+	consoleOutput := []byte("kernel panic\r\n")
+
+	// Emulate interactive stdin: open and idle.
+	stdinR, stdinW := io.Pipe()
+	t.Cleanup(func() { stdinW.Close() })
+
+	serverDone := make(chan struct{})
+	go func() {
+		defer close(serverDone)
+
+		hdr, _, err := srv.readPacket()
+		if !assert.NoError(t, err) {
+			return
+		}
+		serial, proc := hdr.Serial, hdr.Procedure
+
+		if !assert.NoError(t, srv.writePacket(serial, proc, socket.Reply, socket.StatusOK, nil)) {
+			return
+		}
+
+		// End the stream without the client having sent anything.
+		if !assert.NoError(t, srv.writePacket(serial, proc, socket.Stream, socket.StatusContinue, consoleOutput)) {
+			return
+		}
+		assert.NoError(t, srv.writePacket(serial, proc, socket.Stream, socket.StatusOK, nil))
+	}()
+
+	var console bytes.Buffer
+	done := make(chan error, 1)
+	go func() {
+		done <- l.DomainOpenConsoleBidirectional(Domain{}, nil, stdinR, &console, 0)
+	}()
+
+	select {
+	case err := <-done:
+		assert.NoError(t, err)
+		assert.Equal(t, consoleOutput, console.Bytes())
+	case <-time.After(2 * time.Second):
+		t.Fatal("DomainOpenConsoleBidirectional hung waiting for stdin after libvirtd ended the stream")
+	}
+	<-serverDone
+}
+
+// TestDomainOpenConsoleBidirectionalStreamError ensures a stream error is
+// returned even when the sender goroutine has already exited
+func TestDomainOpenConsoleBidirectionalStreamError(t *testing.T) {
+	l, srv := setupConsoleTest(t)
+
+	serverDone := make(chan struct{})
+	go func() {
+		defer close(serverDone)
+
+		hdr, _, err := srv.readPacket()
+		if !assert.NoError(t, err) {
+			return
+		}
+		serial, proc := hdr.Serial, hdr.Procedure
+
+		if !assert.NoError(t, srv.writePacket(serial, proc, socket.Reply, socket.StatusOK, nil)) {
+			return
+		}
+
+		// Empty stdin: the client immediately sends its stream-finish packet
+		// and the sender goroutine exits.
+		shdr, _, err := srv.readPacket()
+		if !assert.NoError(t, err) {
+			return
+		}
+		assert.Equal(t, uint32(socket.Stream), shdr.Type)
+		assert.Equal(t, uint32(socket.StatusOK), shdr.Status)
+
+		// Then the server fails the stream mid-session.
+		assert.NoError(t, srv.writePacket(serial, proc, socket.Stream, socket.StatusError, testErrorMessage))
+	}()
+
+	var console bytes.Buffer
+	done := make(chan error, 1)
+	go func() {
+		done <- l.DomainOpenConsoleBidirectional(Domain{}, nil, bytes.NewReader(nil), &console, 0)
+	}()
+
+	select {
+	case err := <-done:
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "domain is not running")
+	case <-time.After(2 * time.Second):
+		t.Fatal("DomainOpenConsoleBidirectional did not return after a stream error")
+	}
+	<-serverDone
 }
