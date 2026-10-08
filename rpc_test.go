@@ -15,8 +15,12 @@
 package libvirt
 
 import (
+	"bufio"
 	"bytes"
+	"encoding/binary"
 	"fmt"
+	"io"
+	"net"
 	"sync"
 	"testing"
 	"time"
@@ -539,4 +543,74 @@ func TestGetResponseInterrupted(t *testing.T) {
 	close(c)
 	_, err := l.getResponse(c)
 	assert.Equal(t, ErrInterrupted, err)
+}
+
+type pipeDialer struct{ conn net.Conn }
+
+func (d pipeDialer) Dial() (net.Conn, error) { return d.conn, nil }
+
+// libvirtd can send a stream call's data, and its end, ahead of the call's
+// reply.
+func TestStreamDataBeforeReply(t *testing.T) {
+	orders := [][]string{
+		{"reply", "data", "end"},
+		{"data", "reply", "end"},
+		{"data", "end", "reply"},
+	}
+	client, server := net.Pipe()
+	defer server.Close()
+	go func() {
+		r := bufio.NewReader(server)
+		next := 0
+		for {
+			hdr := make([]byte, 28) // length and header
+			if _, err := io.ReadFull(r, hdr); err != nil {
+				return
+			}
+			size := binary.BigEndian.Uint32(hdr)
+			if _, err := io.CopyN(io.Discard, r, int64(size)-int64(len(hdr))); err != nil {
+				return
+			}
+			send := func(typ, status uint32, payload []byte) {
+				pkt := append([]byte(nil), hdr...)
+				binary.BigEndian.PutUint32(pkt[0:], uint32(len(hdr)+len(payload)))
+				binary.BigEndian.PutUint32(pkt[16:], typ)
+				binary.BigEndian.PutUint32(pkt[24:], status)
+				server.Write(append(pkt, payload...))
+			}
+			if binary.BigEndian.Uint32(hdr[12:]) != constants.ProcStorageVolDownload {
+				send(socket.Reply, socket.StatusOK, make([]byte, 4))
+				continue
+			}
+			for _, step := range orders[next] {
+				switch step {
+				case "reply":
+					send(socket.Reply, socket.StatusOK, nil)
+				case "data":
+					send(socket.Stream, socket.StatusContinue, []byte("ABCDEFGH"))
+				case "end":
+					send(socket.Stream, socket.StatusContinue, nil)
+				}
+			}
+			next++
+		}
+	}()
+
+	l := NewWithDialer(pipeDialer{client})
+	if err := l.ConnectToURI(QEMUSystem); err != nil {
+		t.Fatal(err)
+	}
+	for _, order := range orders {
+		var got bytes.Buffer
+		done := make(chan error, 1)
+		go func() { done <- l.StorageVolDownload(StorageVol{Name: "v"}, &got, 0, 8, 0) }()
+		select {
+		case err := <-done:
+			if err != nil || got.String() != "ABCDEFGH" {
+				t.Errorf("download sent as %q read %q, %v; want \"ABCDEFGH\"", order, got.String(), err)
+			}
+		case <-time.After(5 * time.Second):
+			t.Fatalf("download sent as %q did not return", order)
+		}
+	}
 }

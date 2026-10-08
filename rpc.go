@@ -40,6 +40,7 @@ var ErrInterrupted = errors.New("procedure interrupted while awaiting response")
 type response struct {
 	Payload []byte
 	Status  uint32
+	Type    uint32
 }
 
 // Error reponse from libvirt
@@ -110,7 +111,7 @@ func (l *Libvirt) Route(h *socket.Header, buf []byte) {
 	}
 
 	// send response to caller
-	l.callback(h.Serial, response{Payload: buf, Status: h.Status})
+	l.callback(h.Serial, response{Payload: buf, Status: h.Status, Type: h.Type})
 }
 
 func eventFromProcedureID(procID uint32) event.Event {
@@ -282,7 +283,14 @@ func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte,
 		return response{}, err
 	}
 
+	// libvirt may send stream data ahead of the call's reply; hold it until
+	// the reply arrives, then hand it to processIncomingStream first.
+	var early []response
 	resp, err := l.getResponse(c)
+	for err == nil && resp.Type == socket.Stream {
+		early = append(early, resp)
+		resp, err = l.getResponse(c)
+	}
 	if err != nil {
 		return resp, err
 	}
@@ -295,11 +303,12 @@ func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte,
 		}()
 
 		// Even without incoming stream server sends confirmation once all data is received
-		resp, err = l.processIncomingStream(c, in)
+		resp, err = l.processIncomingStream(c, early, in)
 		if err != nil {
 			abort <- true
 			return resp, err
 		}
+		early = nil
 
 		err = <-outErr
 		if err != nil {
@@ -311,17 +320,21 @@ func (l *Libvirt) requestStream(proc uint32, program uint32, payload []byte,
 	case nil:
 		return resp, nil
 	default:
-		return l.processIncomingStream(c, in)
+		return l.processIncomingStream(c, early, in)
 	}
 }
 
 // processIncomingStream is called once we've successfully sent a request to
 // libvirt. It writes the responses back to the stream passed by the caller
-// until libvirt sends a packet with statusOK or an error.
-func (l *Libvirt) processIncomingStream(c chan response, inStream io.Writer) (response, error) {
+// until libvirt sends a packet with statusOK or an error. Stream packets that
+// arrived before the call's reply are passed in early and read first.
+func (l *Libvirt) processIncomingStream(c chan response, early []response, inStream io.Writer) (response, error) {
 	for {
-		resp, err := l.getResponse(c)
-		if err != nil {
+		var resp response
+		var err error
+		if len(early) > 0 {
+			resp, early = early[0], early[1:]
+		} else if resp, err = l.getResponse(c); err != nil {
 			return resp, err
 		}
 
