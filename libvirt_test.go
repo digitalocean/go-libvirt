@@ -16,14 +16,119 @@ package libvirt
 
 import (
 	"context"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+	"runtime"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/digitalocean/go-libvirt/internal/constants"
 	"github.com/digitalocean/go-libvirt/libvirttest"
 )
+
+func TestConnectionLostAtHandshakeCompletion(t *testing.T) {
+	for i := 0; i < 20; i++ {
+		l := NewWithDialer(&handshakeCloseDialer{})
+		if err := l.Connect(); err != nil {
+			t.Fatalf("connect: %v", err)
+		}
+		select {
+		case <-l.Disconnected():
+		case <-time.After(5 * time.Second):
+			t.Fatal("handshake completed on a closed socket without a disconnect notification")
+		}
+		if l.IsConnected() {
+			t.Fatal("closed socket is reported connected")
+		}
+	}
+}
+
+func TestFailedHandshakeIsDisconnected(t *testing.T) {
+	l := NewWithDialer(&handshakeCloseDialer{early: true})
+	if err := l.Connect(); err == nil {
+		t.Fatal("connection to a closed transport succeeded")
+	}
+	if l.IsConnected() {
+		t.Fatal("failed handshake is reported connected")
+	}
+}
+
+type handshakeCloseDialer struct{ early bool }
+
+func (d *handshakeCloseDialer) Dial() (net.Conn, error) {
+	conn, err := libvirttest.New().Dial()
+	if err != nil {
+		return nil, err
+	}
+	if d.early {
+		conn.Close()
+	}
+	return &handshakeCloseConn{Conn: conn, openWritten: make(chan struct{})}, nil
+}
+
+type handshakeCloseConn struct {
+	net.Conn
+	openWritten chan struct{}
+}
+
+func (c *handshakeCloseConn) Write(p []byte) (int, error) {
+	n, err := c.Conn.Write(p)
+	if len(p) >= 28 && binary.BigEndian.Uint32(p[12:16]) == constants.ProcConnectOpen {
+		close(c.openWritten)
+	}
+	return n, err
+}
+
+func (c *handshakeCloseConn) Read(p []byte) (int, error) {
+	n, err := c.Conn.Read(p)
+	if n >= 28 && binary.BigEndian.Uint32(p[12:16]) == constants.ProcConnectOpen {
+		<-c.openWritten
+		// The fake server's complete open reply is delivered, then the transport dies.
+		c.Conn.Close()
+	}
+	return n, err
+}
+
+func TestConnectStateCanBeObservedConcurrently(t *testing.T) {
+	for i := 0; i < 10; i++ {
+		l := NewWithDialer(libvirttest.New())
+		stop := make(chan struct{})
+		var observer sync.WaitGroup
+		observer.Add(1)
+		go func() {
+			defer observer.Done()
+			for {
+				select {
+				case <-stop:
+					return
+				default:
+					l.IsConnected()
+					runtime.Gosched()
+				}
+			}
+		}()
+
+		err := l.Connect()
+		close(stop)
+		observer.Wait()
+		if err != nil {
+			t.Fatalf("connect: %v", err)
+		}
+		if !l.IsConnected() {
+			t.Fatal("successful connection is disconnected")
+		}
+		if err := l.Disconnect(); err != nil {
+			t.Fatalf("disconnect: %v", err)
+		}
+		if l.IsConnected() {
+			t.Fatal("disconnected connection is still connected")
+		}
+	}
+}
 
 func TestDeprecatedConnectAndDisconnect(t *testing.T) {
 	dialer := libvirttest.New()

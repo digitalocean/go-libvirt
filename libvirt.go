@@ -67,6 +67,7 @@ type Libvirt struct {
 	// closed after cleanup complete following the underlying connection to
 	// libvirt being disconnected.
 	disconnected chan struct{}
+	dmux         sync.RWMutex
 
 	// method callbacks
 	cmux      sync.RWMutex
@@ -284,25 +285,39 @@ func (l *Libvirt) initLibvirtComms(uri ConnectURI) error {
 // Since the connection can be lost, the Disconnected function can be used
 // to monitor for a lost connection.
 func (l *Libvirt) ConnectToURI(uri ConnectURI) error {
+	previous := l.Disconnected()
 	err := l.socket.Connect()
 	if err != nil {
 		return err
 	}
+	// A reconnect must not race the previous connection's callback cleanup.
+	select {
+	case <-previous:
+	case <-time.After(disconnectTimeout):
+		l.socket.Disconnect()
+		return errors.New("timed out waiting for previous connection cleanup")
+	}
+	disconnected := make(chan struct{})
+	l.dmux.Lock()
+	l.disconnected = disconnected
+	l.dmux.Unlock()
 
 	// Start watching the underlying socket connection immediately.
 	// If we don't, and Libvirt goes away partway through initLibvirtComms,
 	// then the callbacks that initLibvirtComms has registered will never
 	// be closed, and therefore it will be stuck waiting for data from a
 	// channel that will never arrive.
-	go l.waitAndDisconnect()
+	go l.waitAndDisconnect(l.socket.Disconnected(), disconnected)
 
 	err = l.initLibvirtComms(uri)
 	if err != nil {
 		l.socket.Disconnect()
+		select {
+		case <-disconnected:
+		case <-time.After(disconnectTimeout):
+		}
 		return err
 	}
-
-	l.disconnected = make(chan struct{})
 
 	return nil
 }
@@ -337,7 +352,7 @@ func (l *Libvirt) Disconnect() error {
 	// to happen once it returns.  Safeguard with a timeout.
 	// Things not fully cleaned up is better than a deadlock.
 	select {
-	case <-l.disconnected:
+	case <-l.Disconnected():
 	case <-time.After(disconnectTimeout):
 	}
 
@@ -348,6 +363,8 @@ func (l *Libvirt) Disconnect() error {
 // to libvirt has been closed. If the returned channel is closed, then
 // the connection to libvirt has been lost (or disconnected intentionally).
 func (l *Libvirt) Disconnected() <-chan struct{} {
+	l.dmux.RLock()
+	defer l.dmux.RUnlock()
 	return l.disconnected
 }
 
@@ -527,6 +544,7 @@ func (l *Libvirt) LifecycleEvents(ctx context.Context) (<-chan DomainEventLifecy
 
 // Run executes the given QAPI command against a domain's QEMU instance.
 // For a list of available QAPI commands, see:
+//
 //	http://git.qemu.org/?p=qemu.git;a=blob;f=qapi-schema.json;hb=HEAD
 func (l *Libvirt) Run(dom string, cmd []byte) ([]byte, error) {
 	d, err := l.lookup(dom)
@@ -728,7 +746,8 @@ type BlockLimit struct {
 // 'blkdeviotune' command on a VM in virsh.
 //
 // Example usage:
-//  SetBlockIOTune("vm-name", "vda", BlockLimit{libvirt.QEMUBlockIOWriteBytesSec, 1000000})
+//
+//	SetBlockIOTune("vm-name", "vda", BlockLimit{libvirt.QEMUBlockIOWriteBytesSec, 1000000})
 //
 // Deprecated: use DomainSetBlockIOTune instead.
 func (l *Libvirt) SetBlockIOTune(dom string, disk string, limits ...BlockLimit) error {
@@ -806,9 +825,9 @@ func getQEMUError(r response) error {
 	return nil
 }
 
-func (l *Libvirt) waitAndDisconnect() {
+func (l *Libvirt) waitAndDisconnect(socketDisconnected <-chan struct{}, disconnected chan struct{}) {
 	// wait for the socket to indicate if/when it's been disconnected
-	<-l.socket.Disconnected()
+	<-socketDisconnected
 
 	// close event streams
 	l.removeAllStreams()
@@ -817,21 +836,7 @@ func (l *Libvirt) waitAndDisconnect() {
 	// outstanding requests
 	l.deregisterAll()
 
-	select {
-	case <-l.disconnected:
-		// l.disconnected is already closed, i.e., Libvirt.ConnectToURI
-		// was unable to complete all phases of its connection and
-		// so this hadn't been assigned to an open channel yet (it
-		// is set to a closed channel in Libvirt.New*)
-		//
-		// Just return to avoid closing an already-closed channel.
-		return
-	default:
-		// if we make it here then reading from l.disconnected is blocking,
-		// which suggests that it is open and must be closed.
-	}
-
-	close(l.disconnected)
+	close(disconnected)
 }
 
 // NewWithDialer configures a new Libvirt object that can be used to perform
